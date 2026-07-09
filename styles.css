@@ -420,15 +420,16 @@ ul, ol{ list-style:none; }
 .centered{
   display:flex; flex-direction:column; justify-content:center; align-items:center;
   text-align:center;
-  max-width:660px; margin:0 auto;
+  max-width:min(1280px, 96vw); margin:0 auto;
 }
 .accent-rule{
   display:block; width:44px; height:2px;
   background:var(--accent); margin:0 auto 1.6rem;
 }
 .centered-copy{
-  font-size:clamp(1.15rem, 1.8vw, 1.5rem);
-  font-weight:400; line-height:1.75;
+  font-size:clamp(.82rem, 1.2vw, 1.05rem);
+  font-weight:300; line-height:1.5;
+  letter-spacing:-.035em; word-spacing:-.07em;
 }
 
 /* archive */
