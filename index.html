@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>תות — Studio Tutlavi | מרחב לאירוח ואוצרות</title>
+<meta name="description" content="סטודיו תות — מרחב לאירוח ואוצרות. מפגש ישיר בין קולינריה ליצירה. 24.07 אירוע פתיחה.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Miriam+Libre:wght@400;700&family=Heebo:wght@900&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ============ HEADER — solid, slides never cover it ============ -->
+<header class="site-header" id="siteHeader">
+  <a href="#hero" class="wordmark slide-link" data-slide="0">
+    <span class="he">תות</span><span class="en">tutlavi</span>
+  </a>
+
+  <nav class="main-nav" aria-label="ניווט ראשי">
+    <a href="#studio" class="slide-link" data-slide="1">הסטודיו</a>
+    <a href="#program" class="slide-link" data-slide="2">התוכן</a>
+    <a href="#vivian" class="slide-link" data-slide="3">ויויאן</a>
+    <a href="#we" class="slide-link" data-slide="4">אנחנו</a>
+    <a href="#space" class="slide-link" data-slide="5">להשכרה</a>
+    <a href="#archive" class="slide-link" data-slide="6">יומן</a>
+  </nav>
+
+  <div class="header-side">
+    <div class="ticker" aria-hidden="true">
+      <div class="ticker-track">
+        <span>24.07 אירוע פתיחה ### Inner Circle ### 24.07 אירוע פתיחה ### Inner Circle ### </span>
+        <span>24.07 אירוע פתיחה ### Inner Circle ### 24.07 אירוע פתיחה ### Inner Circle ### </span>
+      </div>
+    </div>
+    <a href="#" class="lang-toggle" aria-label="Switch to English"><span dir="ltr">EN</span></a>
+    <button class="menu-toggle" id="menuToggle" aria-label="תפריט" aria-expanded="false">
+      <span></span><span></span>
+    </button>
+  </div>
+</header>
+
+<!-- mobile overlay nav -->
+<nav class="overlay-nav" id="overlayNav" aria-label="ניווט נייד">
+  <ul>
+    <li><a href="#studio" class="nav-link slide-link" data-slide="1">הסטודיו</a></li>
+    <li><a href="#program" class="nav-link slide-link" data-slide="2">התוכן</a></li>
+    <li><a href="#vivian" class="nav-link slide-link" data-slide="3">ויויאן</a></li>
+    <li><a href="#we" class="nav-link slide-link" data-slide="4">אנחנו</a></li>
+    <li><a href="#space" class="nav-link slide-link" data-slide="5">להשכרה</a></li>
+    <li><a href="#archive" class="nav-link slide-link" data-slide="6">יומן וארכיון</a></li>
+    <li><a href="#join" class="nav-link nav-link-cta slide-link" data-slide="7">Inner Circle</a></li>
+  </ul>
+  <div class="overlay-nav-foot"><span dir="ltr">tutlavi · toute la vie</span></div>
+</nav>
+
+<!-- slide counter, editorial style -->
+<div class="slide-counter mono" id="slideCounter" aria-hidden="true">
+  <span id="slideNow" dir="ltr">01</span><span class="slash" dir="ltr">/</span><span id="slideTotal" dir="ltr">08</span>
+</div>
+
+<!-- ============ THE SLIDES — full-screen, wheel-driven curtain wipes ============ -->
+<div class="slides" id="slides">
+
+  <!-- 0 · HERO — three panels -->
+  <section class="slide" id="hero">
+    <div class="slide-inner hero-split">
+      <div class="hero-text">
+        <p class="big-type reveal">
+          סטודיו תות הוא מרחב
+          לאירוח ואוצרות —
+          בית שמייצר מפגש ישיר
+          בין יוצרים לקהל,
+          בין יצירה לקולינריה.
+          קנבס מינימליסטי
+          שנועד לייצר חיבורים
+          ולעורר סקרנות.
+        </p>
+        <p class="intro-date reveal">
+          <span class="accent-dot" aria-hidden="true"></span>
+          <span class="mono" dir="ltr">24.07</span>
+          <span>אירוע פתיחה</span>
+        </p>
+      </div>
+
+      <div class="hero-media cine cine--gray cine--drift">
+        <video autoplay muted loop playsinline preload="metadata"
+               poster="https://loremflickr.com/900/1600/flower,macro">
+          <source src="https://interactive-examples.mdn.mozilla.net/media/cc0-videos/flower.mp4" type="video/mp4">
+        </video>
+        <div class="media-overlay">
+          <p class="media-info">
+            סטודיו תות<br>
+            מרחב לאירוח ואוצרות<br>
+            מתחם כשר
+          </p>
+          <a href="#join" class="pill slide-link" data-slide="7">
+            <span class="accent-dot" aria-hidden="true"></span>
+            הצטרפות לקהילה
+          </a>
+        </div>
+      </div>
+
+      <div class="hero-media cine cine--gray cine--drift-b" aria-hidden="true">
+        <video autoplay muted loop playsinline preload="metadata"
+               poster="https://loremflickr.com/700/1600/strawberry,macro">
+          <source src="https://upload.wikimedia.org/wikipedia/commons/e/e3/Strawberry_growth_%28Video%29.webm" type="video/webm">
+        </video>
+      </div>
+    </div>
+  </section>
+
+  <!-- 1 · THE STUDIO -->
+  <section class="slide" id="studio">
+    <div class="slide-inner duo">
+      <div class="duo-text">
+        <h2 class="t-title reveal"><span class="t-index" dir="ltr">01</span>הסטודיו</h2>
+        <p class="t-copy reveal">
+          בטון, נירוסטה ומעט עץ לבן.
+          שנדליר רצועות כסופות מעל בר שנבנה במקום.
+          הקפדה ללא פשרות, רק על מה שהיינו קונים בעצמנו —
+          מאמנות ואופנה ועד לקולינריה כשרה ואנשי לב.
+          הכל קורה כאן.
+        </p>
+      </div>
+      <figure class="duo-media reveal">
+        <div class="cine cine--tilt portrait">
+          <video muted loop playsinline preload="none"
+                 poster="https://loremflickr.com/900/1200/bar,interior">
+            <source src="https://upload.wikimedia.org/wikipedia/commons/9/90/Vertigo_Antwerpen_-_walkthrough.webm" type="video/webm">
+          </video>
+        </div>
+        <figcaption class="cap mono" dir="ltr">studio walkthrough · raw 00:31</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <!-- 2 · THE PROGRAM -->
+  <section class="slide" id="program">
+    <div class="slide-inner solo">
+      <h2 class="t-title reveal"><span class="t-index" dir="ltr">02</span>התוכן</h2>
+      <ul class="board reveal">
+        <li>
+          <span class="board-index mono" dir="ltr">a.</span>
+          <span class="t-item">ליין שישי בצהריים</span>
+          <span class="t-desc">פופ-אפים וירידים מקומיים.</span>
+        </li>
+        <li>
+          <span class="board-index mono" dir="ltr">b.</span>
+          <span class="t-item">אמצע השבוע</span>
+          <span class="t-desc">ערבי קולנוע זר, בר פתוח והשראה.</span>
+        </li>
+        <li>
+          <span class="board-index mono" dir="ltr">c.</span>
+          <span class="t-item">סדנאות</span>
+          <span class="t-desc">אופנה, יין וקולינריה.</span>
+        </li>
+      </ul>
+    </div>
+  </section>
+
+  <!-- 3 · VIVIAN — full-bleed band -->
+  <section class="slide" id="vivian">
+    <div class="slide-inner band">
+      <div class="cine cine--band">
+        <video muted loop playsinline preload="none"
+               poster="https://loremflickr.com/1800/900/cocktail,night">
+          <source src="https://upload.wikimedia.org/wikipedia/commons/f/fe/Quintal_Brasileiro%2C_um_drink_com_Jabuticaba_feito_pelo_melhor_bartender_do_Brasil.webm" type="video/webm">
+        </video>
+      </div>
+      <div class="band-overlay" aria-hidden="true"></div>
+      <div class="band-content reveal">
+        <span class="band-kicker mono" dir="ltr">Residency · bar nights</span>
+        <h2 class="band-title">ויויאן</h2>
+        <p class="band-copy">
+          הבית של בר הקוקטיילים ויויאן.
+          שישי בצהריים וערבים נבחרים, בר קבוע שנבנה במקום —
+          ללא שעות פתיחה קונבנציונליות.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4 · WE -->
+  <section class="slide" id="we">
+    <div class="slide-inner centered">
+      <span class="accent-rule reveal" aria-hidden="true"></span>
+      <h2 class="t-title bare reveal"><span class="t-index" dir="ltr">04</span>אנחנו</h2>
+      <p class="centered-copy reveal">
+        תות — <span class="mono" dir="ltr">tutlavi</span>,
+        מ־<span class="mono" dir="ltr">"toute la vie"</span> — כל החיים.
+        אוצרות אישית וקפדנית, שותפים שפועלים
+        ממקום אמיתי של עשייה, ואנשי לב שמביאים
+        אנרגיה שתורמת להרמוניה של הסטודיו.
+        מתחם כשר שמאפשר אירוח פרימיום לקהל רחב.
+      </p>
+    </div>
+  </section>
+
+  <!-- 5 · FOR HIRE -->
+  <section class="slide" id="space">
+    <div class="slide-inner duo">
+      <figure class="duo-media reveal">
+        <div class="cine cine--macro portrait">
+          <video muted loop playsinline preload="none"
+                 poster="https://loremflickr.com/900/1200/macro,photography">
+            <source src="https://upload.wikimedia.org/wikipedia/commons/1/12/Fireweed_seed_pod_bursting_open_in_Tuntorp.webm" type="video/webm">
+          </video>
+        </div>
+        <figcaption class="cap mono" dir="ltr">macro study · 120fps</figcaption>
+      </figure>
+      <div class="duo-text">
+        <h2 class="t-title reveal"><span class="t-index" dir="ltr">05</span>להשכרה</h2>
+        <ul class="t-list reveal">
+          <li>
+            <span class="t-item">יוצרים והפקות</span>
+            <span class="t-desc">השקות, השמעות, ימי צילום וארוחות שף.</span>
+          </li>
+          <li>
+            <span class="t-item">חברות וארגונים</span>
+            <span class="t-desc">אירועי בוטיק, הרמות כוסית וימי גיבוש.</span>
+          </li>
+          <li>
+            <span class="t-item">אירוח פרטי</span>
+            <span class="t-desc">חלל כשר, פרטי ומדויק.</span>
+          </li>
+        </ul>
+        <a href="#join" class="text-link slide-link reveal" data-slide="7">לתיאום סיור בחלל ←</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 · NEWS & ARCHIVE -->
+  <section class="slide" id="archive">
+    <div class="slide-inner solo">
+      <h2 class="t-title reveal"><span class="t-index" dir="ltr">06</span>יומן וארכיון</h2>
+      <ol class="archive-list reveal">
+        <li class="archive-item upcoming">
+          <span class="archive-date mono" dir="ltr">24.07.2026</span>
+          <span class="archive-title">אירוע פתיחה — חותכים את הסרט <span class="soon">בקרוב</span></span>
+          <span class="archive-note">ליין-אפ מוזיקלי · תערוכה מתחלפת · ויויאן · אוניגירי מנטנטן</span>
+        </li>
+        <li class="archive-item">
+          <span class="archive-date mono" dir="ltr">31.07.2026</span>
+          <span class="archive-title">ליין שישי — פופ-אפ מקומי</span>
+        </li>
+        <li class="archive-item">
+          <span class="archive-date mono" dir="ltr">05.08.2026</span>
+          <span class="archive-title">ערב קולנוע זר</span>
+        </li>
+        <li class="archive-item">
+          <span class="archive-date mono" dir="ltr">12.08.2026</span>
+          <span class="archive-title">סדנת יין</span>
+        </li>
+        <li class="archive-item">
+          <span class="archive-date mono" dir="ltr">21.08.2026</span>
+          <span class="archive-title">השמעה אקוסטית</span>
+        </li>
+      </ol>
+      <p class="archive-secret reveal">הפרטים המדויקים, השעות והלוקיישן נחשפים רק בקהילה.</p>
+    </div>
+  </section>
+
+  <!-- 7 · INNER CIRCLE — the footer slide -->
+  <section class="slide slide-footer" id="join">
+    <div class="slide-inner footer-slide">
+      <div class="footer-cta">
+        <p class="footer-eyebrow mono reveal">Inner Circle</p>
+        <h2 class="footer-headline reveal">הדברים הטובים באמת קורים פה.</h2>
+        <p class="footer-copy reveal">
+          הצטרפו לקהילה השקטה שלנו לקבלת הזמנות, עדכונים וגישה מוקדמת לכרטיסים.
+        </p>
+
+        <form class="newsletter reveal" action="#" method="post">
+          <label class="visually-hidden" for="nl-email">אימייל</label>
+          <input id="nl-email" type="email" name="email" placeholder="כתובת אימייל" required>
+          <button type="submit" aria-label="שליחה"><span dir="ltr">&larr;</span></button>
+        </form>
+
+        <div class="footer-actions reveal">
+          <a href="#" class="btn btn-primary">הצטרפות לקהילה</a>
+          <a href="#" class="btn btn-outline">שיתופי פעולה והשכרת החלל</a>
+        </div>
+
+        <p class="footer-meta-line mono reveal">
+          <span>מגן אברהם 6, תל אביב</span>
+          <span class="sep">·</span>
+          <a href="tel:+972543129933" class="footer-link" dir="ltr">054-312-9933</a>
+          <span class="sep">·</span>
+          <a href="#" class="footer-link">אינסטגרם</a>
+          <span class="sep">·</span>
+          <span>מתחם כשר</span>
+        </p>
+      </div>
+
+      <div class="footer-bottom">
+        <span class="wordmark small">
+          <span class="he">תות</span><span class="en">tutlavi</span>
+        </span>
+        <span class="rights">© 2026 · כל הזכויות שמורות · <span dir="ltr">toute la vie</span></span>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- floating newsletter chip -->
+<div class="news-chip" id="newsChip">
+  <button class="news-chip-close" id="newsChipClose" aria-label="סגירה">×</button>
+  <p class="news-chip-label mono">Newsletter</p>
+  <a href="#join" class="news-chip-link slide-link" data-slide="7">
+    <span class="accent-dot" aria-hidden="true"></span>
+    הרשמה לעדכוני תות
+  </a>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
