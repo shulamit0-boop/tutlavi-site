@@ -281,11 +281,11 @@ ul, ol{ list-style:none; }
 }
 
 .big-type{
-  font-size:clamp(1.2rem, 1.85vw, 1.8rem);
-  font-weight:700;
-  line-height:1.24;
-  letter-spacing:.015em;
-  word-spacing:.06em;
+  font-size:clamp(1.25rem, 1.95vw, 1.9rem);
+  font-weight:300;
+  line-height:1.32;
+  letter-spacing:-.035em;
+  word-spacing:-.08em;
 }
 
 .intro-date{
@@ -303,9 +303,9 @@ ul, ol{ list-style:none; }
   gap:1.6rem; text-align:center; padding:1.5rem;
 }
 .media-info{
-  color:#fff; font-weight:700;
+  color:#fff; font-weight:300;
   font-size:clamp(1.05rem, 1.6vw, 1.5rem);
-  line-height:1.45; letter-spacing:.04em;
+  line-height:1.4; letter-spacing:-.02em;
   text-shadow:0 1px 16px rgba(0,0,0,.55);
 }
 .pill{
