@@ -54,11 +54,11 @@ body{
   font-family:'Index Mono', 'Miriam Libre', monospace;
   font-weight:400;
   font-size:15px;
-  line-height:1.35;
-  letter-spacing:-.025em;
+  line-height:1.3;
+  letter-spacing:-.055em;
   overflow:hidden; /* desktop: the slide engine owns scrolling */
-  /* wide alternates (ss01) + ligatures, HE localized forms */
-  font-feature-settings:'ss01' 1, 'liga' 1, 'dlig' 1, 'calt' 1, 'locl' 1;
+  /* ligatures + HE localized forms (ss01 wide alternates off for a tighter set) */
+  font-feature-settings:'liga' 1, 'dlig' 1, 'calt' 1, 'locl' 1;
   font-variant-ligatures:common-ligatures discretionary-ligatures contextual;
 }
 
@@ -69,7 +69,7 @@ ul, ol{ list-style:none; }
 ::selection{ background:var(--accent); color:#fff; }
 :focus-visible{ outline:1.5px solid var(--accent); outline-offset:3px; }
 
-.mono{ font-family:'Index Mono', monospace; letter-spacing:.02em; }
+.mono{ font-family:'Index Mono', monospace; letter-spacing:-.02em; }
 
 .accent-dot{
   width:9px; height:9px; border-radius:50%;
@@ -157,7 +157,7 @@ ul, ol{ list-style:none; }
 
 .main-nav{ display:flex; gap:clamp(.9rem, 2vw, 1.8rem); flex-wrap:nowrap; }
 .main-nav a{
-  font-size:.88rem; font-weight:700; letter-spacing:.01em;
+  font-size:.88rem; font-weight:700; letter-spacing:-.03em;
   position:relative; padding-bottom:2px; white-space:nowrap;
 }
 .main-nav a::after{
@@ -284,9 +284,9 @@ ul, ol{ list-style:none; }
 .big-type{
   font-size:clamp(1.25rem, 1.95vw, 1.9rem);
   font-weight:300;
-  line-height:1.32;
-  letter-spacing:-.035em;
-  word-spacing:-.08em;
+  line-height:1.28;
+  letter-spacing:-.06em;
+  word-spacing:-.1em;
 }
 
 .intro-date{
@@ -325,7 +325,7 @@ ul, ol{ list-style:none; }
 .t-title{
   display:flex; align-items:baseline; gap:.9rem;
   font-size:clamp(1.4rem, 2.4vw, 2.2rem);
-  font-weight:700; letter-spacing:-.02em;
+  font-weight:700; letter-spacing:-.045em;
   padding-bottom:.8rem; margin-bottom:1.6rem;
   border-bottom:1px solid var(--line);
 }
@@ -383,7 +383,7 @@ ul, ol{ list-style:none; }
   display:flex; flex-direction:column; gap:.15rem;
 }
 .t-list li:first-child{ border-top:1px solid var(--line); }
-.t-item{ font-size:1.05rem; font-weight:700; letter-spacing:-.01em; }
+.t-item{ font-size:1.05rem; font-weight:700; letter-spacing:-.03em; }
 .t-desc{ font-size:.88rem; color:var(--ink-soft); }
 
 .text-link{
@@ -412,7 +412,7 @@ ul, ol{ list-style:none; }
 }
 .band-title{
   font-size:clamp(2.2rem, 5.5vw, 3.8rem);
-  font-weight:700; letter-spacing:-.02em; line-height:1.02;
+  font-weight:700; letter-spacing:-.045em; line-height:1.02;
   margin:.6rem 0 1rem;
 }
 .band-copy{ font-size:1rem; color:rgba(255,255,255,.88); max-width:46ch; }
@@ -429,8 +429,8 @@ ul, ol{ list-style:none; }
 }
 .centered-copy{
   font-size:clamp(.82rem, 1.2vw, 1.05rem);
-  font-weight:300; line-height:1.5;
-  letter-spacing:-.035em; word-spacing:-.07em;
+  font-weight:300; line-height:1.45;
+  letter-spacing:-.055em; word-spacing:-.1em;
 }
 
 /* archive */
