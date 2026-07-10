@@ -132,7 +132,7 @@ function engineStop() {
 /* ---------- input: wheel, keys, touch ---------- */
 
 window.addEventListener('wheel', (e) => {
-  if (!engineOn) return;
+  if (!engineOn || document.body.classList.contains('modal-open')) return;
   e.preventDefault();
   if (animating) return;
   wheelAccum += e.deltaY;
@@ -142,7 +142,7 @@ window.addEventListener('wheel', (e) => {
 }, { passive: false });
 
 window.addEventListener('keydown', (e) => {
-  if (!engineOn) return;
+  if (!engineOn || document.body.classList.contains('modal-open')) return;
   if (['ArrowDown', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); next(); }
   if (['ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); prev(); }
   if (e.key === 'Home') { e.preventDefault(); goTo(0, 'up'); }
@@ -218,4 +218,77 @@ if (sessionStorage.getItem('tutlavi-chip-closed')) {
 newsChipClose.addEventListener('click', () => {
   newsChip.classList.add('hidden');
   sessionStorage.setItem('tutlavi-chip-closed', '1');
+});
+
+/* ---------- inquiry modal (collaboration / space rental) ---------- */
+
+const inquiryModal = document.getElementById('inquiryModal');
+const inquiryForm = document.getElementById('inquiryForm');
+const rentalFields = document.getElementById('rentalFields');
+const rentalInputs = rentalFields.querySelectorAll('input');
+const formStatus = document.getElementById('formStatus');
+const typeRadios = inquiryForm.querySelectorAll('input[name="type"]');
+
+function setRentalVisible(show) {
+  rentalFields.hidden = !show;
+  rentalInputs.forEach(inp => { inp.required = show && inp.id === 'f-date'; });
+}
+
+function openInquiry(mode) {
+  if (mode === 'rental') {
+    inquiryForm.querySelector('input[value="השכרת חלל"]').checked = true;
+    setRentalVisible(true);
+  }
+  inquiryModal.classList.add('open');
+  inquiryModal.setAttribute('aria-hidden', 'false');
+  document.body.classList.add('modal-open');
+  setTimeout(() => inquiryForm.querySelector('#f-name').focus(), 300);
+}
+
+function closeInquiry() {
+  inquiryModal.classList.remove('open');
+  inquiryModal.setAttribute('aria-hidden', 'true');
+  document.body.classList.remove('modal-open');
+}
+
+document.querySelectorAll('[data-open-inquiry]').forEach(btn => {
+  btn.addEventListener('click', () => openInquiry(btn.getAttribute('data-open-inquiry')));
+});
+document.querySelectorAll('[data-close-inquiry]').forEach(el => {
+  el.addEventListener('click', closeInquiry);
+});
+window.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && inquiryModal.classList.contains('open')) closeInquiry();
+});
+
+typeRadios.forEach(r => {
+  r.addEventListener('change', () => setRentalVisible(r.value === 'השכרת חלל' && r.checked));
+});
+
+// AJAX submit to Netlify Forms — keeps the visitor on the page
+inquiryForm.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const submitBtn = inquiryForm.querySelector('.modal-submit');
+  formStatus.className = 'form-status mono';
+  formStatus.textContent = 'שולח…';
+  submitBtn.disabled = true;
+
+  const data = new URLSearchParams(new FormData(inquiryForm)).toString();
+  fetch('/', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: data,
+  })
+    .then((res) => {
+      if (!res.ok) throw new Error('bad response');
+      formStatus.className = 'form-status mono ok';
+      formStatus.textContent = 'תודה! הפנייה נשלחה, נחזור אליכם בהקדם.';
+      inquiryForm.reset();
+      setRentalVisible(false);
+    })
+    .catch(() => {
+      formStatus.className = 'form-status mono err';
+      formStatus.textContent = 'משהו השתבש. נסו שוב או כתבו ל-vivian.office.info@gmail.com';
+    })
+    .finally(() => { submitBtn.disabled = false; });
 });

@@ -222,7 +222,7 @@
             <span class="t-desc">חלל כשר, פרטי ומדויק.</span>
           </li>
         </ul>
-        <a href="#join" class="text-link slide-link reveal" data-slide="7">לתיאום סיור בחלל ←</a>
+        <button type="button" class="text-link reveal" data-open-inquiry="rental">לתיאום סיור בחלל ←</button>
       </div>
     </div>
   </section>
@@ -276,7 +276,7 @@
 
         <div class="footer-actions reveal">
           <a href="#" class="btn btn-primary">הצטרפות לקהילה</a>
-          <a href="#" class="btn btn-outline">שיתופי פעולה והשכרת החלל</a>
+          <button type="button" class="btn btn-outline" data-open-inquiry>שיתופי פעולה והשכרת החלל</button>
         </div>
 
         <p class="footer-meta-line mono reveal">
@@ -311,6 +311,63 @@
     <span class="accent-dot" aria-hidden="true"></span>
     הרשמה לעדכוני תות
   </a>
+</div>
+
+<!-- ============ INQUIRY MODAL ============ -->
+<div class="modal" id="inquiryModal" aria-hidden="true">
+  <div class="modal-backdrop" data-close-inquiry></div>
+  <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="inquiryTitle">
+    <button class="modal-close" data-close-inquiry aria-label="סגירה">×</button>
+    <p class="modal-eyebrow mono">צור קשר</p>
+    <h2 class="modal-title" id="inquiryTitle">שיתופי פעולה והשכרת החלל</h2>
+
+    <form name="tutlavi-inquiry" method="POST" data-netlify="true" netlify-honeypot="bot-field" id="inquiryForm">
+      <input type="hidden" name="form-name" value="tutlavi-inquiry">
+      <p class="hp-field"><label>אל תמלאו: <input name="bot-field"></label></p>
+
+      <div class="field">
+        <span class="field-label">סוג הפנייה</span>
+        <div class="radio-row">
+          <label class="radio"><input type="radio" name="type" value="שיתוף פעולה" checked> שיתוף פעולה</label>
+          <label class="radio"><input type="radio" name="type" value="השכרת חלל"> השכרת חלל</label>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="f-name">שם</label>
+        <input id="f-name" type="text" name="name" required>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="f-email">מייל</label>
+        <input id="f-email" type="email" name="email" dir="ltr" required>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="f-message">בקשה</label>
+        <textarea id="f-message" name="message" rows="3" required></textarea>
+      </div>
+
+      <!-- rental-only fields -->
+      <div class="rental-fields" id="rentalFields" hidden>
+        <div class="field">
+          <label class="field-label" for="f-date">תאריך</label>
+          <input id="f-date" type="date" name="event-date" dir="ltr">
+        </div>
+        <div class="field">
+          <label class="field-label" for="f-hours">שעות</label>
+          <input id="f-hours" type="text" name="event-hours" placeholder="למשל 18:00–23:00">
+        </div>
+        <div class="field">
+          <label class="field-label" for="f-purpose">מטרה</label>
+          <input id="f-purpose" type="text" name="event-purpose" placeholder="השקה · צילומים · אירוע חברה…">
+        </div>
+      </div>
+
+      <button type="submit" class="btn modal-submit">שליחה</button>
+      <p class="form-status mono" id="formStatus" role="status" aria-live="polite"></p>
+    </form>
+  </div>
 </div>
 
 <script src="script.js"></script>
