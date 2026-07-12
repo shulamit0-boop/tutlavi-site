@@ -265,7 +265,9 @@ typeRadios.forEach(r => {
   r.addEventListener('change', () => setRentalVisible(r.value === 'השכרת חלל' && r.checked));
 });
 
-// AJAX submit to Netlify Forms — keeps the visitor on the page
+// AJAX submit to FormSubmit — free email delivery, keeps the visitor on the page
+const FORM_ENDPOINT = 'https://formsubmit.co/ajax/vivian.office.info@gmail.com';
+
 inquiryForm.addEventListener('submit', (e) => {
   e.preventDefault();
   const submitBtn = inquiryForm.querySelector('.modal-submit');
@@ -273,14 +275,15 @@ inquiryForm.addEventListener('submit', (e) => {
   formStatus.textContent = 'שולח…';
   submitBtn.disabled = true;
 
-  const data = new URLSearchParams(new FormData(inquiryForm)).toString();
-  fetch('/', {
+  const payload = Object.fromEntries(new FormData(inquiryForm).entries());
+  fetch(FORM_ENDPOINT, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-    body: data,
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    body: JSON.stringify(payload),
   })
-    .then((res) => {
-      if (!res.ok) throw new Error('bad response');
+    .then((res) => res.json())
+    .then((data) => {
+      if (String(data.success) !== 'true') throw new Error(data.message || 'failed');
       formStatus.className = 'form-status mono ok';
       formStatus.textContent = 'תודה! הפנייה נשלחה, נחזור אליכם בהקדם.';
       inquiryForm.reset();
