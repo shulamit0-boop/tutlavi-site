@@ -33,6 +33,38 @@
   font-weight:700; font-style:normal; font-display:swap;
 }
 
+/* ---- Frank Re — Hebrew+Latin serif for running text (3 weights + italic) ---- */
+@font-face{
+  font-family:'Frank Re';
+  src:url('fonts/frank-re-regular-aaa.otf') format('opentype');
+  font-weight:400; font-style:normal; font-display:swap;
+}
+@font-face{
+  font-family:'Frank Re';
+  src:url('fonts/frank-re-regular-natui-aaa.otf') format('opentype');
+  font-weight:400; font-style:italic; font-display:swap;
+}
+@font-face{
+  font-family:'Frank Re';
+  src:url('fonts/frank-re-medium-aaa.otf') format('opentype');
+  font-weight:500; font-style:normal; font-display:swap;
+}
+@font-face{
+  font-family:'Frank Re';
+  src:url('fonts/frank-re-medium-natui-aaa.otf') format('opentype');
+  font-weight:500; font-style:italic; font-display:swap;
+}
+@font-face{
+  font-family:'Frank Re';
+  src:url('fonts/frank-re-bold-aaa.otf') format('opentype');
+  font-weight:700; font-style:normal; font-display:swap;
+}
+@font-face{
+  font-family:'Frank Re';
+  src:url('fonts/frank-re-bold-natui-aaa.otf') format('opentype');
+  font-weight:700; font-style:italic; font-display:swap;
+}
+
 :root{
   --bg: #ffffff;
   --ink: #17140f;
@@ -51,15 +83,13 @@ html, body{ height:100%; }
 body{
   background:var(--bg);
   color:var(--ink);
-  font-family:'Index Mono', 'Miriam Libre', monospace;
+  font-family:'Frank Re', Georgia, 'Times New Roman', serif;
   font-weight:400;
-  font-size:15px;
-  line-height:1.3;
-  letter-spacing:-.055em;
+  font-size:16px;
+  line-height:1.5;
+  letter-spacing:normal;
   overflow:hidden; /* desktop: the slide engine owns scrolling */
-  /* ligatures + HE localized forms (ss01 wide alternates off for a tighter set) */
-  font-feature-settings:'liga' 1, 'dlig' 1, 'calt' 1, 'locl' 1;
-  font-variant-ligatures:common-ligatures discretionary-ligatures contextual;
+  font-feature-settings:'liga' 1, 'calt' 1, 'locl' 1;
 }
 
 img, video{ display:block; width:100%; height:100%; object-fit:cover; }
@@ -155,6 +185,7 @@ ul, ol{ list-style:none; }
 
 .main-nav{ display:flex; gap:clamp(.9rem, 2vw, 1.8rem); flex-wrap:nowrap; }
 .main-nav a{
+  font-family:'Index Mono', monospace;
   font-size:.88rem; font-weight:700; letter-spacing:-.03em;
   position:relative; padding-bottom:2px; white-space:nowrap;
 }
@@ -211,7 +242,7 @@ ul, ol{ list-style:none; }
 }
 .overlay-nav.open{ transform:translateY(0); }
 .overlay-nav ul{ display:flex; flex-direction:column; gap:1.4rem; text-align:center; }
-.nav-link{ font-size:clamp(1.5rem, 6vw, 2.2rem); font-weight:700; }
+.nav-link{ font-family:'Index Mono', monospace; font-size:clamp(1.5rem, 6vw, 2.2rem); font-weight:700; }
 .nav-link:hover{ color:var(--accent); }
 .nav-link-cta{
   font-family:'Index Mono', monospace;
@@ -280,11 +311,11 @@ ul, ol{ list-style:none; }
 }
 
 .big-type{
-  font-size:clamp(1.25rem, 1.95vw, 1.9rem);
-  font-weight:300;
-  line-height:1.28;
-  letter-spacing:-.06em;
-  word-spacing:-.1em;
+  font-size:clamp(1.35rem, 2.1vw, 2.05rem);
+  font-weight:400;
+  line-height:1.42;
+  letter-spacing:normal;
+  word-spacing:normal;
 }
 
 .intro-date{
@@ -322,6 +353,7 @@ ul, ol{ list-style:none; }
 
 /* ============ shared section pieces ============ */
 .t-title{
+  font-family:'Index Mono', monospace;
   display:flex; align-items:baseline; gap:.9rem;
   font-size:clamp(1.4rem, 2.4vw, 2.2rem);
   font-weight:700; letter-spacing:-.045em;
@@ -410,6 +442,7 @@ ul, ol{ list-style:none; }
   color:rgba(255,255,255,.6);
 }
 .band-title{
+  font-family:'Index Mono', monospace;
   font-size:clamp(2.2rem, 5.5vw, 3.8rem);
   font-weight:700; letter-spacing:-.045em; line-height:1.02;
   margin:.6rem 0 1rem;
@@ -427,9 +460,9 @@ ul, ol{ list-style:none; }
   background:var(--accent); margin:0 auto 1.6rem;
 }
 .centered-copy{
-  font-size:clamp(.82rem, 1.2vw, 1.05rem);
-  font-weight:300; line-height:1.45;
-  letter-spacing:-.055em; word-spacing:-.1em;
+  font-size:clamp(.95rem, 1.4vw, 1.2rem);
+  font-weight:400; line-height:1.5;
+  letter-spacing:normal; word-spacing:normal;
 }
 
 /* archive */
@@ -473,6 +506,7 @@ ul, ol{ list-style:none; }
   color:rgba(255,255,255,.55); margin-bottom:1.2rem;
 }
 .footer-headline{
+  font-family:'Index Mono', monospace;
   font-size:clamp(1.6rem, 4vw, 2.6rem);
   font-weight:700; line-height:1.2; margin-bottom:1rem;
 }
@@ -644,6 +678,7 @@ button.text-link{
   color:var(--ink-soft); margin-bottom:.5rem;
 }
 .modal-title{
+  font-family:'Index Mono', monospace;
   font-size:clamp(1.2rem, 2.4vw, 1.6rem); font-weight:700;
   letter-spacing:-.02em; margin-bottom:1.6rem;
 }
