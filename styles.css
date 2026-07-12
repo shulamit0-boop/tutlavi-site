@@ -82,40 +82,38 @@ ul, ol{ list-style:none; }
 }
 
 /* ============================================================
-   CINE — cinematic media treatment
+   MEDIA — bright, restrained, natural colour (apothecary / pop-up)
    ============================================================ */
 .cine{
   position:relative; overflow:hidden;
-  background:#0d0b09;
+  background:#eee9e1;
 }
 .cine video{
-  filter:saturate(.68) contrast(1.2) brightness(.82) sepia(.14) blur(.4px);
+  filter:saturate(.9) contrast(1.0) brightness(1.06);
   transform:scale(1.14);
 }
 
-/* hero variant — near-monochrome under a flat gray veil */
+/* hero variant — same bright, soft treatment */
 .cine--gray video{
-  filter:saturate(.28) contrast(1.16) brightness(.74) sepia(.06) blur(.5px);
+  filter:saturate(.88) contrast(1.0) brightness(1.08);
 }
+/* only a whisper of a scrim so the hero overlay text stays legible */
 .cine.cine--gray::before{
   background:
-    linear-gradient(rgba(122,119,113,.4), rgba(122,119,113,.4)),
-    radial-gradient(ellipse 120% 90% at 50% 45%, transparent 52%, rgba(10,8,6,.62) 100%),
-    linear-gradient(180deg, rgba(10,8,6,.28) 0%, transparent 14%, transparent 86%, rgba(10,8,6,.34) 100%);
+    radial-gradient(ellipse 120% 90% at 50% 48%, transparent 58%, rgba(20,17,12,.16) 100%),
+    linear-gradient(180deg, transparent 62%, rgba(20,17,12,.22) 100%);
 }
 
-/* vignette */
+/* very light vignette — barely there */
 .cine::before{
   content:''; position:absolute; inset:0; z-index:1; pointer-events:none;
-  background:
-    radial-gradient(ellipse 120% 90% at 50% 45%, transparent 52%, rgba(10,8,6,.62) 100%),
-    linear-gradient(180deg, rgba(10,8,6,.28) 0%, transparent 14%, transparent 86%, rgba(10,8,6,.34) 100%);
+  background:radial-gradient(ellipse 130% 100% at 50% 45%, transparent 72%, rgba(20,17,12,.1) 100%);
 }
 
-/* film grain */
+/* faint grain for a hint of texture */
 .cine::after{
   content:''; position:absolute; inset:0; z-index:1; pointer-events:none;
-  opacity:.16; mix-blend-mode:overlay;
+  opacity:.05; mix-blend-mode:multiply;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
@@ -302,12 +300,13 @@ ul, ol{ list-style:none; }
   position:absolute; inset:0; z-index:2;
   display:flex; flex-direction:column; align-items:center; justify-content:center;
   gap:1.6rem; text-align:center; padding:1.5rem;
+  background:radial-gradient(ellipse 80% 55% at 50% 50%, rgba(20,17,12,.34) 0%, transparent 70%);
 }
 .media-info{
   color:#fff; font-weight:300;
   font-size:clamp(1.05rem, 1.6vw, 1.5rem);
   line-height:1.4; letter-spacing:-.02em;
-  text-shadow:0 1px 16px rgba(0,0,0,.55);
+  text-shadow:0 1px 18px rgba(0,0,0,.7);
 }
 .pill{
   display:inline-flex; align-items:center; gap:.6rem;
