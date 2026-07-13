@@ -33,6 +33,18 @@
   font-weight:700; font-style:normal; font-display:swap;
 }
 
+/* ---- Almoni Tzar — condensed Hebrew+Latin sans for running text ---- */
+@font-face{
+  font-family:'Almoni Tzar';
+  src:url('fonts/almoni-tzar-light-aaa.otf') format('opentype');
+  font-weight:300; font-style:normal; font-display:swap;
+}
+@font-face{
+  font-family:'Almoni Tzar';
+  src:url('fonts/almoni-tzar-demibold-aaa.otf') format('opentype');
+  font-weight:600; font-style:normal; font-display:swap;
+}
+
 /* ---- Frank Re — Hebrew+Latin serif for running text (3 weights + italic) ---- */
 @font-face{
   font-family:'Frank Re';
@@ -83,14 +95,17 @@ html, body{ height:100%; }
 body{
   background:var(--bg);
   color:var(--ink);
-  font-family:'Frank Re', Georgia, 'Times New Roman', serif;
-  font-weight:400;
-  font-size:16px;
-  line-height:1.5;
+  font-family:'Almoni Tzar', 'Frank Re', sans-serif;
+  font-weight:300;
+  font-size:17px;
+  line-height:1.4;
   letter-spacing:normal;
   overflow:hidden; /* desktop: the slide engine owns scrolling */
   font-feature-settings:'liga' 1, 'calt' 1, 'locl' 1;
 }
+
+/* condensed sans: emphasis maps to the demibold cut */
+b, strong, .t-item, .intro-date{ font-weight:600; }
 
 img, video{ display:block; width:100%; height:100%; object-fit:cover; }
 a{ color:inherit; text-decoration:none; }
@@ -311,16 +326,16 @@ ul, ol{ list-style:none; }
 }
 
 .big-type{
-  font-size:clamp(1.35rem, 2.1vw, 2.05rem);
-  font-weight:400;
-  line-height:1.42;
+  font-size:clamp(1.5rem, 2.3vw, 2.25rem);
+  font-weight:300;
+  line-height:1.35;
   letter-spacing:normal;
   word-spacing:normal;
 }
 
 .intro-date{
   display:flex; align-items:center; gap:.7rem;
-  margin-top:2rem; font-size:.95rem; font-weight:700;
+  margin-top:2rem; font-size:1rem; font-weight:600;
 }
 .intro-date .mono{ font-size:1.05rem; }
 
@@ -414,7 +429,7 @@ ul, ol{ list-style:none; }
   display:flex; flex-direction:column; gap:.15rem;
 }
 .t-list li:first-child{ border-top:1px solid var(--line); }
-.t-item{ font-size:1.05rem; font-weight:700; letter-spacing:-.03em; }
+.t-item{ font-size:1.15rem; font-weight:600; letter-spacing:normal; }
 .t-desc{ font-size:.88rem; color:var(--ink-soft); }
 
 .text-link{
@@ -460,8 +475,8 @@ ul, ol{ list-style:none; }
   background:var(--accent); margin:0 auto 1.6rem;
 }
 .centered-copy{
-  font-size:clamp(.95rem, 1.4vw, 1.2rem);
-  font-weight:400; line-height:1.5;
+  font-size:clamp(1.05rem, 1.5vw, 1.3rem);
+  font-weight:300; line-height:1.45;
   letter-spacing:normal; word-spacing:normal;
 }
 
