@@ -231,7 +231,9 @@ const typeRadios = inquiryForm.querySelectorAll('input[name="type"]');
 
 function setRentalVisible(show) {
   rentalFields.hidden = !show;
-  rentalInputs.forEach(inp => { inp.required = show && inp.id === 'f-date'; });
+  // date stays optional — a hidden-or-skipped required field silently blocks
+  // submission in some flows; the venue can follow up on missing dates
+  rentalInputs.forEach(inp => { inp.required = false; });
 }
 
 function openInquiry(mode) {
