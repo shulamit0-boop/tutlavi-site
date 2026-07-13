@@ -129,6 +129,7 @@ button.danger{ background:var(--accent); border-color:var(--accent); }
     <div class="row">
       <label>מ־<input type="time" id="wStart" value="18:00"></label>
       <label>עד <input type="time" id="wEnd" value="23:00"></label>
+      <label>מחיר ₪<input type="number" id="wPrice" min="0" step="50" placeholder="0" style="width:90px"></label>
       <input type="text" id="wNote" placeholder="הערה (לא חובה)" size="18">
       <button id="addWin">+ פתיחת חלון</button>
     </div>
@@ -221,7 +222,9 @@ function renderPanel() {
   list.innerHTML = '';
   data.windows.filter((w) => w.date === selected).sort((a,b)=>a.start<b.start?-1:1).forEach((w) => {
     const li = document.createElement('li');
-    li.innerHTML = '<span class="mono">' + w.start + '–' + w.end + '</span><span>' + (w.note || '') + '</span>' +
+    li.innerHTML = '<span class="mono">' + w.start + '–' + w.end + '</span>' +
+      '<span style="font-weight:600">' + (w.price ? '₪' + w.price.toLocaleString() : 'ללא מחיר') + '</span>' +
+      '<span>' + (w.note || '') + '</span>' +
       (w.booked ? '<span style="color:var(--accent);font-weight:600">תפוס</span>' : '<span style="color:var(--open)">פנוי</span>');
     const toggle = document.createElement('button');
     toggle.className = 'del'; toggle.style.color = w.booked ? 'var(--open)' : 'var(--soft)';
@@ -246,8 +249,12 @@ $('lockBtn').addEventListener('click', () => {
 $('addWin').addEventListener('click', () => {
   const s = $('wStart').value, e = $('wEnd').value;
   if (!s || !e || e <= s) { alert('טווח שעות לא תקין'); return; }
-  data.windows.push({ id: Date.now().toString(36), date: selected, start: s, end: e, note: $('wNote').value.trim() });
-  $('wNote').value = '';
+  data.windows.push({
+    id: Date.now().toString(36), date: selected, start: s, end: e,
+    note: $('wNote').value.trim(),
+    price: Math.max(0, Math.round(+$('wPrice').value || 0)),
+  });
+  $('wNote').value = ''; $('wPrice').value = '';
   queueSave(); render();
 });
 

@@ -6,3 +6,8 @@
   from = "/admin"
   to = "/admin.html"
   status = 200
+
+[[redirects]]
+  from = "/contract"
+  to = "/contract.html"
+  status = 200

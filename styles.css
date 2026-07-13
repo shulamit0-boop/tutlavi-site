@@ -809,6 +809,26 @@ button.text-link{
 .avail-status.ok{ color:#1e7a3c; }
 .avail-status.err{ color:var(--accent); }
 
+/* cost + contract row in the rental form */
+.cost-line{
+  font-size:1.05rem; margin-bottom:1.1rem;
+}
+.cost-line b{ font-weight:600; color:var(--accent); }
+.contract-row{
+  border-top:1px solid var(--line); padding-top:1rem; margin-top:.2rem;
+}
+.contract-link{
+  display:inline-block; font-size:.9rem; font-weight:600;
+  border-bottom:1px solid var(--ink); padding-bottom:2px; margin-bottom:.8rem;
+  transition:color .3s ease, border-color .3s ease;
+}
+.contract-link:hover{ color:var(--accent); border-color:var(--accent); }
+.agree{
+  display:flex; align-items:flex-start; gap:.5rem;
+  font-size:.9rem; cursor:pointer;
+}
+.agree input{ width:auto; margin-top:.2rem; accent-color:var(--accent); }
+
 .modal-submit{
   width:100%; margin-top:.4rem;
   background:var(--ink); color:var(--bg); border:1px solid var(--ink);

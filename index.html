@@ -380,6 +380,15 @@
           <label class="field-label" for="f-purpose">מטרה</label>
           <input id="f-purpose" type="text" name="event-purpose" placeholder="השקה · צילומים · אירוע חברה…">
         </div>
+        <input type="hidden" name="estimated-cost" id="f-cost">
+        <p class="cost-line" id="costLine" hidden>עלות ההשכרה: <b id="costVal"></b></p>
+        <div class="contract-row">
+          <a href="/contract" target="_blank" rel="noopener" class="contract-link">צפייה בחוזה ההשכרה ←</a>
+          <label class="agree">
+            <input type="checkbox" id="f-agree" name="contract-approved" value="קראתי ואישרתי את תנאי החוזה">
+            קראתי את החוזה ואני מאשר/ת את תנאיו
+          </label>
+        </div>
       </div>
 
       <button type="submit" class="btn modal-submit">שליחה</button>

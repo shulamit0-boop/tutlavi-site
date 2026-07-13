@@ -22,6 +22,7 @@ const sanitize = (body) => ({
           end: w.end,
           note: String(w.note || '').slice(0, 120),
           booked: w.booked === true,
+          price: Number.isFinite(+w.price) && +w.price > 0 ? Math.min(Math.round(+w.price), 1000000) : 0,
         }))
         .slice(0, 2000)
     : [],

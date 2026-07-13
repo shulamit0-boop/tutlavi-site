@@ -234,6 +234,10 @@ function setRentalVisible(show) {
   // date stays optional — a hidden-or-skipped required field silently blocks
   // submission in some flows; the venue can follow up on missing dates
   rentalInputs.forEach(inp => { inp.required = false; });
+  // contract approval is required for rental requests (visible, so the
+  // browser can point at it if left unchecked)
+  const agree = document.getElementById('f-agree');
+  if (agree) agree.required = show;
   if (show) loadAvailability();
 }
 
@@ -321,13 +325,26 @@ function selectDay(dIso) {
       const chip = document.createElement('button');
       chip.type = 'button';
       chip.className = 'avail-chip';
-      chip.innerHTML = '<span dir="ltr">' + w.start + '–' + w.end + '</span>' + (w.note ? ' · ' + w.note : '');
+      chip.innerHTML = '<span dir="ltr">' + w.start + '–' + w.end + '</span>' +
+        (w.price ? ' · ₪' + w.price.toLocaleString() : '') +
+        (w.note ? ' · ' + w.note : '');
       chip.addEventListener('click', () => {
         hoursInput.value = w.start + '-' + w.end;
         windowIdInput.value = w.id;
         availChips.querySelectorAll('.avail-chip').forEach(c => c.classList.remove('picked'));
         chip.classList.add('picked');
-        availStatus.textContent = 'נבחר: ' + fmtHe(dIso) + ' · ' + w.start + '–' + w.end + ' — החלון יישמר עבורכם עם השליחה.';
+        const costLine = document.getElementById('costLine');
+        const costField = document.getElementById('f-cost');
+        if (w.price) {
+          costField.value = '₪' + w.price.toLocaleString();
+          document.getElementById('costVal').textContent = '₪' + w.price.toLocaleString();
+          costLine.hidden = false;
+        } else {
+          costField.value = '';
+          costLine.hidden = true;
+        }
+        availStatus.textContent = 'נבחר: ' + fmtHe(dIso) + ' · ' + w.start + '–' + w.end +
+          (w.price ? ' · ₪' + w.price.toLocaleString() : '') + ' — החלון יישמר עבורכם עם השליחה.';
         availStatus.className = 'avail-status ok';
       });
       availChips.appendChild(chip);
@@ -413,6 +430,21 @@ inquiryForm.addEventListener('submit', (e) => {
   submitBtn.disabled = true;
 
   const payload = Object.fromEntries(new FormData(inquiryForm).entries());
+  // rental with a picked window: the requester gets an automatic
+  // order-summary email with the cost, bank-transfer note and contract link
+  if (!rentalFields.hidden && payload['event-date']) {
+    payload._autoresponse =
+      'תודה על פנייתך לסטודיו תות!\n\n' +
+      'סיכום הבקשה:\n' +
+      'תאריך: ' + payload['event-date'] + '\n' +
+      (payload['event-hours'] ? 'שעות: ' + payload['event-hours'] + '\n' : '') +
+      (payload['event-purpose'] ? 'מטרה: ' + payload['event-purpose'] + '\n' : '') +
+      (payload['estimated-cost'] ? 'עלות: ' + payload['estimated-cost'] + '\n' : '') +
+      '\nהתשלום מתבצע בהעברה בנקאית — פרטי החשבון ואישור סופי יישלחו אליכם בהמשך.\n' +
+      'החוזה לעיון: https://tutlavi.com/contract\n\n' +
+      'החלון שבחרתם נשמר עבורכם וממתין לאישורנו. נחזור אליכם בהקדם.\n' +
+      'סטודיו תות · מגן אברהם 6, תל אביב · 054-312-9933';
+  }
   fetch(FORM_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
