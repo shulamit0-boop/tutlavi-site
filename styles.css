@@ -33,6 +33,33 @@
   font-weight:700; font-style:normal; font-display:swap;
 }
 
+/* ---- Anomalia — Hebrew+Latin display face for headings & branding ---- */
+@font-face{
+  font-family:'Anomalia';
+  src:url('fonts/anomalia-light-aaa.otf') format('opentype');
+  font-weight:300; font-style:normal; font-display:swap;
+}
+@font-face{
+  font-family:'Anomalia';
+  src:url('fonts/anomalia-medium-aaa.otf') format('opentype');
+  font-weight:500; font-style:normal; font-display:swap;
+}
+@font-face{
+  font-family:'Anomalia';
+  src:url('fonts/anomalia-demibold-aaa.otf') format('opentype');
+  font-weight:600; font-style:normal; font-display:swap;
+}
+@font-face{
+  font-family:'Anomalia';
+  src:url('fonts/anomalia-ultrabold-aaa.otf') format('opentype');
+  font-weight:800; font-style:normal; font-display:swap;
+}
+@font-face{
+  font-family:'Anomalia Hollow';
+  src:url('fonts/anomalia-hollow-aaa.otf') format('opentype');
+  font-weight:400; font-style:normal; font-display:swap;
+}
+
 /* ---- Almoni Tzar — condensed Hebrew+Latin sans for running text ---- */
 @font-face{
   font-family:'Almoni Tzar';
@@ -192,16 +219,16 @@ ul, ol{ list-style:none; }
 }
 
 .wordmark{ display:flex; align-items:baseline; gap:8px; flex:none; }
-.wordmark .he{ font-family:'Index Mono', monospace; font-weight:700; font-size:1.3rem; }
+.wordmark .he{ font-family:'Anomalia', sans-serif; font-weight:800; font-size:1.35rem; }
 .wordmark .en{
-  font-family:'Index Mono', monospace; font-size:.6rem;
+  font-family:'Anomalia', sans-serif; font-weight:300; font-size:.62rem;
   letter-spacing:.16em; color:var(--ink-soft);
 }
 
 .main-nav{ display:flex; gap:clamp(.9rem, 2vw, 1.8rem); flex-wrap:nowrap; }
 .main-nav a{
-  font-family:'Index Mono', monospace;
-  font-size:.88rem; font-weight:700; letter-spacing:-.03em;
+  font-family:'Anomalia', sans-serif;
+  font-size:.9rem; font-weight:500; letter-spacing:.01em;
   position:relative; padding-bottom:2px; white-space:nowrap;
 }
 .main-nav a::after{
@@ -257,7 +284,7 @@ ul, ol{ list-style:none; }
 }
 .overlay-nav.open{ transform:translateY(0); }
 .overlay-nav ul{ display:flex; flex-direction:column; gap:1.4rem; text-align:center; }
-.nav-link{ font-family:'Index Mono', monospace; font-size:clamp(1.5rem, 6vw, 2.2rem); font-weight:700; }
+.nav-link{ font-family:'Anomalia', sans-serif; font-size:clamp(1.5rem, 6vw, 2.2rem); font-weight:600; }
 .nav-link:hover{ color:var(--accent); }
 .nav-link-cta{
   font-family:'Index Mono', monospace;
@@ -368,10 +395,10 @@ ul, ol{ list-style:none; }
 
 /* ============ shared section pieces ============ */
 .t-title{
-  font-family:'Index Mono', monospace;
+  font-family:'Anomalia', sans-serif;
   display:flex; align-items:baseline; gap:.9rem;
   font-size:clamp(1.4rem, 2.4vw, 2.2rem);
-  font-weight:700; letter-spacing:-.045em;
+  font-weight:600; letter-spacing:0;
   padding-bottom:.8rem; margin-bottom:1.6rem;
   border-bottom:1px solid var(--line);
 }
@@ -457,9 +484,9 @@ ul, ol{ list-style:none; }
   color:rgba(255,255,255,.6);
 }
 .band-title{
-  font-family:'Index Mono', monospace;
+  font-family:'Anomalia', sans-serif;
   font-size:clamp(2.2rem, 5.5vw, 3.8rem);
-  font-weight:700; letter-spacing:-.045em; line-height:1.02;
+  font-weight:800; letter-spacing:0; line-height:1.02;
   margin:.6rem 0 1rem;
 }
 .band-copy{ font-size:1rem; color:rgba(255,255,255,.88); max-width:46ch; }
@@ -521,9 +548,9 @@ ul, ol{ list-style:none; }
   color:rgba(255,255,255,.55); margin-bottom:1.2rem;
 }
 .footer-headline{
-  font-family:'Index Mono', monospace;
+  font-family:'Anomalia', sans-serif;
   font-size:clamp(1.6rem, 4vw, 2.6rem);
-  font-weight:700; line-height:1.2; margin-bottom:1rem;
+  font-weight:600; line-height:1.2; margin-bottom:1rem;
 }
 .footer-copy{ font-size:.95rem; color:rgba(255,255,255,.72); max-width:46ch; margin-bottom:2rem; }
 
@@ -693,9 +720,9 @@ button.text-link{
   color:var(--ink-soft); margin-bottom:.5rem;
 }
 .modal-title{
-  font-family:'Index Mono', monospace;
-  font-size:clamp(1.2rem, 2.4vw, 1.6rem); font-weight:700;
-  letter-spacing:-.02em; margin-bottom:1.6rem;
+  font-family:'Anomalia', sans-serif;
+  font-size:clamp(1.2rem, 2.4vw, 1.6rem); font-weight:600;
+  letter-spacing:0; margin-bottom:1.6rem;
 }
 
 .field{ margin-bottom:1.15rem; }
