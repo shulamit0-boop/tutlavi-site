@@ -234,7 +234,76 @@ function setRentalVisible(show) {
   // date stays optional — a hidden-or-skipped required field silently blocks
   // submission in some flows; the venue can follow up on missing dates
   rentalInputs.forEach(inp => { inp.required = false; });
+  if (show) loadAvailability();
 }
+
+/* ---------- availability (managed at /admin) ---------- */
+
+let availability = null;
+const availBox = document.getElementById('availBox');
+const availChips = document.getElementById('availChips');
+const availStatus = document.getElementById('availStatus');
+const dateInput = document.getElementById('f-date');
+const hoursInput = document.getElementById('f-hours');
+
+async function loadAvailability() {
+  if (availability) return;
+  try {
+    const res = await fetch('/api/availability');
+    availability = await res.json();
+  } catch {
+    availability = { locked: [], windows: [] };
+  }
+  renderUpcomingWindows();
+}
+
+function fmtDate(isoDate) {
+  const d = new Date(isoDate + 'T00:00');
+  return d.toLocaleDateString('he-IL', { weekday: 'short', day: 'numeric', month: 'numeric' });
+}
+
+function renderUpcomingWindows() {
+  const today = new Date().toISOString().slice(0, 10);
+  const upcoming = (availability.windows || [])
+    .filter(w => w.date >= today && !availability.locked.includes(w.date))
+    .sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start))
+    .slice(0, 6);
+  if (!upcoming.length) { availBox.hidden = true; return; }
+  availBox.hidden = false;
+  availChips.innerHTML = '';
+  upcoming.forEach(w => {
+    const chip = document.createElement('button');
+    chip.type = 'button';
+    chip.className = 'avail-chip';
+    chip.innerHTML = fmtDate(w.date) + ' · <span dir="ltr">' + w.start + '–' + w.end + '</span>';
+    chip.addEventListener('click', () => {
+      dateInput.value = w.date;
+      hoursInput.value = w.start + '-' + w.end;
+      updateDateStatus();
+    });
+    availChips.appendChild(chip);
+  });
+}
+
+function updateDateStatus() {
+  if (!availability || !dateInput.value) { availStatus.textContent = ''; availStatus.className = 'avail-status'; return; }
+  const d = dateInput.value;
+  if (availability.locked.includes(d)) {
+    availStatus.textContent = 'התאריך הזה נעול ולא זמין להשכרה — בחרו תאריך אחר.';
+    availStatus.className = 'avail-status err';
+    return;
+  }
+  const wins = (availability.windows || []).filter(w => w.date === d);
+  if (wins.length) {
+    availStatus.textContent = 'פתוח בתאריך זה: ' + wins.map(w => w.start + '–' + w.end).join(' · ');
+    availStatus.className = 'avail-status ok';
+  } else {
+    availStatus.textContent = 'אין חלון מוגדר בתאריך זה — אפשר לשלוח בקשה ונחזור אליכם.';
+    availStatus.className = 'avail-status';
+  }
+}
+
+dateInput.addEventListener('change', updateDateStatus);
 
 function openInquiry(mode) {
   if (mode === 'rental') {
@@ -272,6 +341,12 @@ const FORM_ENDPOINT = 'https://formsubmit.co/ajax/vivian.office.info@gmail.com';
 
 inquiryForm.addEventListener('submit', (e) => {
   e.preventDefault();
+  // a locked day cannot be requested
+  if (!rentalFields.hidden && availability && dateInput.value && availability.locked.includes(dateInput.value)) {
+    formStatus.className = 'form-status mono err';
+    formStatus.textContent = 'התאריך שנבחר נעול — בחרו תאריך אחר.';
+    return;
+  }
   const submitBtn = inquiryForm.querySelector('.modal-submit');
   formStatus.className = 'form-status mono';
   formStatus.textContent = 'שולח…';

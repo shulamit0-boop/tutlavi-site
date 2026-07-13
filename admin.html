@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ניהול יומן — סטודיו תות</title>
+<meta name="robots" content="noindex, nofollow">
+<style>
+@font-face{ font-family:'Anomalia'; src:url('fonts/anomalia-demibold-aaa.otf') format('opentype'); font-weight:600; }
+@font-face{ font-family:'Almoni Tzar'; src:url('fonts/almoni-tzar-light-aaa.otf') format('opentype'); font-weight:300; }
+@font-face{ font-family:'Almoni Tzar'; src:url('fonts/almoni-tzar-demibold-aaa.otf') format('opentype'); font-weight:600; }
+@font-face{ font-family:'Index Mono'; src:url('fonts/index-mono-regular-aaa.otf') format('opentype'); font-weight:400; }
+
+:root{
+  --bg:#fff; --ink:#17140f; --soft:#57524a; --line:rgba(25,22,17,.14);
+  --accent:#a91e1c; --open:#1e7a3c; --openbg:#e8f5ec; --lockbg:#fbeaea;
+}
+*{ box-sizing:border-box; margin:0; padding:0; }
+body{
+  background:var(--bg); color:var(--ink);
+  font-family:'Almoni Tzar', sans-serif; font-weight:300; font-size:17px;
+  padding:2rem clamp(16px,4vw,48px); max-width:1080px; margin:0 auto;
+}
+h1{ font-family:'Anomalia', sans-serif; font-weight:600; font-size:1.7rem; margin-bottom:.2rem; }
+.sub{ color:var(--soft); font-size:.95rem; margin-bottom:2rem; }
+.mono{ font-family:'Index Mono', monospace; font-size:.8em; letter-spacing:.02em; }
+
+/* login */
+#login{ max-width:380px; margin:12vh auto; text-align:center; }
+#login input{
+  width:100%; border:1px solid var(--line); padding:.8rem 1rem;
+  font:inherit; margin:1rem 0; text-align:center;
+}
+button{
+  font-family:'Almoni Tzar', sans-serif; font-weight:600; font-size:1rem;
+  background:var(--ink); color:#fff; border:1px solid var(--ink);
+  padding:.7rem 1.6rem; cursor:pointer;
+}
+button:hover{ background:var(--accent); border-color:var(--accent); }
+button.ghost{ background:none; color:var(--ink); }
+button.ghost:hover{ color:var(--accent); border-color:var(--accent); background:none; }
+button.danger{ background:var(--accent); border-color:var(--accent); }
+#loginErr{ color:var(--accent); min-height:1.4em; font-size:.9rem; }
+
+/* app bar */
+.bar{ display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1.4rem; flex-wrap:wrap; }
+.month-nav{ display:flex; align-items:center; gap:.8rem; }
+.month-nav b{ font-family:'Anomalia'; font-weight:600; font-size:1.2rem; min-width:150px; text-align:center; }
+#saveState{ color:var(--soft); font-size:.85rem; min-width:110px; }
+#saveState.saving{ color:var(--accent); }
+#saveState.saved{ color:var(--open); }
+
+/* calendar */
+.cal{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:2rem; }
+.dow{ text-align:center; color:var(--soft); font-size:.8rem; padding-bottom:.3rem; }
+.day{
+  min-height:86px; border:1px solid var(--line); padding:.4rem .5rem;
+  cursor:pointer; position:relative; background:#fff;
+  transition:border-color .2s;
+}
+.day:hover{ border-color:var(--ink); }
+.day.out{ opacity:.32; }
+.day.today .num{ text-decoration:underline; }
+.day.selected{ border-color:var(--ink); border-width:2px; }
+.day.locked{ background:var(--lockbg); }
+.day.haswin{ background:var(--openbg); }
+.day.locked.haswin{ background:linear-gradient(135deg, var(--openbg) 50%, var(--lockbg) 50%); }
+.num{ font-weight:600; font-size:.95rem; }
+.tag{ display:block; font-size:.72rem; color:var(--open); margin-top:.2rem; font-weight:600; }
+.tag.lock{ color:var(--accent); }
+
+/* day panel */
+.panel{ border:1px solid var(--line); padding:1.4rem; }
+.panel h2{ font-family:'Anomalia'; font-weight:600; font-size:1.15rem; margin-bottom:1rem; }
+.row{ display:flex; gap:.8rem; align-items:center; flex-wrap:wrap; margin-bottom:1rem; }
+.row input[type=time], .row input[type=text]{
+  border:1px solid var(--line); padding:.55rem .7rem; font:inherit;
+}
+.winlist{ list-style:none; }
+.winlist li{
+  display:flex; align-items:center; gap:1rem; padding:.55rem 0;
+  border-bottom:1px solid var(--line); font-size:1rem;
+}
+.winlist .del{ background:none; border:none; color:var(--accent); cursor:pointer; font-size:1.1rem; padding:0 .4rem; }
+.hint{ color:var(--soft); font-size:.85rem; margin-top:.8rem; }
+.legend{ display:flex; gap:1.2rem; font-size:.82rem; color:var(--soft); margin-bottom:1rem; }
+.dotg,.dotr{ display:inline-block; width:10px; height:10px; margin-inline-start:.3rem; }
+.dotg{ background:var(--openbg); border:1px solid var(--open); }
+.dotr{ background:var(--lockbg); border:1px solid var(--accent); }
+#app{ display:none; }
+</style>
+</head>
+<body>
+
+<div id="login">
+  <h1>ניהול יומן · תות</h1>
+  <p class="sub">הזנת מפתח ניהול</p>
+  <input type="password" id="keyInput" placeholder="מפתח ניהול" autocomplete="current-password">
+  <p id="loginErr"></p>
+  <button id="loginBtn">כניסה</button>
+</div>
+
+<div id="app">
+  <h1>ניהול יומן השכרות</h1>
+  <p class="sub">פתיחת חלונות זמינות ונעילת ימים — מה שתגדירי כאן יוצג למבקרים בטופס ההשכרה.</p>
+
+  <div class="bar">
+    <div class="month-nav">
+      <button class="ghost" id="prevM">‹ הקודם</button>
+      <b id="monthLabel"></b>
+      <button class="ghost" id="nextM">הבא ›</button>
+    </div>
+    <span id="saveState"></span>
+    <button class="ghost" id="logoutBtn">יציאה</button>
+  </div>
+
+  <div class="legend">
+    <span>חלון פתוח<span class="dotg"></span></span>
+    <span>יום נעול<span class="dotr"></span></span>
+  </div>
+
+  <div class="cal" id="cal"></div>
+
+  <div class="panel" id="dayPanel" hidden>
+    <h2 id="panelTitle"></h2>
+    <div class="row">
+      <button id="lockBtn"></button>
+    </div>
+    <div class="row">
+      <label>מ־<input type="time" id="wStart" value="18:00"></label>
+      <label>עד <input type="time" id="wEnd" value="23:00"></label>
+      <input type="text" id="wNote" placeholder="הערה (לא חובה)" size="18">
+      <button id="addWin">+ פתיחת חלון</button>
+    </div>
+    <ul class="winlist" id="winList"></ul>
+    <p class="hint">חלון פתוח = טווח שעות שמוצג למבקרים כזמין להשכרה באותו יום. יום נעול לא ניתן לבחירה כלל.</p>
+  </div>
+</div>
+
+<script>
+const API = '/api/availability';
+let data = { locked: [], windows: [] };
+let view = new Date(); view.setDate(1);
+let selected = null;
+let saveTimer = null;
+
+const $ = (id) => document.getElementById(id);
+const pad = (n) => String(n).padStart(2, '0');
+const iso = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+const MONTHS = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+const DOW = ['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'];
+
+function key() { return sessionStorage.getItem('tut-admin-key') || ''; }
+
+async function load() {
+  const res = await fetch(API);
+  data = await res.json();
+  render();
+}
+
+function queueSave() {
+  $('saveState').textContent = 'שומר…';
+  $('saveState').className = 'saving';
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    const res = await fetch(API, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': key() },
+      body: JSON.stringify(data),
+    });
+    if (res.ok) { $('saveState').textContent = '✓ נשמר'; $('saveState').className = 'saved'; }
+    else { $('saveState').textContent = 'שגיאת שמירה!'; $('saveState').className = 'saving'; }
+  }, 500);
+}
+
+function render() {
+  $('monthLabel').textContent = MONTHS[view.getMonth()] + ' ' + view.getFullYear();
+  const cal = $('cal');
+  cal.innerHTML = '';
+  DOW.forEach((d) => { const el = document.createElement('div'); el.className = 'dow'; el.textContent = d; cal.appendChild(el); });
+
+  const first = new Date(view);
+  const startOffset = first.getDay(); // Sunday-first
+  const gridStart = new Date(first); gridStart.setDate(1 - startOffset);
+  const todayIso = iso(new Date());
+
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(gridStart); d.setDate(gridStart.getDate() + i);
+    const dIso = iso(d);
+    const el = document.createElement('div');
+    el.className = 'day';
+    if (d.getMonth() !== view.getMonth()) el.classList.add('out');
+    if (dIso === todayIso) el.classList.add('today');
+    if (selected === dIso) el.classList.add('selected');
+    const wins = data.windows.filter((w) => w.date === dIso);
+    const isLocked = data.locked.includes(dIso);
+    if (isLocked) el.classList.add('locked');
+    if (wins.length) el.classList.add('haswin');
+    el.innerHTML = '<span class="num">' + d.getDate() + '</span>' +
+      (wins.length ? '<span class="tag">' + wins.length + ' חלונות</span>'.replace('1 חלונות','חלון פתוח') : '') +
+      (isLocked ? '<span class="tag lock">נעול</span>' : '');
+    el.addEventListener('click', () => { selected = dIso; render(); });
+    cal.appendChild(el);
+  }
+  renderPanel();
+}
+
+function renderPanel() {
+  const p = $('dayPanel');
+  if (!selected) { p.hidden = true; return; }
+  p.hidden = false;
+  const d = new Date(selected + 'T00:00');
+  $('panelTitle').textContent = d.toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  const isLocked = data.locked.includes(selected);
+  $('lockBtn').textContent = isLocked ? 'ביטול נעילה ליום זה' : 'נעילת היום (לא ניתן להשתבץ)';
+  $('lockBtn').className = isLocked ? 'ghost' : 'danger';
+  const list = $('winList');
+  list.innerHTML = '';
+  data.windows.filter((w) => w.date === selected).sort((a,b)=>a.start<b.start?-1:1).forEach((w) => {
+    const li = document.createElement('li');
+    li.innerHTML = '<span class="mono">' + w.start + '–' + w.end + '</span><span>' + (w.note || '') + '</span>';
+    const del = document.createElement('button');
+    del.className = 'del'; del.textContent = '×'; del.title = 'מחיקת חלון';
+    del.addEventListener('click', () => { data.windows = data.windows.filter((x) => x.id !== w.id); queueSave(); render(); });
+    li.appendChild(del);
+    list.appendChild(li);
+  });
+}
+
+$('lockBtn').addEventListener('click', () => {
+  if (data.locked.includes(selected)) data.locked = data.locked.filter((d) => d !== selected);
+  else data.locked.push(selected);
+  queueSave(); render();
+});
+
+$('addWin').addEventListener('click', () => {
+  const s = $('wStart').value, e = $('wEnd').value;
+  if (!s || !e || e <= s) { alert('טווח שעות לא תקין'); return; }
+  data.windows.push({ id: Date.now().toString(36), date: selected, start: s, end: e, note: $('wNote').value.trim() });
+  $('wNote').value = '';
+  queueSave(); render();
+});
+
+$('prevM').addEventListener('click', () => { view.setMonth(view.getMonth() - 1); render(); });
+$('nextM').addEventListener('click', () => { view.setMonth(view.getMonth() + 1); render(); });
+$('logoutBtn').addEventListener('click', () => { sessionStorage.removeItem('tut-admin-key'); location.reload(); });
+
+$('loginBtn').addEventListener('click', doLogin);
+$('keyInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
+
+async function doLogin() {
+  const k = $('keyInput').value.trim();
+  if (!k) return;
+  // verify the key with a no-op save of current data
+  const res = await fetch(API);
+  const current = await res.json();
+  const test = await fetch(API, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', 'x-admin-key': k },
+    body: JSON.stringify(current),
+  });
+  if (test.ok) {
+    sessionStorage.setItem('tut-admin-key', k);
+    start();
+  } else {
+    $('loginErr').textContent = 'מפתח שגוי';
+  }
+}
+
+function start() {
+  $('login').style.display = 'none';
+  $('app').style.display = 'block';
+  load();
+}
+
+if (key()) start();
+</script>
+</body>
+</html>

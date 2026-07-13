@@ -755,6 +755,20 @@ button.text-link{
 
 .hp-field{ position:absolute; left:-9999px; }
 
+/* availability inside the rental form */
+.avail{ margin-bottom:1.15rem; }
+.avail-chips{ display:flex; flex-wrap:wrap; gap:.5rem; }
+.avail-chip{
+  font-family:'Almoni Tzar', sans-serif; font-weight:600; font-size:.88rem;
+  background:none; border:1px solid var(--ink); color:var(--ink);
+  padding:.4rem .8rem; border-radius:999px; cursor:pointer;
+  transition:background .25s ease, color .25s ease, border-color .25s ease;
+}
+.avail-chip:hover{ background:var(--accent); border-color:var(--accent); color:#fff; }
+.avail-status{ font-size:.82rem; color:var(--ink-soft); margin-top:.45rem; min-height:1em; }
+.avail-status.ok{ color:#1e7a3c; }
+.avail-status.err{ color:var(--accent); }
+
 .modal-submit{
   width:100%; margin-top:.4rem;
   background:var(--ink); color:var(--bg); border:1px solid var(--ink);

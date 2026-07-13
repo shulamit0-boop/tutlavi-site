@@ -352,9 +352,14 @@
 
       <!-- rental-only fields -->
       <div class="rental-fields" id="rentalFields" hidden>
+        <div class="avail" id="availBox" hidden>
+          <p class="field-label">חלונות פתוחים קרובים</p>
+          <div class="avail-chips" id="availChips"></div>
+        </div>
         <div class="field">
           <label class="field-label" for="f-date">תאריך</label>
           <input id="f-date" type="date" name="event-date" dir="ltr">
+          <p class="avail-status" id="availStatus"></p>
         </div>
         <div class="field">
           <label class="field-label" for="f-hours">שעות</label>
