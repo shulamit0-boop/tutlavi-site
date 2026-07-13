@@ -352,18 +352,29 @@
 
       <!-- rental-only fields -->
       <div class="rental-fields" id="rentalFields" hidden>
-        <div class="avail" id="availBox" hidden>
-          <p class="field-label">חלונות פתוחים קרובים</p>
-          <div class="avail-chips" id="availChips"></div>
-        </div>
         <div class="field">
-          <label class="field-label" for="f-date">תאריך</label>
-          <input id="f-date" type="date" name="event-date" dir="ltr">
+          <span class="field-label">בחירת תאריך מהיומן</span>
+          <div class="fcal" id="fcal">
+            <div class="fcal-head">
+              <button type="button" class="fcal-nav" id="fcalPrev">‹</button>
+              <b id="fcalLabel"></b>
+              <button type="button" class="fcal-nav" id="fcalNext">›</button>
+            </div>
+            <div class="fcal-grid" id="fcalGrid"></div>
+            <div class="fcal-legend">
+              <span><i class="lg lg-open"></i>פנוי</span>
+              <span><i class="lg lg-booked"></i>תפוס</span>
+              <span><i class="lg lg-locked"></i>נעול</span>
+            </div>
+          </div>
+          <div class="avail-chips" id="availChips"></div>
           <p class="avail-status" id="availStatus"></p>
         </div>
+        <input id="f-date" type="hidden" name="event-date">
+        <input type="hidden" name="window-id" id="f-window-id">
         <div class="field">
           <label class="field-label" for="f-hours">שעות</label>
-          <input id="f-hours" type="text" name="event-hours" placeholder="למשל 18:00–23:00">
+          <input id="f-hours" type="text" name="event-hours" placeholder="ייבחר מהיומן, או כתבו טווח">
         </div>
         <div class="field">
           <label class="field-label" for="f-purpose">מטרה</label>

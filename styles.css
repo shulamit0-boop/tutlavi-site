@@ -755,9 +755,49 @@ button.text-link{
 
 .hp-field{ position:absolute; left:-9999px; }
 
-/* availability inside the rental form */
-.avail{ margin-bottom:1.15rem; }
-.avail-chips{ display:flex; flex-wrap:wrap; gap:.5rem; }
+/* availability calendar inside the rental form */
+.fcal{ border:1px solid var(--line); padding:.7rem .8rem; margin-bottom:.6rem; }
+.fcal-head{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:.5rem;
+}
+.fcal-head b{ font-family:'Anomalia', sans-serif; font-weight:600; font-size:1rem; }
+.fcal-nav{
+  background:none; border:1px solid var(--line); cursor:pointer;
+  width:28px; height:28px; font-size:1rem; line-height:1; color:var(--ink);
+}
+.fcal-nav:hover{ border-color:var(--accent); color:var(--accent); }
+.fcal-grid{
+  display:grid; grid-template-columns:repeat(7, 1fr); gap:3px;
+}
+.fcal-dow{
+  text-align:center; font-family:'Index Mono', monospace;
+  font-size:.58rem; color:var(--ink-soft); padding-bottom:.15rem;
+}
+.fcal-day{
+  aspect-ratio:1; border:1px solid var(--line); background:none;
+  font-family:'Almoni Tzar', sans-serif; font-weight:600; font-size:.85rem;
+  color:var(--ink); cursor:pointer; padding:0;
+  transition:border-color .2s ease;
+}
+.fcal-day:hover:not(:disabled){ border-color:var(--ink); }
+.fcal-day.out{ opacity:.3; }
+.fcal-day.past{ opacity:.25; cursor:default; }
+.fcal-day.open{ background:#e8f5ec; border-color:#1e7a3c; color:#1e7a3c; }
+.fcal-day.booked{ background:#efece6; color:var(--ink-soft); text-decoration:line-through; }
+.fcal-day.locked{ background:#fbeaea; color:var(--accent); cursor:not-allowed; }
+.fcal-day.sel{ border:2px solid var(--ink); }
+.fcal-legend{
+  display:flex; gap:1rem; margin-top:.5rem;
+  font-family:'Index Mono', monospace; font-size:.56rem; letter-spacing:.08em; color:var(--ink-soft);
+}
+.fcal-legend .lg{ display:inline-block; width:9px; height:9px; margin-inline-end:.3rem; border:1px solid; }
+.lg-open{ background:#e8f5ec; border-color:#1e7a3c; }
+.lg-booked{ background:#efece6; border-color:var(--line); }
+.lg-locked{ background:#fbeaea; border-color:var(--accent); }
+
+.avail-chips{ display:flex; flex-wrap:wrap; gap:.5rem; margin-bottom:.5rem; }
+.avail-chip.picked{ background:var(--accent); border-color:var(--accent); color:#fff; }
 .avail-chip{
   font-family:'Almoni Tzar', sans-serif; font-weight:600; font-size:.88rem;
   background:none; border:1px solid var(--ink); color:var(--ink);

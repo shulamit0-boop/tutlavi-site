@@ -196,8 +196,11 @@ function render() {
     const isLocked = data.locked.includes(dIso);
     if (isLocked) el.classList.add('locked');
     if (wins.length) el.classList.add('haswin');
+    const openN = wins.filter(w => !w.booked).length;
+    const bookedN = wins.length - openN;
     el.innerHTML = '<span class="num">' + d.getDate() + '</span>' +
-      (wins.length ? '<span class="tag">' + wins.length + ' חלונות</span>'.replace('1 חלונות','חלון פתוח') : '') +
+      (openN ? '<span class="tag">' + (openN === 1 ? 'חלון פנוי' : openN + ' פנויים') + '</span>' : '') +
+      (bookedN ? '<span class="tag lock">' + (bookedN === 1 ? 'תפוס' : bookedN + ' תפוסים') + '</span>' : '') +
       (isLocked ? '<span class="tag lock">נעול</span>' : '');
     el.addEventListener('click', () => { selected = dIso; render(); });
     cal.appendChild(el);
@@ -218,7 +221,14 @@ function renderPanel() {
   list.innerHTML = '';
   data.windows.filter((w) => w.date === selected).sort((a,b)=>a.start<b.start?-1:1).forEach((w) => {
     const li = document.createElement('li');
-    li.innerHTML = '<span class="mono">' + w.start + '–' + w.end + '</span><span>' + (w.note || '') + '</span>';
+    li.innerHTML = '<span class="mono">' + w.start + '–' + w.end + '</span><span>' + (w.note || '') + '</span>' +
+      (w.booked ? '<span style="color:var(--accent);font-weight:600">תפוס</span>' : '<span style="color:var(--open)">פנוי</span>');
+    const toggle = document.createElement('button');
+    toggle.className = 'del'; toggle.style.color = w.booked ? 'var(--open)' : 'var(--soft)';
+    toggle.textContent = w.booked ? '↺' : '✔';
+    toggle.title = w.booked ? 'שחרור החלון (הפיכה לפנוי)' : 'סימון כתפוס';
+    toggle.addEventListener('click', () => { w.booked = !w.booked; queueSave(); render(); });
+    li.appendChild(toggle);
     const del = document.createElement('button');
     del.className = 'del'; del.textContent = '×'; del.title = 'מחיקת חלון';
     del.addEventListener('click', () => { data.windows = data.windows.filter((x) => x.id !== w.id); queueSave(); render(); });

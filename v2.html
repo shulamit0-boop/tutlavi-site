@@ -247,6 +247,30 @@ nav a:hover{ color:var(--red); }
 .rental-x{ display:none; }
 .rental-x.on{ display:block; }
 
+/* poster-style mini calendar */
+.vcal{ border:2px solid var(--ink); padding:.6rem; margin-top:.4rem; }
+.vcal-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:.45rem; }
+.vcal-head b{ font-family:'Caravan150',sans-serif; font-weight:400; font-size:1.15rem; }
+.vnav{
+  background:var(--ink); color:var(--paper); border:none; cursor:pointer;
+  width:26px; height:26px; font-size:1rem; line-height:1;
+}
+.vnav:hover{ background:var(--red); }
+.vcal-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
+.vdow{ text-align:center; font-family:'Index Mono',monospace; font-size:.55rem; color:#666; }
+.vday{
+  aspect-ratio:1; border:2px solid var(--ink); background:var(--paper);
+  font-family:'Caravan150',sans-serif; font-size:.95rem; color:var(--ink);
+  cursor:pointer; padding:0;
+}
+.vday.out{ opacity:.25; }
+.vday.past{ opacity:.2; cursor:default; }
+.vday.open{ background:var(--ink); color:var(--paper); }
+.vday.booked{ background:#d9d4c8; color:#777; text-decoration:line-through; border-style:dashed; }
+.vday.locked{ background:var(--red); color:var(--paper); cursor:not-allowed; }
+.vday.sel{ outline:3px solid var(--red); outline-offset:1px; }
+.chip.picked{ background:var(--red); color:var(--paper); border-color:var(--ink); }
+
 .credit{
   background:var(--ink); color:var(--paper);
   font-family:'Index Mono',monospace; font-size:.62rem; letter-spacing:.12em;
@@ -391,13 +415,21 @@ nav a:hover{ color:var(--red); }
     <textarea id="v-msg" name="message" rows="2" required></textarea>
 
     <div class="rental-x" id="vRental">
-      <label>חלונות פתוחים קרובים</label>
+      <label>בחירת תאריך מהיומן</label>
+      <div class="vcal">
+        <div class="vcal-head">
+          <button type="button" class="vnav" id="vPrev">‹</button>
+          <b id="vLabel" class="caravan"></b>
+          <button type="button" class="vnav" id="vNext">›</button>
+        </div>
+        <div class="vcal-grid" id="vGrid"></div>
+      </div>
       <div class="chips" id="vChips"></div>
-      <label for="v-date">תאריך</label>
-      <input id="v-date" name="event-date" type="date" dir="ltr">
+      <input id="v-date" name="event-date" type="hidden">
+      <input id="v-winid" name="window-id" type="hidden">
       <p class="fstat" id="vDateStat"></p>
       <label for="v-hours">שעות</label>
-      <input id="v-hours" name="event-hours" placeholder="18:00-23:00">
+      <input id="v-hours" name="event-hours" placeholder="ייבחר מהיומן">
       <label for="v-purpose">מטרה</label>
       <input id="v-purpose" name="event-purpose" placeholder="השקה · צילומים · אירוע">
     </div>
@@ -416,7 +448,11 @@ nav a:hover{ color:var(--red); }
 const API = '/api/availability';
 const EP = 'https://formsubmit.co/ajax/vivian.office.info@gmail.com';
 let avail = null;
+let vView = null;
+let vSel = null;
 const $ = (id) => document.getElementById(id);
+const MON = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+const iso = (d) => d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
 
 document.querySelectorAll('#vf input[name=type]').forEach(r => {
   r.addEventListener('change', async () => {
@@ -424,35 +460,66 @@ document.querySelectorAll('#vf input[name=type]').forEach(r => {
     $('vRental').classList.toggle('on', rental);
     if (rental && !avail) {
       try { avail = await (await fetch(API)).json(); } catch { avail = { locked: [], windows: [] }; }
-      renderChips();
+      vView = new Date(); vView.setDate(1);
+      renderVcal();
     }
   });
 });
 
-function renderChips() {
-  const today = new Date().toISOString().slice(0, 10);
-  const up = (avail.windows || []).filter(w => w.date >= today && !avail.locked.includes(w.date))
-    .sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start)).slice(0, 6);
-  const box = $('vChips'); box.innerHTML = '';
-  up.forEach(w => {
-    const d = new Date(w.date + 'T00:00');
+function renderVcal() {
+  $('vLabel').textContent = MON[vView.getMonth()] + ' ' + vView.getFullYear();
+  const g = $('vGrid'); g.innerHTML = '';
+  ['א','ב','ג','ד','ה','ו','ש'].forEach(d => { const s = document.createElement('span'); s.className='vdow'; s.textContent=d; g.appendChild(s); });
+  const start = new Date(vView); start.setDate(1 - vView.getDay());
+  const today = iso(new Date());
+  for (let i=0;i<42;i++){
+    const d = new Date(start); d.setDate(start.getDate()+i);
+    const dI = iso(d);
     const b = document.createElement('button');
-    b.type = 'button'; b.className = 'chip';
-    b.textContent = d.toLocaleDateString('he-IL', { weekday: 'short', day: 'numeric', month: 'numeric' }) + ' · ' + w.start + '–' + w.end;
-    b.addEventListener('click', () => { $('v-date').value = w.date; $('v-hours').value = w.start + '-' + w.end; dateStat(); });
-    box.appendChild(b);
-  });
+    b.type='button'; b.className='vday'; b.textContent=d.getDate();
+    if (d.getMonth()!==vView.getMonth()) b.classList.add('out');
+    if (dI<today) b.classList.add('past');
+    const wins = (avail.windows||[]).filter(w=>w.date===dI);
+    const open = wins.filter(w=>!w.booked);
+    const locked = (avail.locked||[]).includes(dI);
+    if (locked) b.classList.add('locked');
+    else if (open.length) b.classList.add('open');
+    else if (wins.length) b.classList.add('booked');
+    if (dI===vSel) b.classList.add('sel');
+    b.disabled = locked || dI<today;
+    if (!b.disabled) b.addEventListener('click', ()=>pickDay(dI));
+    g.appendChild(b);
+  }
 }
 
-function dateStat() {
-  const d = $('v-date').value, el = $('vDateStat');
-  if (!avail || !d) { el.textContent = ''; el.className = 'fstat'; return; }
-  if (avail.locked.includes(d)) { el.textContent = 'התאריך נעול — בחרו אחר.'; el.className = 'fstat err'; return; }
-  const w = (avail.windows || []).filter(x => x.date === d);
-  if (w.length) { el.textContent = 'פתוח: ' + w.map(x => x.start + '–' + x.end).join(' · '); el.className = 'fstat ok'; }
-  else { el.textContent = 'אין חלון מוגדר — אפשר לשלוח בקשה.'; el.className = 'fstat'; }
+function pickDay(dI){
+  vSel = dI; $('v-date').value = dI; $('v-winid').value=''; renderVcal();
+  const el = $('vDateStat'); const box = $('vChips'); box.innerHTML='';
+  const wins = (avail.windows||[]).filter(w=>w.date===dI);
+  const open = wins.filter(w=>!w.booked).sort((a,b)=>a.start.localeCompare(b.start));
+  if (open.length){
+    open.forEach(w=>{
+      const c = document.createElement('button');
+      c.type='button'; c.className='chip';
+      c.textContent = w.start+'–'+w.end + (w.note? ' · '+w.note : '');
+      c.addEventListener('click', ()=>{
+        $('v-hours').value = w.start+'-'+w.end; $('v-winid').value = w.id;
+        box.querySelectorAll('.chip').forEach(x=>x.classList.remove('picked'));
+        c.classList.add('picked');
+        el.textContent = 'נבחר חלון — יישמר עבורכם עם השליחה.'; el.className='fstat ok';
+      });
+      box.appendChild(c);
+    });
+    el.textContent = 'בחרו חלון שעות:'; el.className='fstat';
+  } else if (wins.length){
+    el.textContent = 'כל החלונות בתאריך זה תפוסים.'; el.className='fstat err';
+  } else {
+    el.textContent = 'אין חלון מוגדר — אפשר לכתוב שעות ולשלוח בקשה.'; el.className='fstat';
+  }
 }
-$('v-date').addEventListener('change', dateStat);
+
+$('vPrev').addEventListener('click', ()=>{ vView.setMonth(vView.getMonth()-1); renderVcal(); });
+$('vNext').addEventListener('click', ()=>{ vView.setMonth(vView.getMonth()+1); renderVcal(); });
 
 $('vf').addEventListener('submit', async (e) => {
   e.preventDefault();
@@ -470,8 +537,18 @@ $('vf').addEventListener('submit', async (e) => {
     const res = await fetch(EP, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' }, body: JSON.stringify(payload) });
     const data = await res.json();
     if (String(data.success) !== 'true') throw 0;
-    st.textContent = 'תודה! הפנייה נשלחה.'; st.className = 'fstat ok';
-    e.target.reset(); $('vRental').classList.remove('on');
+    let msg = 'תודה! הפנייה נשלחה.';
+    if ($('v-winid').value && d) {
+      try {
+        const rr = await fetch(API, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ action:'reserve', id: $('v-winid').value, date: d }) });
+        msg = rr.status === 409
+          ? 'הפנייה נשלחה! החלון בדיוק נתפס — נחזור אליכם לתיאום.'
+          : 'תודה! הפנייה נשלחה והחלון נשמר עבורכם.';
+      } catch {}
+      try { avail = await (await fetch(API)).json(); vSel=null; renderVcal(); } catch {}
+    }
+    st.textContent = msg; st.className = 'fstat ok';
+    e.target.reset(); $('vRental').classList.remove('on'); $('vChips').innerHTML='';
   } catch {
     st.textContent = 'שגיאה בשליחה — נסו שוב.'; st.className = 'fstat err';
   }

@@ -237,73 +237,133 @@ function setRentalVisible(show) {
   if (show) loadAvailability();
 }
 
-/* ---------- availability (managed at /admin) ---------- */
+/* ---------- availability calendar (managed at /admin) ---------- */
 
 let availability = null;
-const availBox = document.getElementById('availBox');
+let fcalView = null;   // first-of-month Date being displayed
+let selectedDate = null;
 const availChips = document.getElementById('availChips');
 const availStatus = document.getElementById('availStatus');
 const dateInput = document.getElementById('f-date');
 const hoursInput = document.getElementById('f-hours');
+const windowIdInput = document.getElementById('f-window-id');
+const fcalGrid = document.getElementById('fcalGrid');
+const fcalLabel = document.getElementById('fcalLabel');
 
-async function loadAvailability() {
-  if (availability) return;
+const HE_MONTHS = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
+const HE_DOW = ['א','ב','ג','ד','ה','ו','ש'];
+const isoOf = (d) => d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+
+async function loadAvailability(force) {
+  if (availability && !force) { renderFcal(); return; }
   try {
     const res = await fetch('/api/availability');
     availability = await res.json();
   } catch {
     availability = { locked: [], windows: [] };
   }
-  renderUpcomingWindows();
+  if (!fcalView) { fcalView = new Date(); fcalView.setDate(1); }
+  renderFcal();
 }
 
-function fmtDate(isoDate) {
-  const d = new Date(isoDate + 'T00:00');
-  return d.toLocaleDateString('he-IL', { weekday: 'short', day: 'numeric', month: 'numeric' });
+function dayWindows(dIso) {
+  return (availability.windows || []).filter(w => w.date === dIso);
 }
 
-function renderUpcomingWindows() {
-  const today = new Date().toISOString().slice(0, 10);
-  const upcoming = (availability.windows || [])
-    .filter(w => w.date >= today && !availability.locked.includes(w.date))
-    .sort((a, b) => (a.date + a.start).localeCompare(b.date + b.start))
-    .slice(0, 6);
-  if (!upcoming.length) { availBox.hidden = true; return; }
-  availBox.hidden = false;
-  availChips.innerHTML = '';
-  upcoming.forEach(w => {
-    const chip = document.createElement('button');
-    chip.type = 'button';
-    chip.className = 'avail-chip';
-    chip.innerHTML = fmtDate(w.date) + ' · <span dir="ltr">' + w.start + '–' + w.end + '</span>';
-    chip.addEventListener('click', () => {
-      dateInput.value = w.date;
-      hoursInput.value = w.start + '-' + w.end;
-      updateDateStatus();
-    });
-    availChips.appendChild(chip);
+function renderFcal() {
+  if (!fcalGrid || !availability || !fcalView) return;
+  fcalLabel.textContent = HE_MONTHS[fcalView.getMonth()] + ' ' + fcalView.getFullYear();
+  fcalGrid.innerHTML = '';
+  HE_DOW.forEach(d => {
+    const el = document.createElement('span');
+    el.className = 'fcal-dow';
+    el.textContent = d;
+    fcalGrid.appendChild(el);
   });
+  const gridStart = new Date(fcalView);
+  gridStart.setDate(1 - fcalView.getDay());
+  const todayIso = isoOf(new Date());
+
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(gridStart);
+    d.setDate(gridStart.getDate() + i);
+    const dIso = isoOf(d);
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'fcal-day';
+    btn.textContent = d.getDate();
+    if (d.getMonth() !== fcalView.getMonth()) btn.classList.add('out');
+    if (dIso < todayIso) btn.classList.add('past');
+    const wins = dayWindows(dIso);
+    const openWins = wins.filter(w => !w.booked);
+    const isLocked = (availability.locked || []).includes(dIso);
+    if (isLocked) btn.classList.add('locked');
+    else if (openWins.length) btn.classList.add('open');
+    else if (wins.length) btn.classList.add('booked');
+    if (dIso === selectedDate) btn.classList.add('sel');
+    const disabled = isLocked || dIso < todayIso;
+    btn.disabled = disabled;
+    if (!disabled) btn.addEventListener('click', () => selectDay(dIso));
+    fcalGrid.appendChild(btn);
+  }
 }
 
-function updateDateStatus() {
-  if (!availability || !dateInput.value) { availStatus.textContent = ''; availStatus.className = 'avail-status'; return; }
-  const d = dateInput.value;
-  if (availability.locked.includes(d)) {
-    availStatus.textContent = 'התאריך הזה נעול ולא זמין להשכרה — בחרו תאריך אחר.';
+function selectDay(dIso) {
+  selectedDate = dIso;
+  dateInput.value = dIso;
+  windowIdInput.value = '';
+  renderFcal();
+  const wins = dayWindows(dIso);
+  const open = wins.filter(w => !w.booked).sort((a, b) => a.start.localeCompare(b.start));
+  availChips.innerHTML = '';
+  if (open.length) {
+    open.forEach(w => {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'avail-chip';
+      chip.innerHTML = '<span dir="ltr">' + w.start + '–' + w.end + '</span>' + (w.note ? ' · ' + w.note : '');
+      chip.addEventListener('click', () => {
+        hoursInput.value = w.start + '-' + w.end;
+        windowIdInput.value = w.id;
+        availChips.querySelectorAll('.avail-chip').forEach(c => c.classList.remove('picked'));
+        chip.classList.add('picked');
+        availStatus.textContent = 'נבחר: ' + fmtHe(dIso) + ' · ' + w.start + '–' + w.end + ' — החלון יישמר עבורכם עם השליחה.';
+        availStatus.className = 'avail-status ok';
+      });
+      availChips.appendChild(chip);
+    });
+    availStatus.textContent = 'בחרו חלון שעות פנוי:';
+    availStatus.className = 'avail-status';
+  } else if (wins.length) {
+    availStatus.textContent = 'כל החלונות בתאריך זה תפוסים — בחרו יום אחר.';
     availStatus.className = 'avail-status err';
-    return;
-  }
-  const wins = (availability.windows || []).filter(w => w.date === d);
-  if (wins.length) {
-    availStatus.textContent = 'פתוח בתאריך זה: ' + wins.map(w => w.start + '–' + w.end).join(' · ');
-    availStatus.className = 'avail-status ok';
   } else {
-    availStatus.textContent = 'אין חלון מוגדר בתאריך זה — אפשר לשלוח בקשה ונחזור אליכם.';
+    availStatus.textContent = fmtHe(dIso) + ' — אין חלון מוגדר; אפשר לכתוב שעות מבוקשות ולשלוח, ונחזור אליכם.';
     availStatus.className = 'avail-status';
   }
 }
 
-dateInput.addEventListener('change', updateDateStatus);
+function fmtHe(isoDate) {
+  return new Date(isoDate + 'T00:00').toLocaleDateString('he-IL', { weekday: 'short', day: 'numeric', month: 'numeric' });
+}
+
+document.getElementById('fcalPrev')?.addEventListener('click', () => { fcalView.setMonth(fcalView.getMonth() - 1); renderFcal(); });
+document.getElementById('fcalNext')?.addEventListener('click', () => { fcalView.setMonth(fcalView.getMonth() + 1); renderFcal(); });
+
+async function reserveWindow() {
+  if (!windowIdInput.value || !dateInput.value) return true;
+  try {
+    const res = await fetch('/api/availability', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'reserve', id: windowIdInput.value, date: dateInput.value }),
+    });
+    if (res.status === 409) return 'taken';
+    return res.ok;
+  } catch {
+    return true; // the email is what matters; reservation is best-effort
+  }
+}
 
 function openInquiry(mode) {
   if (mode === 'rental') {
@@ -359,12 +419,20 @@ inquiryForm.addEventListener('submit', (e) => {
     body: JSON.stringify(payload),
   })
     .then((res) => res.json())
-    .then((data) => {
+    .then(async (data) => {
       if (String(data.success) !== 'true') throw new Error(data.message || 'failed');
+      const reserved = await reserveWindow();
       formStatus.className = 'form-status mono ok';
-      formStatus.textContent = 'תודה! הפנייה נשלחה, נחזור אליכם בהקדם.';
+      formStatus.textContent = reserved === 'taken'
+        ? 'הפנייה נשלחה! שימו לב: החלון בדיוק נתפס על ידי מישהו אחר — נחזור אליכם לתיאום.'
+        : (windowIdInput.value
+            ? 'תודה! הפנייה נשלחה והחלון נשמר עבורכם — נחזור אליכם לאישור סופי.'
+            : 'תודה! הפנייה נשלחה, נחזור אליכם בהקדם.');
       inquiryForm.reset();
+      selectedDate = null;
+      availChips.innerHTML = '';
       setRentalVisible(false);
+      loadAvailability(true); // refresh so the taken slot shows as booked
     })
     .catch(() => {
       formStatus.className = 'form-status mono err';
