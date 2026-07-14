@@ -352,6 +352,17 @@
 
       <!-- rental-only fields -->
       <div class="rental-fields" id="rentalFields" hidden>
+
+        <div class="field">
+          <label class="field-label" for="f-idnum">ת.ז / ח.פ (לחוזה)</label>
+          <input id="f-idnum" type="text" name="id-number" inputmode="numeric" dir="ltr">
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="f-phone">טלפון</label>
+          <input id="f-phone" type="tel" name="phone" inputmode="tel" dir="ltr">
+        </div>
+
         <div class="field">
           <span class="field-label">בחירת תאריך מהיומן</span>
           <div class="fcal" id="fcal">
@@ -372,22 +383,62 @@
         </div>
         <input id="f-date" type="hidden" name="event-date">
         <input type="hidden" name="window-id" id="f-window-id">
-        <div class="field">
-          <label class="field-label" for="f-hours">שעות</label>
-          <input id="f-hours" type="text" name="event-hours" placeholder="ייבחר מהיומן, או כתבו טווח">
+
+        <div class="field field-split">
+          <div>
+            <label class="field-label" for="f-start">משעה</label>
+            <select id="f-start" name="event-start"></select>
+          </div>
+          <div>
+            <label class="field-label" for="f-end">עד שעה</label>
+            <select id="f-end" name="event-end"></select>
+          </div>
         </div>
+
         <div class="field">
-          <label class="field-label" for="f-purpose">מטרה</label>
-          <input id="f-purpose" type="text" name="event-purpose" placeholder="השקה · צילומים · אירוע חברה…">
+          <label class="field-label" for="f-purpose">מטרת ההשכרה</label>
+          <select id="f-purpose" name="event-purpose">
+            <option value="">בחרו מטרה…</option>
+            <option>השקה</option>
+            <option>יום צילומים</option>
+            <option>אירוע חברה</option>
+            <option>סדנה</option>
+            <option>ארוחה פרטית</option>
+            <option>הרמת כוסית</option>
+            <option>אחר</option>
+          </select>
         </div>
+
+        <div class="field">
+          <label class="field-label" for="f-participants">מספר משתתפים</label>
+          <select id="f-participants" name="participants">
+            <option value="">בחרו…</option>
+            <option>עד 10</option>
+            <option>11–20</option>
+            <option>21–30</option>
+            <option>31–50</option>
+            <option>50+</option>
+          </select>
+        </div>
+
         <input type="hidden" name="estimated-cost" id="f-cost">
         <p class="cost-line" id="costLine" hidden>עלות ההשכרה: <b id="costVal"></b></p>
+
         <div class="contract-row">
-          <a href="/contract" target="_blank" rel="noopener" class="contract-link">צפייה בחוזה ההשכרה ←</a>
+          <a href="/contract" target="_blank" rel="noopener" class="contract-link" id="contractLink">צפייה בחוזה עם הפרטים שלכם ←</a>
           <label class="agree">
             <input type="checkbox" id="f-agree" name="contract-approved" value="קראתי ואישרתי את תנאי החוזה">
             קראתי את החוזה ואני מאשר/ת את תנאיו
           </label>
+        </div>
+
+        <div class="field">
+          <span class="field-label">חתימה (ציירו באצבע או בעכבר)</span>
+          <div class="sig-wrap">
+            <canvas id="sigPad" width="400" height="140"></canvas>
+            <button type="button" class="sig-clear" id="sigClear">ניקוי</button>
+          </div>
+          <p class="avail-status" id="sigStatus"></p>
         </div>
       </div>
 

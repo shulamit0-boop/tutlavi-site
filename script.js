@@ -249,10 +249,25 @@ let selectedDate = null;
 const availChips = document.getElementById('availChips');
 const availStatus = document.getElementById('availStatus');
 const dateInput = document.getElementById('f-date');
-const hoursInput = document.getElementById('f-hours');
+const startSel = document.getElementById('f-start');
+const endSel = document.getElementById('f-end');
 const windowIdInput = document.getElementById('f-window-id');
 const fcalGrid = document.getElementById('fcalGrid');
 const fcalLabel = document.getElementById('fcalLabel');
+
+// hours are chosen, never typed: 08:00–23:30 in half-hour steps
+(function fillTimeSelects() {
+  if (!startSel) return;
+  const opts = ['<option value="">--:--</option>'];
+  for (let h = 8; h < 24; h++) {
+    for (const m of ['00', '30']) {
+      const t = String(h).padStart(2, '0') + ':' + m;
+      opts.push('<option>' + t + '</option>');
+    }
+  }
+  startSel.innerHTML = opts.join('');
+  endSel.innerHTML = opts.join('');
+})();
 
 const HE_MONTHS = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
 const HE_DOW = ['א','ב','ג','ד','ה','ו','ש'];
@@ -329,7 +344,8 @@ function selectDay(dIso) {
         (w.price ? ' · ₪' + w.price.toLocaleString() : '') +
         (w.note ? ' · ' + w.note : '');
       chip.addEventListener('click', () => {
-        hoursInput.value = w.start + '-' + w.end;
+        startSel.value = w.start;
+        endSel.value = w.end;
         windowIdInput.value = w.id;
         availChips.querySelectorAll('.avail-chip').forEach(c => c.classList.remove('picked'));
         chip.classList.add('picked');
@@ -346,6 +362,7 @@ function selectDay(dIso) {
         availStatus.textContent = 'נבחר: ' + fmtHe(dIso) + ' · ' + w.start + '–' + w.end +
           (w.price ? ' · ₪' + w.price.toLocaleString() : '') + ' — החלון יישמר עבורכם עם השליחה.';
         availStatus.className = 'avail-status ok';
+        refreshContractLink();
       });
       availChips.appendChild(chip);
     });
@@ -355,9 +372,10 @@ function selectDay(dIso) {
     availStatus.textContent = 'כל החלונות בתאריך זה תפוסים — בחרו יום אחר.';
     availStatus.className = 'avail-status err';
   } else {
-    availStatus.textContent = fmtHe(dIso) + ' — אין חלון מוגדר; אפשר לכתוב שעות מבוקשות ולשלוח, ונחזור אליכם.';
+    availStatus.textContent = fmtHe(dIso) + ' — אין חלון מוגדר; בחרו שעות מבוקשות ושלחו, ונחזור אליכם.';
     availStatus.className = 'avail-status';
   }
+  refreshContractLink();
 }
 
 function fmtHe(isoDate) {
@@ -379,6 +397,120 @@ async function reserveWindow() {
     return res.ok;
   } catch {
     return true; // the email is what matters; reservation is best-effort
+  }
+}
+
+/* ---------- the contract preview link mirrors the form live ---------- */
+
+function contractParams() {
+  const p = new URLSearchParams();
+  const set = (k, v) => { if (v) p.set(k, v); };
+  set('name', document.getElementById('f-name').value.trim());
+  set('idnum', document.getElementById('f-idnum').value.trim());
+  set('date', dateInput.value);
+  set('start', startSel.value);
+  set('end', endSel.value);
+  set('purpose', document.getElementById('f-purpose').value);
+  set('participants', document.getElementById('f-participants').value);
+  set('price', document.getElementById('f-cost').value);
+  return p;
+}
+
+function refreshContractLink() {
+  const link = document.getElementById('contractLink');
+  if (!link) return;
+  const p = contractParams();
+  link.href = '/contract' + (p.toString() ? '?' + p.toString() : '');
+}
+
+['f-name', 'f-idnum', 'f-purpose', 'f-participants'].forEach(id => {
+  document.getElementById(id)?.addEventListener('input', refreshContractLink);
+  document.getElementById(id)?.addEventListener('change', refreshContractLink);
+});
+startSel?.addEventListener('change', refreshContractLink);
+endSel?.addEventListener('change', refreshContractLink);
+
+/* ---------- signature pad ---------- */
+
+const sigPad = document.getElementById('sigPad');
+const sigCtx = sigPad.getContext('2d');
+let sigDrawn = false;
+let drawing = false;
+
+function sigInit() {
+  sigCtx.fillStyle = '#ffffff';
+  sigCtx.fillRect(0, 0, sigPad.width, sigPad.height);
+  sigCtx.strokeStyle = '#17140f';
+  sigCtx.lineWidth = 2;
+  sigCtx.lineCap = 'round';
+  sigCtx.lineJoin = 'round';
+  sigDrawn = false;
+}
+sigInit();
+
+function sigPos(e) {
+  const r = sigPad.getBoundingClientRect();
+  const t = e.touches ? e.touches[0] : e;
+  return [
+    (t.clientX - r.left) * (sigPad.width / r.width),
+    (t.clientY - r.top) * (sigPad.height / r.height),
+  ];
+}
+
+function sigStart(e) {
+  e.preventDefault();
+  drawing = true;
+  const [x, y] = sigPos(e);
+  sigCtx.beginPath();
+  sigCtx.moveTo(x, y);
+}
+function sigMove(e) {
+  if (!drawing) return;
+  e.preventDefault();
+  const [x, y] = sigPos(e);
+  sigCtx.lineTo(x, y);
+  sigCtx.stroke();
+  sigDrawn = true;
+}
+function sigEnd() { drawing = false; }
+
+sigPad.addEventListener('mousedown', sigStart);
+sigPad.addEventListener('mousemove', sigMove);
+window.addEventListener('mouseup', sigEnd);
+sigPad.addEventListener('touchstart', sigStart, { passive: false });
+sigPad.addEventListener('touchmove', sigMove, { passive: false });
+sigPad.addEventListener('touchend', sigEnd);
+
+document.getElementById('sigClear').addEventListener('click', sigInit);
+
+/* create the signed booking record; returns its id (or null) */
+async function createBooking(payload) {
+  try {
+    const res = await fetch('/api/booking', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'create',
+        signature: sigPad.toDataURL('image/png'),
+        data: {
+          name: payload.name,
+          idnum: payload['id-number'],
+          email: payload.email,
+          phone: payload.phone,
+          date: payload['event-date'],
+          start: payload['event-start'],
+          end: payload['event-end'],
+          purpose: payload['event-purpose'],
+          participants: payload.participants,
+          price: payload['estimated-cost'],
+          message: payload.message,
+        },
+      }),
+    });
+    const data = await res.json();
+    return data.ok ? data.id : null;
+  } catch {
+    return null;
   }
 }
 
@@ -430,42 +562,68 @@ inquiryForm.addEventListener('submit', (e) => {
   submitBtn.disabled = true;
 
   const payload = Object.fromEntries(new FormData(inquiryForm).entries());
-  // rental with a picked window: the requester gets an automatic
-  // order-summary email with the cost, bank-transfer note and contract link
-  if (!rentalFields.hidden && payload['event-date']) {
-    payload._autoresponse =
-      'תודה על פנייתך לסטודיו תות!\n\n' +
-      'סיכום הבקשה:\n' +
-      'תאריך: ' + payload['event-date'] + '\n' +
-      (payload['event-hours'] ? 'שעות: ' + payload['event-hours'] + '\n' : '') +
-      (payload['event-purpose'] ? 'מטרה: ' + payload['event-purpose'] + '\n' : '') +
-      (payload['estimated-cost'] ? 'עלות: ' + payload['estimated-cost'] + '\n' : '') +
-      '\nהתשלום מתבצע בהעברה בנקאית — פרטי החשבון ואישור סופי יישלחו אליכם בהמשך.\n' +
-      'החוזה לעיון: https://tutlavi.com/contract\n\n' +
-      'החלון שבחרתם נשמר עבורכם וממתין לאישורנו. נחזור אליכם בהקדם.\n' +
-      'סטודיו תות · מגן אברהם 6, תל אביב · 054-312-9933';
+  const isRental = !rentalFields.hidden;
+
+  // rental requests must be signed
+  if (isRental && !sigDrawn) {
+    document.getElementById('sigStatus').textContent = 'נדרשת חתימה — ציירו את חתימתכם במסגרת.';
+    document.getElementById('sigStatus').className = 'avail-status err';
+    formStatus.textContent = '';
+    submitBtn.disabled = false;
+    sigPad.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    return;
   }
-  fetch(FORM_ENDPOINT, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-    body: JSON.stringify(payload),
-  })
-    .then((res) => res.json())
-    .then(async (data) => {
-      if (String(data.success) !== 'true') throw new Error(data.message || 'failed');
-      const reserved = await reserveWindow();
-      formStatus.className = 'form-status mono ok';
-      formStatus.textContent = reserved === 'taken'
-        ? 'הפנייה נשלחה! שימו לב: החלון בדיוק נתפס על ידי מישהו אחר — נחזור אליכם לתיאום.'
-        : (windowIdInput.value
-            ? 'תודה! הפנייה נשלחה והחלון נשמר עבורכם — נחזור אליכם לאישור סופי.'
-            : 'תודה! הפנייה נשלחה, נחזור אליכם בהקדם.');
-      inquiryForm.reset();
-      selectedDate = null;
-      availChips.innerHTML = '';
-      setRentalVisible(false);
-      loadAvailability(true); // refresh so the taken slot shows as booked
-    })
+
+  (async () => {
+    let contractUrl = 'https://tutlavi.com/contract';
+
+    if (isRental) {
+      // store the signed contract; both emails link to it
+      const bid = await createBooking(payload);
+      if (bid) {
+        contractUrl = 'https://tutlavi.com/contract?bid=' + bid;
+        payload['signed-contract'] = contractUrl;
+      }
+      payload['event-hours'] = (payload['event-start'] || '') +
+        (payload['event-end'] ? '-' + payload['event-end'] : '');
+      payload._autoresponse =
+        'תודה על פנייתך לסטודיו תות!\n\n' +
+        'סיכום הבקשה:\n' +
+        'תאריך: ' + (payload['event-date'] || '') + '\n' +
+        (payload['event-hours'] ? 'שעות: ' + payload['event-hours'] + '\n' : '') +
+        (payload['event-purpose'] ? 'מטרה: ' + payload['event-purpose'] + '\n' : '') +
+        (payload.participants ? 'משתתפים: ' + payload.participants + '\n' : '') +
+        (payload['estimated-cost'] ? 'עלות: ' + payload['estimated-cost'] + '\n' : '') +
+        '\nהחוזה החתום שלכם: ' + contractUrl + '\n' +
+        'החוזה הועבר לחתימת סטודיו תות; עותק נגיש בקישור בכל עת.\n\n' +
+        'התשלום מתבצע בהעברה בנקאית — פרטי החשבון יישלחו עם אישור ההזמנה.\n' +
+        (payload['window-id'] ? 'החלון שבחרתם נשמר עבורכם וממתין לאישורנו.\n' : '') +
+        '\nסטודיו תות · מגן אברהם 6, תל אביב · 054-312-9933';
+    }
+
+    const res = await fetch(FORM_ENDPOINT, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    const data = await res.json();
+    if (String(data.success) !== 'true') throw new Error(data.message || 'failed');
+
+    const reserved = await reserveWindow();
+    formStatus.className = 'form-status mono ok';
+    formStatus.textContent = reserved === 'taken'
+      ? 'הפנייה נשלחה! שימו לב: החלון בדיוק נתפס על ידי מישהו אחר — נחזור אליכם לתיאום.'
+      : (isRental
+          ? 'תודה! החוזה נחתם והועבר לחתימת סטודיו תות. עותק נשלח למייל שלכם.'
+          : 'תודה! הפנייה נשלחה, נחזור אליכם בהקדם.');
+    inquiryForm.reset();
+    sigInit();
+    selectedDate = null;
+    availChips.innerHTML = '';
+    document.getElementById('costLine').hidden = true;
+    setRentalVisible(false);
+    loadAvailability(true); // refresh so the taken slot shows as booked
+  })()
     .catch(() => {
       formStatus.className = 'form-status mono err';
       formStatus.textContent = 'משהו השתבש. נסו שוב או כתבו ל-vivian.office.info@gmail.com';
