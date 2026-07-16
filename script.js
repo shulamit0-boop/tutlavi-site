@@ -5,8 +5,9 @@
    Falls back to native scrolling on mobile / reduced motion.
    ============================================================ */
 
-const WIPE_MS = 600;
+const WIPE_MS = 700;
 const WIPE_EASE = 'cubic-bezier(.45, 0, .55, 1)';
+const BASE44_VIDEO = 'https://media.base44.com/videos/public/6a5644595cc0504757b80ced/942e46b3b_AQPnop7OXDVQhZdDXctnRAaiNehtQ_B-J6EkVGLI3tmkQx_lHRpyOJKBc6Oxhx26sVjV_lmT1rLz2sKPh4YU6b0RYd0SUC4UfWWqROI.mp4';
 
 const slides = [...document.querySelectorAll('.slide')];
 const navLinks = [...document.querySelectorAll('.main-nav a')];
@@ -23,6 +24,22 @@ let wheelAccum = 0;
 let engineOn = false;
 
 if (slideTotal) slideTotal.textContent = String(slides.length).padStart(2, '0');
+
+document.querySelectorAll('video').forEach(video => {
+  const source = video.querySelector('source');
+  const src = video.dataset.videoSrc || BASE44_VIDEO;
+  if (source) {
+    source.setAttribute('src', src);
+    source.setAttribute('type', 'video/mp4');
+  } else {
+    video.setAttribute('src', src);
+  }
+  video.setAttribute('playsinline', 'true');
+  video.setAttribute('muted', 'true');
+  video.setAttribute('loop', 'true');
+  video.setAttribute('autoplay', 'true');
+  video.load();
+});
 
 /* ---------- per-slide content ---------- */
 
