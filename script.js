@@ -1,243 +1,102 @@
 /* ============================================================
-   Slide engine — a faithful port of the reference site's
-   home-page scroll: fixed full-screen sections, one step per
-   wheel gesture, clip-path curtain wipes (.6s power2.inOut).
-   Falls back to native scrolling on mobile / reduced motion.
+   STUDIO TUTLAVI — front-end reproduction of the Base44 "HomeAlt"
+   page (normal vertical scroll) + the original rental / signing
+   / calendar system preserved intact.
    ============================================================ */
 
-const WIPE_MS = 700;
-const WIPE_EASE = 'cubic-bezier(.45, 0, .55, 1)';
+document.documentElement.classList.add('js');
+
 const BASE44_VIDEO = 'https://media.base44.com/videos/public/6a5644595cc0504757b80ced/942e46b3b_AQPnop7OXDVQhZdDXctnRAaiNehtQ_B-J6EkVGLI3tmkQx_lHRpyOJKBc6Oxhx26sVjV_lmT1rLz2sKPh4YU6b0RYd0SUC4UfWWqROI.mp4';
 
-const slides = [...document.querySelectorAll('.slide')];
-const navLinks = [...document.querySelectorAll('.main-nav a')];
-const slideNow = document.getElementById('slideNow');
-const slideTotal = document.getElementById('slideTotal');
-
-const isSlideshow = () =>
-  window.matchMedia('(min-width: 981px)').matches &&
-  !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-let current = 0;
-let animating = false;
-let wheelAccum = 0;
-let engineOn = false;
-
-if (slideTotal) slideTotal.textContent = String(slides.length).padStart(2, '0');
-
+/* ---------- videos: inject source + autoplay ---------- */
 document.querySelectorAll('video').forEach(video => {
-  const source = video.querySelector('source');
   const src = video.dataset.videoSrc || BASE44_VIDEO;
-  if (source) {
-    source.setAttribute('src', src);
-    source.setAttribute('type', 'video/mp4');
-  } else {
-    video.setAttribute('src', src);
-  }
+  const source = video.querySelector('source');
+  if (source) { source.setAttribute('src', src); source.setAttribute('type', 'video/mp4'); }
+  else { video.setAttribute('src', src); }
+  video.muted = true;
   video.setAttribute('playsinline', 'true');
-  video.setAttribute('muted', 'true');
   video.setAttribute('loop', 'true');
   video.setAttribute('autoplay', 'true');
   video.load();
+  video.play().catch(() => {});
 });
 
-/* ---------- per-slide content ---------- */
+/* ---------- scroll reveal ---------- */
+const revealEls = [...document.querySelectorAll('.reveal')];
+const showReveal = (el) => el.classList.add('in-view');
 
-function playSlideVideos(slide, play) {
-  slide.querySelectorAll('video').forEach(v => {
-    if (play) v.play().catch(() => {});
-    else v.pause();
-  });
-}
-
-function revealSlide(slide) {
-  slide.querySelectorAll('.reveal').forEach((el, i) => {
-    el.style.transitionDelay = (0.25 + i * 0.09).toFixed(2) + 's';
-    el.classList.add('in-view');
-  });
-}
-
-function unrevealSlide(slide) {
-  slide.querySelectorAll('.reveal').forEach(el => {
-    el.style.transitionDelay = '0s';
-    el.classList.remove('in-view');
-  });
-}
-
-function markActive(index) {
-  navLinks.forEach(l => l.classList.toggle('active', +l.dataset.slide === index));
-  if (slideNow) slideNow.textContent = String(index + 1).padStart(2, '0');
-  document.body.classList.toggle('slide-footer-active', slides[index].classList.contains('slide-footer'));
-  const id = slides[index].id;
-  if (id) history.replaceState(null, '', '#' + id);
-}
-
-/* ---------- the curtain wipe (ported from the reference) ---------- */
-
-function setStyles(el, styles) {
-  Object.assign(el.style, styles);
-}
-
-function goTo(target, dir) {
-  if (animating || target === current || target < 0 || target >= slides.length) return;
-  animating = true;
-
-  const from = slides[current];
-  const to = slides[target];
-  const down = dir === 'down';
-
-  unrevealSlide(from);
-  playSlideVideos(to, true);
-
-  // incoming slide sits fully visible beneath the outgoing one
-  setStyles(to, { transition: 'none', clipPath: 'none', zIndex: 9, visibility: 'visible' });
-  setStyles(from, { zIndex: 10 });
-
-  // force reflow so the transition below actually runs
-  void from.offsetHeight;
-
-  from.style.transition = `clip-path ${WIPE_MS}ms ${WIPE_EASE}`;
-  // down: the current slide is wiped away upward (bottom edge rises)
-  // up:   the current slide descends away (top edge falls) — the special drop
-  from.style.clipPath = down ? 'inset(0 0 100% 0)' : 'inset(100% 0 0 0)';
-
-  window.setTimeout(() => {
-    setStyles(from, { transition: 'none', zIndex: 0, clipPath: 'none', visibility: 'hidden' });
-    setStyles(to, { zIndex: 10 });
-    playSlideVideos(from, false);
-    current = target;
-    markActive(current);
-    revealSlide(to);
-    animating = false;
-  }, WIPE_MS + 30);
-}
-
-const next = () => goTo(current + 1, 'down');
-const prev = () => goTo(current - 1, 'up');
-
-/* ---------- engine setup / teardown ---------- */
-
-function engineStart() {
-  engineOn = true;
-  slides.forEach((slide, i) => {
-    slide.classList.add('is-ready');
-    setStyles(slide, {
-      visibility: i === current ? 'visible' : 'hidden',
-      zIndex: i === current ? 10 : 0,
-      clipPath: 'none',
-      transition: 'none',
+if ('IntersectionObserver' in window) {
+  const revealObserver = new IntersectionObserver((entries) => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { showReveal(e.target); revealObserver.unobserve(e.target); }
     });
-    playSlideVideos(slide, i === current);
-  });
-  markActive(current);
-  revealSlide(slides[current]);
+  }, { threshold: 0, rootMargin: '0px 0px -6% 0px' });
+  revealEls.forEach(el => revealObserver.observe(el));
+  // reveal anything already within the first viewport immediately
+  revealEls.forEach(el => { if (el.getBoundingClientRect().top < window.innerHeight) showReveal(el); });
+} else {
+  // no IO support → just show everything
+  revealEls.forEach(showReveal);
 }
 
-function engineStop() {
-  engineOn = false;
-  slides.forEach(slide => {
-    slide.classList.add('is-ready');
-    setStyles(slide, { visibility: 'visible', zIndex: 0, clipPath: 'none', transition: 'none' });
-    slide.querySelectorAll('.reveal').forEach(el => {
-      el.style.transitionDelay = '0s';
-      el.classList.add('in-view');
-    });
-    playSlideVideos(slide, true);
-  });
-}
+/* ---------- header state (scrolled + on-dark over the black section) ---------- */
+const header = document.getElementById('siteHeader');
+const aboutSection = document.getElementById('about');
+const playBtn = document.getElementById('playBtn');
+const introSection = document.getElementById('intro');
 
-/* ---------- input: wheel, keys, touch ---------- */
+function onScroll() {
+  const y = window.scrollY;
+  header.classList.toggle('scrolled', y > 40);
 
-window.addEventListener('wheel', (e) => {
-  if (!engineOn || document.body.classList.contains('modal-open')) return;
-  e.preventDefault();
-  if (animating) return;
-  wheelAccum += e.deltaY;
-  if (Math.abs(wheelAccum) < 24) return;
-  (wheelAccum > 0) ? next() : prev();
-  wheelAccum = 0;
-}, { passive: false });
+  // header turns light while the black "about" band sits under it
+  if (aboutSection) {
+    const r = aboutSection.getBoundingClientRect();
+    header.classList.toggle('on-dark', r.top <= 80 && r.bottom >= 80);
+  }
 
-window.addEventListener('keydown', (e) => {
-  if (!engineOn || document.body.classList.contains('modal-open')) return;
-  if (['ArrowDown', 'PageDown', ' '].includes(e.key)) { e.preventDefault(); next(); }
-  if (['ArrowUp', 'PageUp'].includes(e.key)) { e.preventDefault(); prev(); }
-  if (e.key === 'Home') { e.preventDefault(); goTo(0, 'up'); }
-  if (e.key === 'End') { e.preventDefault(); goTo(slides.length - 1, 'down'); }
-});
-
-let touchY = null;
-window.addEventListener('touchstart', (e) => { touchY = e.touches[0].clientY; }, { passive: true });
-window.addEventListener('touchend', (e) => {
-  if (!engineOn || touchY === null) return;
-  const dy = touchY - e.changedTouches[0].clientY;
-  if (Math.abs(dy) > 48) (dy > 0) ? next() : prev();
-  touchY = null;
-}, { passive: true });
-
-/* ---------- nav links jump straight to their slide ---------- */
-
-document.querySelectorAll('.slide-link').forEach(link => {
-  link.addEventListener('click', (e) => {
-    if (!engineOn) return; // mobile: let the anchor scroll natively
-    e.preventDefault();
-    const target = +link.dataset.slide;
-    goTo(target, target > current ? 'down' : 'up');
-  });
-});
-
-/* ---------- mode switching on resize ---------- */
-
-function applyMode() {
-  if (isSlideshow()) {
-    if (!engineOn) engineStart();
-  } else {
-    if (engineOn || !slides[0].classList.contains('is-ready')) engineStop();
+  // floating play button hides once we scroll past the split section
+  if (playBtn && introSection) {
+    const pastSplit = introSection.getBoundingClientRect().bottom < window.innerHeight * 0.4;
+    playBtn.classList.toggle('hide', pastSplit || document.body.classList.contains('menu-open'));
   }
 }
+window.addEventListener('scroll', onScroll, { passive: true });
+onScroll();
 
-window.addEventListener('resize', () => { applyMode(); });
+/* ---------- full-screen menu overlay ---------- */
+const menuOverlay = document.getElementById('menuOverlay');
+const menuBtn = document.getElementById('menuBtn');
+const menuClose = document.getElementById('menuClose');
 
-/* honor a #hash deep-link on load */
-(function initFromHash() {
-  const id = location.hash.slice(1);
-  const idx = slides.findIndex(s => s.id === id);
-  if (idx > 0) current = idx;
-})();
-
-applyMode();
-
-/* ---------- mobile overlay nav ---------- */
-
-const menuToggle = document.getElementById('menuToggle');
-const overlayNav = document.getElementById('overlayNav');
-
-menuToggle.addEventListener('click', () => {
-  const isOpen = overlayNav.classList.toggle('open');
-  menuToggle.setAttribute('aria-expanded', isOpen);
-});
-
-overlayNav.querySelectorAll('.nav-link').forEach(link => {
-  link.addEventListener('click', () => {
-    overlayNav.classList.remove('open');
-    menuToggle.setAttribute('aria-expanded', 'false');
-  });
-});
-
-/* ---------- floating newsletter chip ---------- */
-
-const newsChip = document.getElementById('newsChip');
-const newsChipClose = document.getElementById('newsChipClose');
-
-if (sessionStorage.getItem('tutlavi-chip-closed')) {
-  newsChip.classList.add('hidden');
+function openMenu() {
+  menuOverlay.classList.add('open');
+  menuOverlay.setAttribute('aria-hidden', 'false');
+  menuBtn.setAttribute('aria-expanded', 'true');
+  document.body.classList.add('menu-open', 'modal-open');
+  if (playBtn) playBtn.classList.add('hide');
 }
-newsChipClose.addEventListener('click', () => {
-  newsChip.classList.add('hidden');
-  sessionStorage.setItem('tutlavi-chip-closed', '1');
-});
+function closeMenu() {
+  menuOverlay.classList.remove('open');
+  menuOverlay.setAttribute('aria-hidden', 'true');
+  menuBtn.setAttribute('aria-expanded', 'false');
+  document.body.classList.remove('menu-open');
+  if (!document.getElementById('inquiryModal').classList.contains('open')) {
+    document.body.classList.remove('modal-open');
+  }
+  onScroll();
+}
+menuBtn.addEventListener('click', () => menuOverlay.classList.contains('open') ? closeMenu() : openMenu());
+if (playBtn) playBtn.addEventListener('click', openMenu);
+menuClose.addEventListener('click', closeMenu);
+menuOverlay.querySelectorAll('.menu-item[href]').forEach(a => a.addEventListener('click', closeMenu));
+window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && menuOverlay.classList.contains('open')) closeMenu(); });
 
-/* ---------- inquiry modal (collaboration / space rental) ---------- */
+/* ============================================================
+   RENTAL / COLLABORATION SYSTEM  (calendar · signing · contract)
+   Preserved from the original site.
+   ============================================================ */
 
 const inquiryModal = document.getElementById('inquiryModal');
 const inquiryForm = document.getElementById('inquiryForm');
@@ -248,20 +107,15 @@ const typeRadios = inquiryForm.querySelectorAll('input[name="type"]');
 
 function setRentalVisible(show) {
   rentalFields.hidden = !show;
-  // date stays optional — a hidden-or-skipped required field silently blocks
-  // submission in some flows; the venue can follow up on missing dates
   rentalInputs.forEach(inp => { inp.required = false; });
-  // contract approval is required for rental requests (visible, so the
-  // browser can point at it if left unchecked)
   const agree = document.getElementById('f-agree');
   if (agree) agree.required = show;
   if (show) loadAvailability();
 }
 
 /* ---------- availability calendar (managed at /admin) ---------- */
-
 let availability = null;
-let fcalView = null;   // first-of-month Date being displayed
+let fcalView = null;
 let selectedDate = null;
 const availChips = document.getElementById('availChips');
 const availStatus = document.getElementById('availStatus');
@@ -272,7 +126,6 @@ const windowIdInput = document.getElementById('f-window-id');
 const fcalGrid = document.getElementById('fcalGrid');
 const fcalLabel = document.getElementById('fcalLabel');
 
-// hours are chosen, never typed: 08:00–23:30 in half-hour steps
 (function fillTimeSelects() {
   if (!startSel) return;
   const opts = ['<option value="">--:--</option>'];
@@ -413,12 +266,11 @@ async function reserveWindow() {
     if (res.status === 409) return 'taken';
     return res.ok;
   } catch {
-    return true; // the email is what matters; reservation is best-effort
+    return true;
   }
 }
 
-/* ---------- the contract preview link mirrors the form live ---------- */
-
+/* ---------- contract preview link mirrors the form live ---------- */
 function contractParams() {
   const p = new URLSearchParams();
   const set = (k, v) => { if (v) p.set(k, v); };
@@ -448,7 +300,6 @@ startSel?.addEventListener('change', refreshContractLink);
 endSel?.addEventListener('change', refreshContractLink);
 
 /* ---------- signature pad ---------- */
-
 const sigPad = document.getElementById('sigPad');
 const sigCtx = sigPad.getContext('2d');
 let sigDrawn = false;
@@ -457,7 +308,7 @@ let drawing = false;
 function sigInit() {
   sigCtx.fillStyle = '#ffffff';
   sigCtx.fillRect(0, 0, sigPad.width, sigPad.height);
-  sigCtx.strokeStyle = '#17140f';
+  sigCtx.strokeStyle = '#000000';
   sigCtx.lineWidth = 2;
   sigCtx.lineCap = 'round';
   sigCtx.lineJoin = 'round';
@@ -474,21 +325,8 @@ function sigPos(e) {
   ];
 }
 
-function sigStart(e) {
-  e.preventDefault();
-  drawing = true;
-  const [x, y] = sigPos(e);
-  sigCtx.beginPath();
-  sigCtx.moveTo(x, y);
-}
-function sigMove(e) {
-  if (!drawing) return;
-  e.preventDefault();
-  const [x, y] = sigPos(e);
-  sigCtx.lineTo(x, y);
-  sigCtx.stroke();
-  sigDrawn = true;
-}
+function sigStart(e) { e.preventDefault(); drawing = true; const [x, y] = sigPos(e); sigCtx.beginPath(); sigCtx.moveTo(x, y); }
+function sigMove(e) { if (!drawing) return; e.preventDefault(); const [x, y] = sigPos(e); sigCtx.lineTo(x, y); sigCtx.stroke(); sigDrawn = true; }
 function sigEnd() { drawing = false; }
 
 sigPad.addEventListener('mousedown', sigStart);
@@ -497,10 +335,8 @@ window.addEventListener('mouseup', sigEnd);
 sigPad.addEventListener('touchstart', sigStart, { passive: false });
 sigPad.addEventListener('touchmove', sigMove, { passive: false });
 sigPad.addEventListener('touchend', sigEnd);
-
 document.getElementById('sigClear').addEventListener('click', sigInit);
 
-/* create the signed booking record; returns its id (or null) */
 async function createBooking(payload) {
   try {
     const res = await fetch('/api/booking', {
@@ -531,7 +367,9 @@ async function createBooking(payload) {
   }
 }
 
+/* ---------- modal open/close ---------- */
 function openInquiry(mode) {
+  if (menuOverlay.classList.contains('open')) closeMenu();
   if (mode === 'rental') {
     inquiryForm.querySelector('input[value="השכרת חלל"]').checked = true;
     setRentalVisible(true);
@@ -541,47 +379,39 @@ function openInquiry(mode) {
   document.body.classList.add('modal-open');
   setTimeout(() => inquiryForm.querySelector('#f-name').focus(), 300);
 }
-
 function closeInquiry() {
   inquiryModal.classList.remove('open');
   inquiryModal.setAttribute('aria-hidden', 'true');
-  document.body.classList.remove('modal-open');
+  if (!document.body.classList.contains('menu-open')) document.body.classList.remove('modal-open');
 }
-
 document.querySelectorAll('[data-open-inquiry]').forEach(btn => {
   btn.addEventListener('click', () => openInquiry(btn.getAttribute('data-open-inquiry')));
 });
-document.querySelectorAll('[data-close-inquiry]').forEach(el => {
-  el.addEventListener('click', closeInquiry);
-});
-window.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape' && inquiryModal.classList.contains('open')) closeInquiry();
-});
+document.querySelectorAll('[data-close-inquiry]').forEach(el => el.addEventListener('click', closeInquiry));
+window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && inquiryModal.classList.contains('open')) closeInquiry(); });
 
 typeRadios.forEach(r => {
   r.addEventListener('change', () => setRentalVisible(r.value === 'השכרת חלל' && r.checked));
 });
 
-// AJAX submit to FormSubmit — free email delivery, keeps the visitor on the page
+/* ---------- inquiry submit → FormSubmit + booking + reservation ---------- */
 const FORM_ENDPOINT = 'https://formsubmit.co/ajax/vivian.office.info@gmail.com';
 
 inquiryForm.addEventListener('submit', (e) => {
   e.preventDefault();
-  // a locked day cannot be requested
   if (!rentalFields.hidden && availability && dateInput.value && availability.locked.includes(dateInput.value)) {
-    formStatus.className = 'form-status mono err';
+    formStatus.className = 'form-status err';
     formStatus.textContent = 'התאריך שנבחר נעול — בחרו תאריך אחר.';
     return;
   }
   const submitBtn = inquiryForm.querySelector('.modal-submit');
-  formStatus.className = 'form-status mono';
+  formStatus.className = 'form-status';
   formStatus.textContent = 'שולח…';
   submitBtn.disabled = true;
 
   const payload = Object.fromEntries(new FormData(inquiryForm).entries());
   const isRental = !rentalFields.hidden;
 
-  // rental requests must be signed
   if (isRental && !sigDrawn) {
     document.getElementById('sigStatus').textContent = 'נדרשת חתימה — ציירו את חתימתכם במסגרת.';
     document.getElementById('sigStatus').className = 'avail-status err';
@@ -593,9 +423,7 @@ inquiryForm.addEventListener('submit', (e) => {
 
   (async () => {
     let contractUrl = 'https://tutlavi.com/contract';
-
     if (isRental) {
-      // store the signed contract; both emails link to it
       const bid = await createBooking(payload);
       if (bid) {
         contractUrl = 'https://tutlavi.com/contract?bid=' + bid;
@@ -627,7 +455,7 @@ inquiryForm.addEventListener('submit', (e) => {
     if (String(data.success) !== 'true') throw new Error(data.message || 'failed');
 
     const reserved = await reserveWindow();
-    formStatus.className = 'form-status mono ok';
+    formStatus.className = 'form-status ok';
     formStatus.textContent = reserved === 'taken'
       ? 'הפנייה נשלחה! שימו לב: החלון בדיוק נתפס על ידי מישהו אחר — נחזור אליכם לתיאום.'
       : (isRental
@@ -639,11 +467,40 @@ inquiryForm.addEventListener('submit', (e) => {
     availChips.innerHTML = '';
     document.getElementById('costLine').hidden = true;
     setRentalVisible(false);
-    loadAvailability(true); // refresh so the taken slot shows as booked
+    loadAvailability(true);
   })()
     .catch(() => {
-      formStatus.className = 'form-status mono err';
+      formStatus.className = 'form-status err';
       formStatus.textContent = 'משהו השתבש. נסו שוב או כתבו ל-vivian.office.info@gmail.com';
     })
     .finally(() => { submitBtn.disabled = false; });
+});
+
+/* ---------- on-page contact form → FormSubmit ---------- */
+const contactForm = document.getElementById('contactForm');
+const cfStatus = document.getElementById('cfStatus');
+contactForm?.addEventListener('submit', (e) => {
+  e.preventDefault();
+  const btn = contactForm.querySelector('.btn-send');
+  cfStatus.className = 'cf-status';
+  cfStatus.textContent = 'שולח…';
+  btn.disabled = true;
+  const payload = Object.fromEntries(new FormData(contactForm).entries());
+  fetch(FORM_ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    body: JSON.stringify(payload),
+  })
+    .then(r => r.json())
+    .then(data => {
+      if (String(data.success) !== 'true') throw new Error();
+      cfStatus.className = 'cf-status ok';
+      cfStatus.textContent = 'תודה! ההודעה נשלחה, נחזור אליכם בהקדם.';
+      contactForm.reset();
+    })
+    .catch(() => {
+      cfStatus.className = 'cf-status err';
+      cfStatus.textContent = 'משהו השתבש. נסו שוב או כתבו ל-vivian.office.info@gmail.com';
+    })
+    .finally(() => { btn.disabled = false; });
 });
