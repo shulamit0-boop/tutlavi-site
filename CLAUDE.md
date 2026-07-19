@@ -4,11 +4,20 @@
 כל התוכן והתקשורת עם המשתמשת — **בעברית**.
 
 ## איפה הכל חי
-- **דומיין:** https://tutlavi.com (נרכש ב-Porkbun; DNS: רשומת A ל-75.2.60.5 + CNAME ל-www)
-- **אחסון:** Netlify, פרויקט `fabulous-mermaid-3bfcce` (בעלים: shulamit hecht / חשבון `sh-ikwcac4`)
-- **קוד:** GitHub `shulamit0-boop/tutlavi-site` (repo **ציבורי** — נדרש כדי ש-deploy יעבוד בתוכנית החינמית)
-- **סנכרון אוטומטי:** git push ל-`main` → Netlify מפרסם תוך ~20-40 שניות. אין צורך בהעלאה ידנית.
-- **תיקיית העבודה המקומית:** `C:\Users\PC\Desktop\Claude\ויויאן\tutlavi-landing` (התיקייה הוזזה פעם אחת מ-`Desktop\ויויאן`)
+- **דומיין:** https://tutlavi.com (נרכש ב-Porkbun; DNS: רשומת A ל-**216.198.79.1** = Vercel)
+- **אחסון:** **Vercel**, פרויקט `tutlavi-site` (חשבון `shulamit0-boop`, תוכנית Hobby)
+- **אחסון נתונים:** **Upstash Redis** דרך Vercel Marketplace (`upstash-kv-cerulean-flask`). משתני הסביבה `KV_REST_API_URL` + `KV_REST_API_TOKEN` מוזרקים אוטומטית.
+- **קוד:** GitHub `shulamit0-boop/tutlavi-site` (repo ציבורי)
+- **סנכרון אוטומטי:** git push ל-`main` → Vercel מפרסם תוך ~40 שניות.
+- **תיקיית העבודה המקומית:** `C:\Users\PC\Desktop\Claude\vivian\tutlavi-landing`
+
+### היסטוריית אחסון (חשוב)
+האתר **הועבר מ-Netlify ל-Vercel ביולי 2026**, אחרי שהקרדיטים של Netlify נגמרו ופרסומי הפרודקשן הושהו.
+- אתר Netlify הישן (`fabulous-mermaid-3bfcce`) עדיין קיים אבל **לא בשימוש** — אפשר למחוק.
+- `netlify/functions/` ו-`netlify.toml` נשארו בקוד כגיבוי היסטורי בלבד; **הפונקציות הפעילות הן ב-`api/`**.
+- `www.tutlavi.com` עדיין מפנה (CNAME) ל-Netlify — לתקן או למחוק.
+- רשומות `_acme-challenge` ב-DNS הן שאריות SSL של Netlify — אפשר למחוק.
+- ⛔ **אסור למחוק** ב-Porkbun את רשומות ה-**MX** ו-**TXT (SPF)** — הן המייל של הדומיין.
 
 ## תהליך עבודה (חשוב)
 1. עורכים קבצים מקומית → `git add -A && git commit && git push`
@@ -16,30 +25,51 @@
 3. השרת המקומי (`npx serve`) לא נחוץ — עדיף לאמת ישירות על האתר החי
 
 ## מבנה הקבצים
-- `index.html` — עמוד ראשי, one-pager עם מנוע סליידים (גלילה = מעברי clip-path בסגנון linousoumpasis.gr)
+- `index.html` — עמוד ראשי, דף גלילה רגיל (ראה "עיצוב" למטה)
 - `styles.css` — כל העיצוב
-- `script.js` — מנוע הסליידים, יומן הזמינות בטופס, חתימה, שליחה
+- `script.js` — אינטראקציות הדף + יומן הזמינות בטופס, חתימה, שליחה
 - `contract.html` — עמוד חוזה השכרה (מתמלא אוטומטית מפרמטרים / מ-booking id)
-- `admin.html` — ניהול יומן (מוגן במפתח) → `tutlavi.com/admin`
-- `v2.html` — **ניסוי עיצובי חלופי** (שפת פוסטר/פסטיבל, פונט Caravan). לא מקושר מהאתר הראשי; רק לבדיקה ב-`tutlavi.com/v2.html`. לא למחוק.
-- `netlify/functions/availability.mjs` → `/api/availability` (יומן: חלונות פתוחים, ימים נעולים, שריון)
-- `netlify/functions/booking.mjs` → `/api/booking` (יצירת חוזה חתום, חתימת סטודיו)
-- `netlify.toml` — redirects ל-/admin ו-/contract; הגדרת functions
-- `fonts/` — כל הפונטים המקומיים (OTF)
+- `admin.html` — ניהול יומן (מוגן ב-`ADMIN_KEY`) → `tutlavi.com/admin`
+- `v2.html` — **ניסוי עיצובי חלופי** (שפת פוסטר/פסטיבל, פונט Caravan). לא מקושר מהאתר הראשי. לא למחוק.
+- **`api/availability.mjs`** → `/api/availability` (יומן: חלונות פתוחים, ימים נעולים, שריון)
+- **`api/booking.mjs`** → `/api/booking` (יצירת חוזה חתום, חתימת סטודיו)
+- **`api/_store.mjs`** — מתאם KV מול Upstash Redis REST (החליף את Netlify Blobs)
+- `vercel.json` — rewrites ל-`/admin` ו-`/contract` (חיוני: שומר את `?bid=` בקישור לחוזה)
+- `fonts/` — פונטים עבריים (OTF). **לא בשימוש בעיצוב הנוכחי** — נשארו למקרה חזרה.
+- `netlify/`, `netlify.toml` — היסטורי בלבד, לא פעיל.
 
-## טיפוגרפיה (3 שכבות)
-- **Anomalia** — מיתוג וכותרות (לוגו "תות", כותרות סקשנים, ויויאן, פוטר, מודאל)
-- **Almoni Tzar** — כל הטקסט הרץ (Light 300, הדגשות DemiBold 600). פונט צר.
-- **Index Mono** — תוויות טכניות (תאריכים, אינדקסים 01/02, טיקר, כיתובי-פילם, מונה סליידים)
-- Frank Re מותקן כגיבוי בלבד (ניסינו, הוחלף ל-Almoni Tzar)
+## עיצוב (שוכתב ביולי 2026)
+האתר שוכתב כדי להיות **זהה לעיצוב שנבנה ב-Base44** (עמוד `HomeAlt` של האפליקציה
+`captured-wwwbuildinamsterdamcom-57b80ced`). המשתמשת ביקשה התאמה מלאה, לא "אותה תמה".
+העיצוב הקודם — מנוע סליידים עם מעברי clip-path בסגנון linousoumpasis.gr, ופונטים
+עבריים (Anomalia / Almoni Tzar / Index Mono) — **הוחלף לגמרי**.
 
-## עיצוב
-- רקע לבן `#ffffff`, טקסט `#17140f`, מבטא "אדום תות" `#a91e1c` (נקודתי בלבד)
-- וידאו: טיפול בהיר-רך-מאופק (לא כהה-קולנועי). כל הסרטונים placeholders מוויקישיתוף — **צריך להחליף בצילום אמיתי של הסטודיו**
-- השראה: linousoumpasis.gr (מנגנון הגלילה) + לוח Pinterest "תות" של הילה שייר (בהיר, בשמים/פופ-אפ/אפותקרי)
+**פלטה:** רקע לבן `#ffffff` · טקסט שחור `#000000` · מבטא אדום חי `#ef4444` · אפור מושתק `#545454`
+**טיפוגרפיה:** גופן מערכת גרוטסקי (`system-ui` / Segoe UI) — בדיוק מה ש-Base44 מציג בפועל
+(הוא מגדיר NeueHaasGrotesk אבל הפונט לא באמת נטען, ולכן נופל ל-system-ui). הכותרת
+`TUTLAVI.` ב-Helvetica Neue. כותרות סקשנים במשקל **300 דק** עם נקודה אדומה.
+**פינות:** חדות (radius 0) בכל מקום, למעט עיגולים (כפתורים, אייקונים).
+
+**מבנה הדף (גלילה רגילה, אין יותר סליידים):**
+1. Hero מסך-מלא — תמונת רקע קבועה + `TUTLAVI.` ענק (clamp עד 10rem)
+2. Split — וידאו בחצי + "CREATIVITY CANVAS FOR EVERYTHING WE LOVE" בחצי
+3. `#schedule` — טבלת לו"ז עריכתית על רקע אפרפר `rgba(245,245,247,.5)`
+4. `#about` — סקשן **שחור מוחלט** עם טקסט לבן דק
+5. `#contact` — פרטי קשר + טופס underline + CTA שפותח את מודאל ההשכרה
+6. פוטר רב-טורי · תפריט מלא-מסך (clip-path עיגול) · כפתור עיגול אדום צף "Come play with us"
+
+**תוכן:** התוכן הוא ה**אמיתי** של הסטודיו (אירועים אמיתיים, פרטי קשר אמיתיים) — לא
+ה-placeholders של Base44 (סדנאות קרמיקה דמה, `hello@toot.studio`). לא להחזיר אותם.
+
+**וידאו/תמונות:** מתארחים על `media.base44.com` (hotlink). עדיין placeholders —
+**צריך להחליף בצילום אמיתי של הסטודיו.**
+
+**הערה:** `.reveal` מוסתר רק תחת `html.js` (ה-JS מוסיף את המחלקה), כדי ששבירת JS לא
+תשאיר את הדף ריק. ל-`body` יש `overflow-x:clip` ולא `hidden` — `hidden` הופך את ה-body
+ל-scroll container ושובר את גלילת החלון, את ה-IntersectionObserver ואת הניווט לעוגנים.
 
 ## מערכת השכרת חלל (הפיצ'ר המרכזי)
-**ניהול — `tutlavi.com/admin`** (מפתח: משתנה סביבה `ADMIN_KEY` ב-Netlify; המשתמשת מכירה אותו):
+**ניהול — `tutlavi.com/admin`** (מפתח: משתנה סביבה `ADMIN_KEY` ב-**Vercel**; המשתמשת מכירה אותו):
 - לוח חודשי; לחיצה על יום → נעילת יום או פתיחת חלונות (שעות + **מחיר ₪** + הערה)
 - סימון חלון כתפוס/פנוי, מחיקה. שמירה אוטומטית.
 
@@ -52,14 +82,23 @@
 
 **חתימת הסטודיו:** המשתמשת פותחת את קישור החוזה מהמייל → כפתור "חתימת סטודיו תות" (דורש מפתח ניהול) → חותמת "אושר ונחתם".
 
-**נתונים:** Netlify Blobs, store בשם `tutlavi-booking`.
+**נתונים:** **Upstash Redis** (דרך Vercel). מפתחות: `availability` ליומן, ו-`booking:<id>` לכל חוזה חתום.
 
 ## מיילים
 - טופס יוצר קשר → **FormSubmit** (חינם) → `vivian.office.info@gmail.com`. הופעל (activation אושר). התראות מייל של Netlify עצמו הן בתשלום — לכן FormSubmit.
 - תשלום השכרה: **העברה בנקאית** (פרטי חשבון נשלחים ידנית עם אישור; אפשר להוסיף אותם אוטומטית למייל אם המשתמשת תיתן בנק/סניף/חשבון/מוטב)
 
 ## פתוח / TODO
+### ניקוי אחרי המעבר ל-Vercel
+- `www.tutlavi.com` — רשומת CNAME ב-Porkbun עדיין מצביעה ל-Netlify. להוסיף את www ב-Vercel כהפניה ל-apex, ולעדכן/למחוק את ה-CNAME.
+- למחוק ב-Porkbun את שתי רשומות ה-TXT `_acme-challenge` (שאריות SSL של Netlify). **לא לגעת ב-MX/SPF.**
+- למחוק את אתר Netlify הישן `fabulous-mermaid-3bfcce` אחרי תקופת חסד.
+- ב-Upstash יש רשומת בדיקה `booking:mrqtz3rf41jxcjzu` בשם "בדיקת מערכת" — אפשר למחוק.
+- לשקול להסיר את `netlify/`, `netlify.toml` ואת התלות `@netlify/blobs` מ-`package.json`.
+
+### תוכן ועיצוב
 - להחליף וידאו placeholder בצילום אמיתי של הסטודיו/הבר (השג מ-Pexels/Coverr או צילום עצמי)
+- המדיה מתארחת על `media.base44.com` (hotlink) — עדיף להעלות עצמאית כדי לא להיות תלויים בשירות חיצוני
 - אימייל ואינסטגרם בפוטר אמיתיים ✓ (vivian.office.info@gmail.com, instagram.com/studio16_tlv)
 - נוסח החוזה: כרגע שלד סטנדרטי עם הפרטים הנכונים (סטודיו תות, מגן אברהם 6, העברה בנקאית, בלי עמדת איפור). המשתמשת אישרה "החוזה מצוין כמו שהוא". חילוץ מ-PDF מקורי נתקע — אם צריך דיוק, להעתיק-הדביק טקסט.
 - דומיין totlavi.com (LiveDNS) — נרכש בטעות, לא בשימוש, יפוג לבד ב-2027
