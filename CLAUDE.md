@@ -34,6 +34,7 @@
 - **`api/availability.mjs`** → `/api/availability` (יומן: חלונות פתוחים, ימים נעולים, שריון)
 - **`api/booking.mjs`** → `/api/booking` (יצירת חוזה חתום, חתימת סטודיו)
 - **`api/content.mjs`** → `/api/content` (תוכן האתר הנערך: GET ציבורי, PUT עם `x-admin-key`)
+- **`api/upload.mjs`** → `/api/upload` (העלאת מדיה ל-**Vercel Blob** בזרימת client-upload של `@vercel/blob`; דורש `BLOB_READ_WRITE_TOKEN`)
 - **`api/_store.mjs`** — מתאם KV מול Upstash Redis REST (החליף את Netlify Blobs)
 - `vercel.json` — rewrites ל-`/admin` ו-`/contract` (חיוני: שומר את `?bid=` בקישור לחוזה)
 - `fonts/` — פונטים עבריים (OTF). **לא בשימוש בעיצוב הנוכחי** — נשארו למקרה חזרה.
@@ -90,6 +91,8 @@
 - **איך זה עובד:** אלמנטים ב-`index.html` מסומנים `data-edit="key"` (ו-`data-dot` אם צריך להוסיף נקודה אדומה בסוף). `script.js` מושך `/api/content` בטעינה ומחליף טקסטים; שדה ריק/חסר = הטקסט המקורי שב-HTML נשאר. קישורי מייל/טלפון/אינסטגרם מטופלים ייעודית (`data-email`/`data-phone`/`data-insta` — מעדכן גם href וגם טקסט, בכל המופעים כולל פוטר).
 - **אירועי הלו"ז:** נשמרים כ-array. `events: null` = ברירות המחדל שב-HTML; `events: []` = הסתרת סקשן הלו"ז כולו; אחרת הרשימה מוזרקת ל-`#schedList` ומעדכנת את המונה. שדה `hot` = הדגשה אדומה (נקודה + סטטוס).
 - **בפאנל:** השדות מגיעים ממולאים בברירות המחדל (מוגדרות פעמיים — ב-`FIELDS`/`DEFAULT_EVENTS` ב-admin.html וב-HTML עצמו; אם משנים טקסט ב-index.html לעדכן גם שם). שמירה אוטומטית (debounce) עם אותו מפתח ניהול.
+- **מדיה (תמונת Hero + וידאו הסקשן):** קבוצת "מדיה" בטאב התוכן מעלה קבצים ל-**Vercel Blob** ישירות מהדפדפן (עוקף את מגבלת 4.5MB של פונקציות; multipart מעל 8MB). ה-URL נשמר ב-`content.texts.heroImage` / `content.texts.splitVideo`; script.js מחיל אותם (הרקע שומר על הגרדיאנט; טעינת הווידאו נדחית עד תשובת `/api/content` כדי לא להוריד וידאו כפול). קובץ שהוחלף נמחק מה-Blob. הקוד בצד הלקוח נטען כמודול מ-esm.sh.
+  ⚠️ **דרוש חד-פעמית:** יצירת Blob Store ב-Vercel (Storage → Create → Blob, לחבר לפרויקט `tutlavi-site`) — עד אז `/api/upload` מחזיר 503 והפאנל מציג הודעה מתאימה.
 
 ## מיילים
 - טופס יוצר קשר → **FormSubmit** (חינם) → `vivian.office.info@gmail.com`. הופעל (activation אושר). התראות מייל של Netlify עצמו הן בתשלום — לכן FormSubmit.

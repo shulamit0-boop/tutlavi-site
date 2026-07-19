@@ -107,6 +107,11 @@ button.danger{ background:var(--accent); border-color:var(--accent); }
 .cfield textarea{ resize:vertical; min-height:4.2em; }
 .cfield .note{ color:var(--soft); font-size:.8rem; margin-top:.3rem; }
 
+.media-row{ display:flex; align-items:center; gap:1.1rem; flex-wrap:wrap; }
+.media-thumb{ width:150px; height:95px; object-fit:cover; border:1px solid var(--line); background:#f6f5f3; flex:none; }
+.media-side .ghost{ margin-bottom:.45rem; }
+.media-status{ min-height:1.2em; font-weight:600; }
+
 .ev-card{ border:1px solid var(--line); padding:1rem; margin-bottom:.9rem; }
 .ev-grid{ display:grid; grid-template-columns:130px 1fr 1fr; gap:.8rem; margin-bottom:.7rem; }
 .ev-grid label, .ev-actions > label{ display:block; font-size:.8rem; font-weight:600; color:var(--soft); }
@@ -182,6 +187,35 @@ button.danger{ background:var(--accent); border-color:var(--accent); }
   <!-- ============ TAB: SITE CONTENT ============ -->
   <div id="tabContent" hidden>
     <div id="contentFields"></div>
+
+    <div class="cgroup">
+      <h2>מדיה — תמונה ווידאו</h2>
+      <div class="cfield">
+        <label>תמונת הרקע של הפתיחה</label>
+        <div class="media-row">
+          <img id="heroPreview" class="media-thumb" alt="תצוגה מקדימה של תמונת הפתיחה">
+          <div class="media-side">
+            <button id="heroBtn" class="ghost">החלפת התמונה…</button>
+            <p class="note" id="heroCur"></p>
+            <p class="note media-status" id="heroStatus"></p>
+          </div>
+          <input type="file" id="heroFile" accept="image/*" hidden>
+        </div>
+      </div>
+      <div class="cfield">
+        <label>הווידאו שליד המשפט הגדול</label>
+        <div class="media-row">
+          <video id="videoPreview" class="media-thumb" muted playsinline loop autoplay></video>
+          <div class="media-side">
+            <button id="videoBtn" class="ghost">החלפת הווידאו…</button>
+            <p class="note" id="videoCur"></p>
+            <p class="note media-status" id="videoStatus"></p>
+          </div>
+          <input type="file" id="videoFile" accept="video/mp4,video/quicktime,video/webm" hidden>
+        </div>
+      </div>
+      <p class="hint">תמונה עד 20MB, וידאו עד 300MB. ההעלאה נשמרת אוטומטית ומופיעה באתר תוך שניות.</p>
+    </div>
 
     <div class="cgroup">
       <h2>אירועי הלו"ז</h2>
@@ -375,6 +409,7 @@ async function loadContent() {
   if (!Array.isArray(content.events)) content.events = DEFAULT_EVENTS.map(e => ({ ...e }));
   renderContentForm();
   renderEvents();
+  window.renderMediaUI?.();
 }
 
 function queueContentSave() {
@@ -535,6 +570,85 @@ function start() {
 }
 
 if (key()) start();
+</script>
+
+<script type="module">
+/* Media uploads via Vercel Blob direct client upload. Kept in a module so a
+   CDN failure here can never break the rest of the panel. Reads the shared
+   globals (content / queueContentSave / key) from the main script. */
+import { upload } from 'https://esm.sh/@vercel/blob@0.27.3/client';
+
+const DEFAULT_HERO = 'https://media.base44.com/images/public/6a5644595cc0504757b80ced/9217f0cc4_WhatsAppImage2026-07-15at132637.jpg';
+const DEFAULT_VIDEO = '/media/studio.mp4';
+
+window.renderMediaUI = () => {
+  const t = content.texts || {};
+  const heroUrl = typeof t.heroImage === 'string' && t.heroImage.trim() ? t.heroImage.trim() : '';
+  const vidUrl = typeof t.splitVideo === 'string' && t.splitVideo.trim() ? t.splitVideo.trim() : '';
+  const img = document.getElementById('heroPreview');
+  if (img.getAttribute('src') !== (heroUrl || DEFAULT_HERO)) img.src = heroUrl || DEFAULT_HERO;
+  document.getElementById('heroCur').textContent = heroUrl ? 'תמונה שהעליתם' : 'תמונת ברירת המחדל';
+  const vid = document.getElementById('videoPreview');
+  if (vid.getAttribute('src') !== (vidUrl || DEFAULT_VIDEO)) vid.src = vidUrl || DEFAULT_VIDEO;
+  document.getElementById('videoCur').textContent = vidUrl ? 'וידאו שהעליתם' : 'הווידאו הנוכחי';
+};
+
+const MEDIA = [
+  { key: 'heroImage', file: 'heroFile', btn: 'heroBtn', status: 'heroStatus', isVideo: false, prefix: 'media/hero', max: 20 * 1024 * 1024, maxLabel: '20MB' },
+  { key: 'splitVideo', file: 'videoFile', btn: 'videoBtn', status: 'videoStatus', isVideo: true, prefix: 'media/video', max: 300 * 1024 * 1024, maxLabel: '300MB' },
+];
+
+MEDIA.forEach((m) => {
+  const btn = document.getElementById(m.btn);
+  const fileInput = document.getElementById(m.file);
+  const status = document.getElementById(m.status);
+  btn.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', async () => {
+    const f = fileInput.files[0];
+    fileInput.value = '';
+    if (!f) return;
+    if (m.isVideo ? !f.type.startsWith('video/') : !f.type.startsWith('image/')) {
+      status.textContent = 'סוג הקובץ לא מתאים'; return;
+    }
+    if (f.size > m.max) { status.textContent = 'הקובץ גדול מדי (עד ' + m.maxLabel + ')'; return; }
+    btn.disabled = true;
+    status.textContent = 'מעלה… 0%';
+    try {
+      const ext = ((f.name.split('.').pop() || '').toLowerCase().replace(/[^a-z0-9]/g, '')) ||
+        (m.isVideo ? 'mp4' : 'jpg');
+      const blob = await upload(m.prefix + '-' + Date.now() + '.' + ext, f, {
+        access: 'public',
+        handleUploadUrl: '/api/upload',
+        clientPayload: JSON.stringify({ adminKey: key() }),
+        multipart: f.size > 8 * 1024 * 1024,
+        onUploadProgress: (p) => { status.textContent = 'מעלה… ' + Math.round(p.percentage) + '%'; },
+      });
+      const old = content.texts[m.key];
+      content.texts[m.key] = blob.url;
+      queueContentSave();
+      if (old && /\.blob\.vercel-storage\.com\//.test(old)) {
+        fetch('/api/upload', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'x-admin-key': key() },
+          body: JSON.stringify({ type: 'delete', url: old }),
+        }).catch(() => {});
+      }
+      status.textContent = '✓ הועלה ונשמר — רעננו את האתר לצפייה';
+      renderMediaUI();
+    } catch (err) {
+      const msg = String((err && err.message) || err);
+      status.textContent = /unauthorized/i.test(msg)
+        ? 'שגיאת הרשאה — צאו והתחברו מחדש'
+        : /not configured|503/i.test(msg)
+          ? 'אחסון המדיה עדיין לא הופעל ב-Vercel — צרו Blob Store בלוח הבקרה'
+          : 'שגיאה בהעלאה: ' + msg;
+    } finally {
+      btn.disabled = false;
+    }
+  });
+});
+
+renderMediaUI();
 </script>
 </body>
 </html>

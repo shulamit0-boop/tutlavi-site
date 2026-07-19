@@ -8,19 +8,31 @@ document.documentElement.classList.add('js');
 
 const STUDIO_VIDEO = '/media/studio.mp4';
 
-/* ---------- videos: inject source + autoplay ---------- */
-document.querySelectorAll('video').forEach(video => {
-  const src = video.dataset.videoSrc || STUDIO_VIDEO;
-  const source = video.querySelector('source');
-  if (source) { source.setAttribute('src', src); source.setAttribute('type', 'video/mp4'); }
-  else { video.setAttribute('src', src); }
-  video.muted = true;
-  video.setAttribute('playsinline', 'true');
-  video.setAttribute('loop', 'true');
-  video.setAttribute('autoplay', 'true');
-  video.load();
-  video.play().catch(() => {});
-});
+/* ---------- videos: inject source + autoplay ----------
+   Initialized after /api/content resolves (or after a short timeout) so a
+   custom uploaded video doesn't cause the default one to download too. */
+let videosInited = false;
+function initVideos(overrideSrc) {
+  videosInited = true;
+  document.querySelectorAll('video').forEach(video => {
+    const src = overrideSrc || video.dataset.videoSrc || STUDIO_VIDEO;
+    const source = video.querySelector('source');
+    if (source) {
+      if (source.getAttribute('src') === src) return;
+      source.setAttribute('src', src); source.setAttribute('type', 'video/mp4');
+    } else {
+      if (video.getAttribute('src') === src) return;
+      video.setAttribute('src', src);
+    }
+    video.muted = true;
+    video.setAttribute('playsinline', 'true');
+    video.setAttribute('loop', 'true');
+    video.setAttribute('autoplay', 'true');
+    video.load();
+    video.play().catch(() => {});
+  });
+}
+setTimeout(() => { if (!videosInited) initVideos(null); }, 2500);
 
 /* ---------- editable site content (managed at /admin → "תוכן האתר") ----------
    Overrides stored in KV under the `content` key. Empty/missing value = the
@@ -29,8 +41,13 @@ const escHtml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>
 
 fetch('/api/content')
   .then(r => (r.ok ? r.json() : null))
-  .then(applySiteContent)
-  .catch(() => {});
+  .catch(() => null)
+  .then(c => {
+    try { applySiteContent(c); } catch { /* never break the page */ }
+    const t = (c && c.texts) || {};
+    const vid = typeof t.splitVideo === 'string' && t.splitVideo.trim() ? t.splitVideo.trim() : null;
+    if (!videosInited || vid) initVideos(vid);
+  });
 
 function applySiteContent(c) {
   if (!c) return;
@@ -68,6 +85,13 @@ function applySiteContent(c) {
       a.href = 'https://www.instagram.com/' + handle;
       (a.querySelector('span[dir]') || a).textContent = '@' + handle;
     });
+  }
+  if (has('heroImage')) {
+    const bg = document.querySelector('.hero-bg');
+    if (bg) {
+      bg.style.backgroundImage =
+        'linear-gradient(rgba(255,255,255,.12), rgba(255,255,255,.28)), url("' + t.heroImage.trim() + '")';
+    }
   }
   if (has('footerStudio')) {
     const col = document.getElementById('footerStudioCol');
