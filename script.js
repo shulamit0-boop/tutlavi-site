@@ -22,6 +22,91 @@ document.querySelectorAll('video').forEach(video => {
   video.play().catch(() => {});
 });
 
+/* ---------- editable site content (managed at /admin → "תוכן האתר") ----------
+   Overrides stored in KV under the `content` key. Empty/missing value = the
+   built-in text in this HTML stays as-is. events: null = defaults, [] = hide. */
+const escHtml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+fetch('/api/content')
+  .then(r => (r.ok ? r.json() : null))
+  .then(applySiteContent)
+  .catch(() => {});
+
+function applySiteContent(c) {
+  if (!c) return;
+  const t = c.texts || {};
+  const has = (k) => typeof t[k] === 'string' && t[k].trim() !== '';
+
+  document.querySelectorAll('[data-edit]').forEach(el => {
+    const k = el.dataset.edit;
+    if (!has(k)) return;
+    el.innerHTML = escHtml(t[k].trim()).replace(/\n/g, '<br>') +
+      (el.hasAttribute('data-dot') ? '<span class="dot">.</span>' : '');
+  });
+
+  if (has('contactEmail')) {
+    const email = t.contactEmail.trim();
+    document.querySelectorAll('a[data-email]').forEach(a => {
+      a.href = 'mailto:' + email;
+      (a.querySelector('span[dir]') || a).textContent = email;
+    });
+  }
+  if (has('contactPhone')) {
+    const phone = t.contactPhone.trim();
+    const digits = phone.replace(/[^\d+]/g, '');
+    document.querySelectorAll('a[data-phone]').forEach(a => {
+      a.href = 'tel:' + (digits.startsWith('0') ? '+972' + digits.slice(1) : digits);
+      (a.querySelector('span[dir]') || a).textContent = phone;
+    });
+  }
+  if (has('contactInstagram')) {
+    const handle = t.contactInstagram.trim()
+      .replace(/^https?:\/\/(www\.)?instagram\.com\//, '')
+      .replace(/^@/, '')
+      .replace(/\/+$/, '');
+    document.querySelectorAll('a[data-insta]').forEach(a => {
+      a.href = 'https://www.instagram.com/' + handle;
+      (a.querySelector('span[dir]') || a).textContent = '@' + handle;
+    });
+  }
+  if (has('footerStudio')) {
+    const col = document.getElementById('footerStudioCol');
+    if (col) {
+      col.querySelectorAll('.footer-static').forEach(s => s.remove());
+      t.footerStudio.split('\n').map(l => l.trim()).filter(Boolean).forEach(line => {
+        const s = document.createElement('span');
+        s.className = 'footer-static';
+        s.textContent = line;
+        col.appendChild(s);
+      });
+    }
+  }
+
+  if (Array.isArray(c.events)) {
+    const section = document.getElementById('schedule');
+    const list = document.getElementById('schedList');
+    if (!c.events.length) {
+      if (section) section.style.display = 'none';
+    } else if (list) {
+      list.innerHTML = c.events.map(ev => {
+        const hot = ev.hot ? ' on' : '';
+        return '<li class="sched-row reveal in-view">' +
+          '<span class="sched-flag' + hot + '"></span>' +
+          '<span class="sched-date" dir="ltr">' + escHtml(ev.date || '') + '</span>' +
+          '<span class="sched-main">' +
+            '<span class="sched-name">' + escHtml(ev.name || '') + '</span>' +
+            (ev.desc ? '<span class="sched-desc">' + escHtml(ev.desc) + '</span>' : '') +
+          '</span>' +
+          '<span class="sched-cat">' + escHtml(ev.cat || '') + '</span>' +
+          '<span class="sched-status' + hot + '">' + escHtml(ev.status || '') + '</span>' +
+        '</li>';
+      }).join('');
+      const count = document.getElementById('schedCount');
+      if (count) count.textContent = c.events.length === 1 ? 'אירוע קרוב אחד' : c.events.length + ' אירועים קרובים';
+    }
+  }
+}
+
 /* ---------- scroll reveal ---------- */
 const revealEls = [...document.querySelectorAll('.reveal')];
 const showReveal = (el) => el.classList.add('in-view');

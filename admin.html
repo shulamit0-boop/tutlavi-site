@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ניהול יומן — סטודיו תות</title>
+<title>ניהול האתר — סטודיו תות</title>
 <meta name="robots" content="noindex, nofollow">
 <style>
 @font-face{ font-family:'Anomalia'; src:url('fonts/anomalia-demibold-aaa.otf') format('opentype'); font-weight:600; }
@@ -42,13 +42,20 @@ button.ghost:hover{ color:var(--accent); border-color:var(--accent); background:
 button.danger{ background:var(--accent); border-color:var(--accent); }
 #loginErr{ color:var(--accent); min-height:1.4em; font-size:.9rem; }
 
-/* app bar */
-.bar{ display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1.4rem; flex-wrap:wrap; }
-.month-nav{ display:flex; align-items:center; gap:.8rem; }
-.month-nav b{ font-family:'Anomalia'; font-weight:600; font-size:1.2rem; min-width:150px; text-align:center; }
-#saveState{ color:var(--soft); font-size:.85rem; min-width:110px; }
+/* app bar + tabs */
+.bar{ display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1.6rem; flex-wrap:wrap; }
+.tabs{ display:flex; border:1px solid var(--ink); }
+.tabs button{ background:none; color:var(--ink); border:none; padding:.6rem 1.4rem; }
+.tabs button.active{ background:var(--ink); color:#fff; }
+.tabs button:hover{ background:var(--accent); color:#fff; }
+.bar-side{ display:flex; align-items:center; gap:1rem; }
+.bar-side a{ color:var(--soft); font-size:.9rem; text-decoration:none; }
+.bar-side a:hover{ color:var(--accent); }
+#saveState{ color:var(--soft); font-size:.85rem; min-width:90px; text-align:left; }
 #saveState.saving{ color:var(--accent); }
 #saveState.saved{ color:var(--open); }
+.month-nav{ display:flex; align-items:center; gap:.8rem; margin-bottom:1.2rem; }
+.month-nav b{ font-family:'Anomalia'; font-weight:600; font-size:1.2rem; min-width:150px; text-align:center; }
 
 /* calendar */
 .cal{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:2rem; }
@@ -87,13 +94,37 @@ button.danger{ background:var(--accent); border-color:var(--accent); }
 .dotg,.dotr{ display:inline-block; width:10px; height:10px; margin-inline-start:.3rem; }
 .dotg{ background:var(--openbg); border:1px solid var(--open); }
 .dotr{ background:var(--lockbg); border:1px solid var(--accent); }
+
+/* content editor */
+.cgroup{ border:1px solid var(--line); padding:1.4rem; margin-bottom:1.6rem; }
+.cgroup > h2{ font-family:'Anomalia'; font-weight:600; font-size:1.15rem; margin-bottom:1.1rem; }
+.cfield{ margin-bottom:1.1rem; }
+.cfield:last-child{ margin-bottom:0; }
+.cfield > label{ display:block; font-weight:600; font-size:.92rem; margin-bottom:.35rem; }
+.cfield input, .cfield textarea{
+  width:100%; border:1px solid var(--line); padding:.6rem .8rem; font:inherit; background:#fff;
+}
+.cfield textarea{ resize:vertical; min-height:4.2em; }
+.cfield .note{ color:var(--soft); font-size:.8rem; margin-top:.3rem; }
+
+.ev-card{ border:1px solid var(--line); padding:1rem; margin-bottom:.9rem; }
+.ev-grid{ display:grid; grid-template-columns:130px 1fr 1fr; gap:.8rem; margin-bottom:.7rem; }
+.ev-grid label, .ev-actions > label{ display:block; font-size:.8rem; font-weight:600; color:var(--soft); }
+.ev-grid input{ width:100%; border:1px solid var(--line); padding:.45rem .6rem; font:inherit; margin-top:.25rem; }
+.ev-desc-wrap{ grid-column:1 / -1; }
+.ev-actions{ display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; }
+.ev-actions .ev-hot{ display:flex; align-items:center; gap:.4rem; font-size:.88rem; margin-inline-end:auto; cursor:pointer; }
+.ev-actions button{ padding:.3rem .7rem; font-size:.9rem; }
+.ev-actions .del{ color:var(--accent); border-color:var(--accent); background:none; }
+.ev-actions .del:hover{ background:var(--accent); color:#fff; }
+@media (max-width:640px){ .ev-grid{ grid-template-columns:1fr; } }
 #app{ display:none; }
 </style>
 </head>
 <body>
 
 <div id="login">
-  <h1>ניהול יומן · תות</h1>
+  <h1>ניהול האתר · תות</h1>
   <p class="sub">הזנת מפתח ניהול</p>
   <input type="password" id="keyInput" placeholder="מפתח ניהול" autocomplete="current-password">
   <p id="loginErr"></p>
@@ -101,45 +132,69 @@ button.danger{ background:var(--accent); border-color:var(--accent); }
 </div>
 
 <div id="app">
-  <h1>ניהול יומן השכרות</h1>
-  <p class="sub">פתיחת חלונות זמינות ונעילת ימים — מה שתגדירי כאן יוצג למבקרים בטופס ההשכרה.</p>
+  <h1>ניהול האתר</h1>
+  <p class="sub">יומן ההשכרות ותוכן האתר — כל שינוי נשמר אוטומטית ומופיע באתר תוך שניות.</p>
 
   <div class="bar">
+    <div class="tabs">
+      <button id="tabCalBtn" class="active">יומן השכרות</button>
+      <button id="tabContentBtn">תוכן האתר</button>
+    </div>
+    <div class="bar-side">
+      <span id="saveState"></span>
+      <a href="/" target="_blank" rel="noopener">צפייה באתר ↗</a>
+      <button class="ghost" id="logoutBtn">יציאה</button>
+    </div>
+  </div>
+
+  <!-- ============ TAB: CALENDAR ============ -->
+  <div id="tabCal">
     <div class="month-nav">
       <button class="ghost" id="prevM">‹ הקודם</button>
       <b id="monthLabel"></b>
       <button class="ghost" id="nextM">הבא ›</button>
     </div>
-    <span id="saveState"></span>
-    <button class="ghost" id="logoutBtn">יציאה</button>
+
+    <div class="legend">
+      <span>חלון פתוח<span class="dotg"></span></span>
+      <span>יום נעול<span class="dotr"></span></span>
+    </div>
+
+    <div class="cal" id="cal"></div>
+
+    <div class="panel" id="dayPanel" hidden>
+      <h2 id="panelTitle"></h2>
+      <div class="row">
+        <button id="lockBtn"></button>
+      </div>
+      <div class="row">
+        <label>מ־<input type="time" id="wStart" value="18:00"></label>
+        <label>עד <input type="time" id="wEnd" value="23:00"></label>
+        <label>מחיר ₪<input type="number" id="wPrice" min="0" step="50" placeholder="0" style="width:90px"></label>
+        <input type="text" id="wNote" placeholder="הערה (לא חובה)" size="18">
+        <button id="addWin">+ פתיחת חלון</button>
+      </div>
+      <ul class="winlist" id="winList"></ul>
+      <p class="hint">חלון פתוח = טווח שעות שמוצג למבקרים כזמין להשכרה באותו יום. יום נעול לא ניתן לבחירה כלל.</p>
+    </div>
   </div>
 
-  <div class="legend">
-    <span>חלון פתוח<span class="dotg"></span></span>
-    <span>יום נעול<span class="dotr"></span></span>
-  </div>
+  <!-- ============ TAB: SITE CONTENT ============ -->
+  <div id="tabContent" hidden>
+    <div id="contentFields"></div>
 
-  <div class="cal" id="cal"></div>
-
-  <div class="panel" id="dayPanel" hidden>
-    <h2 id="panelTitle"></h2>
-    <div class="row">
-      <button id="lockBtn"></button>
+    <div class="cgroup">
+      <h2>אירועי הלו"ז</h2>
+      <div id="eventsList"></div>
+      <button id="addEvent">+ אירוע חדש</button>
+      <p class="hint">האירועים מוצגים בסדר הזה בטבלת הלו"ז באתר. "הדגשה באדום" מסמנת את האירוע בנקודה אדומה וסטטוס אדום.</p>
     </div>
-    <div class="row">
-      <label>מ־<input type="time" id="wStart" value="18:00"></label>
-      <label>עד <input type="time" id="wEnd" value="23:00"></label>
-      <label>מחיר ₪<input type="number" id="wPrice" min="0" step="50" placeholder="0" style="width:90px"></label>
-      <input type="text" id="wNote" placeholder="הערה (לא חובה)" size="18">
-      <button id="addWin">+ פתיחת חלון</button>
-    </div>
-    <ul class="winlist" id="winList"></ul>
-    <p class="hint">חלון פתוח = טווח שעות שמוצג למבקרים כזמין להשכרה באותו יום. יום נעול לא ניתן לבחירה כלל.</p>
   </div>
 </div>
 
 <script>
 const API = '/api/availability';
+const CONTENT_API = '/api/content';
 let data = { locked: [], windows: [] };
 let view = new Date(); view.setDate(1);
 let selected = null;
@@ -153,6 +208,19 @@ const DOW = ['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'];
 
 function key() { return sessionStorage.getItem('tut-admin-key') || ''; }
 
+function setSaveState(txt, cls) { $('saveState').textContent = txt; $('saveState').className = cls; }
+
+/* ================= TABS ================= */
+function showTab(which) {
+  $('tabCal').hidden = which !== 'cal';
+  $('tabContent').hidden = which !== 'content';
+  $('tabCalBtn').classList.toggle('active', which === 'cal');
+  $('tabContentBtn').classList.toggle('active', which === 'content');
+}
+$('tabCalBtn').addEventListener('click', () => showTab('cal'));
+$('tabContentBtn').addEventListener('click', () => showTab('content'));
+
+/* ================= CALENDAR (availability) ================= */
 async function load() {
   const res = await fetch(API);
   data = await res.json();
@@ -160,8 +228,7 @@ async function load() {
 }
 
 function queueSave() {
-  $('saveState').textContent = 'שומר…';
-  $('saveState').className = 'saving';
+  setSaveState('שומר…', 'saving');
   clearTimeout(saveTimer);
   saveTimer = setTimeout(async () => {
     const res = await fetch(API, {
@@ -169,8 +236,8 @@ function queueSave() {
       headers: { 'Content-Type': 'application/json', 'x-admin-key': key() },
       body: JSON.stringify(data),
     });
-    if (res.ok) { $('saveState').textContent = '✓ נשמר'; $('saveState').className = 'saved'; }
-    else { $('saveState').textContent = 'שגיאת שמירה!'; $('saveState').className = 'saving'; }
+    if (res.ok) setSaveState('✓ נשמר', 'saved');
+    else setSaveState('שגיאת שמירה!', 'saving');
   }, 500);
 }
 
@@ -260,8 +327,184 @@ $('addWin').addEventListener('click', () => {
 
 $('prevM').addEventListener('click', () => { view.setMonth(view.getMonth() - 1); render(); });
 $('nextM').addEventListener('click', () => { view.setMonth(view.getMonth() + 1); render(); });
-$('logoutBtn').addEventListener('click', () => { sessionStorage.removeItem('tut-admin-key'); location.reload(); });
 
+/* ================= SITE CONTENT ================= */
+/* Defaults mirror the built-in texts in index.html. An emptied field falls
+   back to the built-in text on the site. */
+const FIELDS = [
+  { sec: 'עמוד ראשי' },
+  { key: 'heroTitle', label: 'כותרת ענק (פתיחת העמוד)', def: 'TUTLAVI', dir: 'ltr' },
+  { key: 'splitHeadline', label: 'המשפט ליד הווידאו (כל שורה = שורה חדשה)', def: 'Creativity\nCanvas\nfor everything\nwe love', multi: true, dir: 'ltr' },
+  { sec: 'לו"ז הסטודיו' },
+  { key: 'schedEyebrow', label: 'שורת התקופה (מעל הכותרת)', def: 'יולי–אוגוסט 2026' },
+  { key: 'schedTitle', label: 'כותרת הסקשן', def: 'לו"ז הסטודיו' },
+  { sec: 'מי אנחנו' },
+  { key: 'aboutTitle', label: 'כותרת', def: 'מי אנחנו' },
+  { key: 'aboutLead', label: 'משפט פתיחה', def: 'תות — tutlavi, מ־"toute la vie" — כל החיים.' },
+  { key: 'aboutBody', label: 'פסקת תיאור', def: 'אוצרות אישית וקפדנית, שותפים שפועלים ממקום אמיתי של עשייה, ואנשי לב שמביאים אנרגיה שתורמת להרמוניה של הסטודיו. מתחם כשר שמאפשר אירוח פרימיום לקהל רחב.', multi: true },
+  { sec: 'צור קשר' },
+  { key: 'contactTitle', label: 'כותרת (כל שורה = שורה חדשה)', def: 'דברו\nאיתנו', multi: true },
+  { key: 'contactEmail', label: 'אימייל', def: 'vivian.office.info@gmail.com', dir: 'ltr', note: 'מתעדכן גם בפוטר' },
+  { key: 'contactPhone', label: 'טלפון', def: '054-312-9933', dir: 'ltr' },
+  { key: 'contactInstagram', label: 'אינסטגרם', def: '@studio16_tlv', dir: 'ltr', note: 'אפשר @שם או קישור מלא — מתעדכן גם בפוטר' },
+  { key: 'contactAddr', label: 'כתובת', def: 'מגן אברהם 6, תל אביב · מתחם כשר' },
+  { sec: 'פוטר (תחתית העמוד)' },
+  { key: 'footerBrand', label: 'משפט על הסטודיו', def: 'מרחב לאירוח, יצירה ואוצרות במרכז תל אביב.' },
+  { key: 'footerStudio', label: 'עמודת "Studio" (כל שורה = פריט)', def: 'שישי בצהריים\nערבי אמצע שבוע\nסדנאות ואירועים\nאירוח פרטי', multi: true },
+  { key: 'footerAddr', label: 'כתובת בפוטר', def: 'מגן אברהם 6, תל אביב' },
+];
+
+const DEFAULT_EVENTS = [
+  { date: '24.07.2026', name: 'אירוע פתיחה — חותכים את הסרט', desc: 'ליין-אפ מוזיקלי · תערוכה מתחלפת · ויויאן · אוניגירי מנטנטן', cat: 'אירוע', status: 'בקרוב', hot: true },
+  { date: '31.07.2026', name: 'ליין שישי — פופ-אפ מקומי', desc: 'ירידים ופופ-אפים של יוצרים מקומיים בצהרי שישי.', cat: 'פופ-אפ', status: 'פתוח', hot: true },
+  { date: '05.08.2026', name: 'ערב קולנוע זר', desc: 'הקרנה נבחרת, בר פתוח והשראה באמצע השבוע.', cat: 'קולנוע', status: 'בקרוב', hot: false },
+  { date: '12.08.2026', name: 'סדנת יין', desc: 'טעימות וטעינה — סדנה אינטימית סביב הבר.', cat: 'סדנה', status: 'פתוח להרשמה', hot: true },
+  { date: '21.08.2026', name: 'השמעה אקוסטית', desc: 'ערב מוזיקה חיה בחלל הסטודיו.', cat: 'מוזיקה', status: 'בקרוב', hot: false },
+];
+
+let content = { texts: {}, events: null };
+let contentTimer = null;
+
+async function loadContent() {
+  try {
+    const res = await fetch(CONTENT_API);
+    const c = await res.json();
+    if (c && typeof c === 'object') content = c;
+  } catch { /* keep empty */ }
+  content.texts = content.texts && typeof content.texts === 'object' ? content.texts : {};
+  if (!Array.isArray(content.events)) content.events = DEFAULT_EVENTS.map(e => ({ ...e }));
+  renderContentForm();
+  renderEvents();
+}
+
+function queueContentSave() {
+  setSaveState('שומר…', 'saving');
+  clearTimeout(contentTimer);
+  contentTimer = setTimeout(async () => {
+    const res = await fetch(CONTENT_API, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': key() },
+      body: JSON.stringify({ texts: content.texts, events: content.events }),
+    });
+    if (res.ok) setSaveState('✓ נשמר', 'saved');
+    else setSaveState('שגיאת שמירה!', 'saving');
+  }, 700);
+}
+
+function renderContentForm() {
+  const wrap = $('contentFields');
+  wrap.innerHTML = '';
+  let group = null;
+  FIELDS.forEach((f) => {
+    if (f.sec) {
+      group = document.createElement('div');
+      group.className = 'cgroup';
+      const h = document.createElement('h2');
+      h.textContent = f.sec;
+      group.appendChild(h);
+      wrap.appendChild(group);
+      return;
+    }
+    const field = document.createElement('div');
+    field.className = 'cfield';
+    const label = document.createElement('label');
+    label.textContent = f.label;
+    field.appendChild(label);
+    const input = document.createElement(f.multi ? 'textarea' : 'input');
+    if (f.dir) input.dir = f.dir;
+    input.value = (typeof content.texts[f.key] === 'string' && content.texts[f.key].trim() !== '')
+      ? content.texts[f.key]
+      : f.def;
+    input.addEventListener('input', () => {
+      content.texts[f.key] = input.value;
+      queueContentSave();
+    });
+    field.appendChild(input);
+    if (f.note) {
+      const n = document.createElement('p');
+      n.className = 'note';
+      n.textContent = f.note;
+      field.appendChild(n);
+    }
+    group.appendChild(field);
+  });
+}
+
+function renderEvents() {
+  const wrap = $('eventsList');
+  wrap.innerHTML = '';
+  content.events.forEach((ev, i) => {
+    const card = document.createElement('div');
+    card.className = 'ev-card';
+
+    const grid = document.createElement('div');
+    grid.className = 'ev-grid';
+    const mk = (labelTxt, prop, dir, full) => {
+      const l = document.createElement('label');
+      if (full) l.className = 'ev-desc-wrap';
+      l.textContent = labelTxt;
+      const inp = document.createElement('input');
+      if (dir) inp.dir = dir;
+      inp.value = ev[prop] || '';
+      inp.addEventListener('input', () => { ev[prop] = inp.value; queueContentSave(); });
+      l.appendChild(inp);
+      grid.appendChild(l);
+    };
+    mk('תאריך', 'date', 'ltr');
+    mk('שם האירוע', 'name');
+    mk('קטגוריה', 'cat');
+    mk('תיאור', 'desc', null, true);
+    mk('סטטוס (למשל: בקרוב / פתוח להרשמה)', 'status', null, true);
+    card.appendChild(grid);
+
+    const actions = document.createElement('div');
+    actions.className = 'ev-actions';
+    const hot = document.createElement('label');
+    hot.className = 'ev-hot';
+    const cb = document.createElement('input');
+    cb.type = 'checkbox';
+    cb.checked = ev.hot === true;
+    cb.addEventListener('change', () => { ev.hot = cb.checked; queueContentSave(); });
+    hot.appendChild(cb);
+    hot.appendChild(document.createTextNode('הדגשה באדום'));
+    actions.appendChild(hot);
+
+    const mkBtn = (txt, title, cls, fn) => {
+      const b = document.createElement('button');
+      b.textContent = txt; b.title = title; b.className = cls;
+      b.addEventListener('click', fn);
+      actions.appendChild(b);
+    };
+    mkBtn('↑', 'הזזה למעלה', 'ghost', () => {
+      if (i === 0) return;
+      [content.events[i - 1], content.events[i]] = [content.events[i], content.events[i - 1]];
+      queueContentSave(); renderEvents();
+    });
+    mkBtn('↓', 'הזזה למטה', 'ghost', () => {
+      if (i === content.events.length - 1) return;
+      [content.events[i + 1], content.events[i]] = [content.events[i], content.events[i + 1]];
+      queueContentSave(); renderEvents();
+    });
+    mkBtn('× מחיקה', 'מחיקת האירוע', 'del', () => {
+      if (!confirm('למחוק את "' + (ev.name || 'האירוע') + '"?')) return;
+      content.events.splice(i, 1);
+      queueContentSave(); renderEvents();
+    });
+    card.appendChild(actions);
+    wrap.appendChild(card);
+  });
+}
+
+$('addEvent').addEventListener('click', () => {
+  content.events.push({ date: '', name: '', desc: '', cat: '', status: 'בקרוב', hot: false });
+  queueContentSave();
+  renderEvents();
+  const cards = $('eventsList').querySelectorAll('.ev-card');
+  cards[cards.length - 1]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+});
+
+/* ================= LOGIN ================= */
+$('logoutBtn').addEventListener('click', () => { sessionStorage.removeItem('tut-admin-key'); location.reload(); });
 $('loginBtn').addEventListener('click', doLogin);
 $('keyInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
 
@@ -288,6 +531,7 @@ function start() {
   $('login').style.display = 'none';
   $('app').style.display = 'block';
   load();
+  loadContent();
 }
 
 if (key()) start();

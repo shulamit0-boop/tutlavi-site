@@ -56,7 +56,7 @@
 <!-- ============ 1 · HERO ============ -->
 <section class="hero" id="hero">
   <div class="hero-bg" aria-hidden="true"></div>
-  <h1 class="hero-title" dir="ltr">TUTLAVI<span class="dot">.</span></h1>
+  <h1 class="hero-title" dir="ltr" data-edit="heroTitle" data-dot>TUTLAVI<span class="dot">.</span></h1>
 </section>
 
 <!-- ============ 2 · SPLIT (video + statement) ============ -->
@@ -66,7 +66,7 @@
     <div class="split-media-fade" aria-hidden="true"></div>
   </div>
   <div class="split-text">
-    <h2 class="split-headline reveal" dir="ltr">
+    <h2 class="split-headline reveal" dir="ltr" data-edit="splitHeadline" data-dot>
       Creativity<br>Canvas<br>for everything<br>we love<span class="dot">.</span>
     </h2>
   </div>
@@ -77,10 +77,10 @@
   <div class="wrap">
     <div class="sched-head reveal">
       <div>
-        <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span>יולי–אוגוסט 2026</p>
-        <h2 class="sched-title">לו"ז הסטודיו<span class="dot">.</span></h2>
+        <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span><span data-edit="schedEyebrow">יולי–אוגוסט 2026</span></p>
+        <h2 class="sched-title" data-edit="schedTitle" data-dot>לו"ז הסטודיו<span class="dot">.</span></h2>
       </div>
-      <span class="sched-count">5 אירועים קרובים</span>
+      <span class="sched-count" id="schedCount">5 אירועים קרובים</span>
     </div>
 
     <div class="sched-cols reveal">
@@ -91,7 +91,7 @@
       <span class="col-status">סטטוס</span>
     </div>
 
-    <ul class="sched-list">
+    <ul class="sched-list" id="schedList">
       <li class="sched-row reveal">
         <span class="sched-flag on"></span>
         <span class="sched-date" dir="ltr">24.07.2026</span>
@@ -150,14 +150,14 @@
 <section class="about" id="about">
   <div class="wrap about-grid">
     <div class="about-left reveal">
-      <p class="eyebrow light"><span class="rule" aria-hidden="true"></span>מי אנחנו</p>
-      <h2 class="about-title">מי אנחנו<span class="dot">.</span></h2>
+      <p class="eyebrow light"><span class="rule" aria-hidden="true"></span><span data-edit="aboutEyebrow">מי אנחנו</span></p>
+      <h2 class="about-title" data-edit="aboutTitle" data-dot>מי אנחנו<span class="dot">.</span></h2>
     </div>
     <div class="about-right reveal">
-      <p class="about-lead">
+      <p class="about-lead" data-edit="aboutLead">
         <strong>תות</strong> — <span dir="ltr">tutlavi</span>, מ־<span dir="ltr">"toute la vie"</span> — כל החיים.
       </p>
-      <p class="about-body">
+      <p class="about-body" data-edit="aboutBody">
         אוצרות אישית וקפדנית, שותפים שפועלים ממקום אמיתי של עשייה, ואנשי לב שמביאים אנרגיה שתורמת
         להרמוניה של הסטודיו. מתחם כשר שמאפשר אירוח פרימיום לקהל רחב.
       </p>
@@ -171,19 +171,19 @@
     <div class="contact-left reveal">
       <div>
         <p class="eyebrow"><span class="rule dark" aria-hidden="true"></span><span dir="ltr">Contact</span></p>
-        <h2 class="contact-title">דברו<br>איתנו<span class="dot">.</span></h2>
+        <h2 class="contact-title" data-edit="contactTitle" data-dot>דברו<br>איתנו<span class="dot">.</span></h2>
       </div>
       <div class="contact-links">
-        <a href="mailto:vivian.office.info@gmail.com" class="contact-link">
+        <a href="mailto:vivian.office.info@gmail.com" class="contact-link" data-email>
           <span class="ci" aria-hidden="true">✉</span><span dir="ltr">vivian.office.info@gmail.com</span>
         </a>
-        <a href="tel:+972543129933" class="contact-link">
+        <a href="tel:+972543129933" class="contact-link" data-phone>
           <span class="ci" aria-hidden="true">☎</span><span dir="ltr">054-312-9933</span>
         </a>
-        <a href="https://www.instagram.com/studio16_tlv" target="_blank" rel="noopener" class="contact-link">
+        <a href="https://www.instagram.com/studio16_tlv" target="_blank" rel="noopener" class="contact-link" data-insta>
           <span class="ci" aria-hidden="true">◎</span><span dir="ltr">@studio16_tlv</span>
         </a>
-        <p class="contact-addr">מגן אברהם 6, תל אביב · מתחם כשר</p>
+        <p class="contact-addr" data-edit="contactAddr">מגן אברהם 6, תל אביב · מתחם כשר</p>
       </div>
     </div>
 
@@ -224,7 +224,7 @@
     <div class="footer-cols">
       <div class="footer-brand">
         <span class="brand"><span class="brand-he">תות</span><span class="brand-dot">.</span></span>
-        <p>מרחב לאירוח, יצירה ואוצרות במרכז תל אביב.</p>
+        <p data-edit="footerBrand">מרחב לאירוח, יצירה ואוצרות במרכז תל אביב.</p>
       </div>
       <div class="footer-col">
         <p class="footer-label" dir="ltr">Explore</p>
@@ -233,7 +233,7 @@
         <a href="#contact">צרו קשר</a>
         <button type="button" class="footer-linkbtn" data-open-inquiry="rental">השכרת החלל</button>
       </div>
-      <div class="footer-col">
+      <div class="footer-col" id="footerStudioCol">
         <p class="footer-label" dir="ltr">Studio</p>
         <span class="footer-static">שישי בצהריים</span>
         <span class="footer-static">ערבי אמצע שבוע</span>
@@ -242,9 +242,9 @@
       </div>
       <div class="footer-col">
         <p class="footer-label" dir="ltr">Contact</p>
-        <a href="mailto:vivian.office.info@gmail.com" dir="ltr">vivian.office.info@gmail.com</a>
-        <a href="https://www.instagram.com/studio16_tlv" target="_blank" rel="noopener" dir="ltr">@studio16_tlv</a>
-        <span class="footer-static">מגן אברהם 6, תל אביב</span>
+        <a href="mailto:vivian.office.info@gmail.com" dir="ltr" data-email>vivian.office.info@gmail.com</a>
+        <a href="https://www.instagram.com/studio16_tlv" target="_blank" rel="noopener" dir="ltr" data-insta>@studio16_tlv</a>
+        <span class="footer-static" data-edit="footerAddr">מגן אברהם 6, תל אביב</span>
       </div>
     </div>
     <div class="footer-bottom">
