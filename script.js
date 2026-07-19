@@ -6,11 +6,11 @@
 
 document.documentElement.classList.add('js');
 
-const BASE44_VIDEO = 'https://media.base44.com/videos/public/6a5644595cc0504757b80ced/942e46b3b_AQPnop7OXDVQhZdDXctnRAaiNehtQ_B-J6EkVGLI3tmkQx_lHRpyOJKBc6Oxhx26sVjV_lmT1rLz2sKPh4YU6b0RYd0SUC4UfWWqROI.mp4';
+const STUDIO_VIDEO = '/media/studio.mp4';
 
 /* ---------- videos: inject source + autoplay ---------- */
 document.querySelectorAll('video').forEach(video => {
-  const src = video.dataset.videoSrc || BASE44_VIDEO;
+  const src = video.dataset.videoSrc || STUDIO_VIDEO;
   const source = video.querySelector('source');
   if (source) { source.setAttribute('src', src); source.setAttribute('type', 'video/mp4'); }
   else { video.setAttribute('src', src); }
