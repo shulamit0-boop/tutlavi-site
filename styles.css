@@ -31,6 +31,9 @@
   --grotesk: 'Anomalia', system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
   --display: 'Anomalia', 'Helvetica Neue', Arial, system-ui, sans-serif;
   --mono: 'Consolas', 'Courier New', ui-monospace, monospace;
+  /* Anomalia is a Hebrew display face only — English/Latin text (marked dir="ltr"
+     throughout the markup) keeps the original system grotesque, unchanged */
+  --grotesk-en: system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
 
   /* schedule "pasted flyer" paper tones — brand palette: red / black / white / a touch of beige */
   --p1:#f6f1e4; --p2:#18130f; --p3:#a8291d; --p4:#ddcfa0; --p5:#221c16;
@@ -579,3 +582,8 @@ html.js .sched-row.reveal.in-view{ transform:rotate(var(--tilt, 0deg)); }
   video{ display:none; }
   .split-media{ background:var(--ink); }
 }
+
+/* ============ English/Latin text keeps its original font ============ */
+/* `html` bumps specificity to match ".field input{ font-family:inherit }" etc.,
+   and it's placed last so it also wins same-specificity ties against rules above */
+html [dir="ltr"]{ font-family:var(--grotesk-en); }
