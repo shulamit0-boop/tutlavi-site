@@ -1,24 +1,28 @@
 /* ============================================================
-   STUDIO TUTLAVI — brand identity restored: Anomalia (the
-   studio's own blocky poster/logo typeface) sitewide, black
-   ink, vivid red pop (#ef4444). Normal vertical scroll.
+   STUDIO TUTLAVI — brand identity: Cousine, a Courier-metric
+   typewriter monospace, sitewide (Hebrew + Latin subsets,
+   self-hosted). Black ink, vivid red pop (#ef4444).
    ============================================================ */
 
 @font-face{
-  font-family:'Anomalia'; font-weight:300; font-style:normal; font-display:swap;
-  src:url('fonts/anomalia-light-aaa.woff2') format('woff2');
+  font-family:'Cousine'; font-weight:400; font-style:normal; font-display:swap;
+  src:url('fonts/cousine-regular-hebrew.woff2') format('woff2');
+  unicode-range:U+0307-0308, U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
 }
 @font-face{
-  font-family:'Anomalia'; font-weight:500; font-style:normal; font-display:swap;
-  src:url('fonts/anomalia-medium-aaa.woff2') format('woff2');
+  font-family:'Cousine'; font-weight:400; font-style:normal; font-display:swap;
+  src:url('fonts/cousine-regular-latin.woff2') format('woff2');
+  unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215;
 }
 @font-face{
-  font-family:'Anomalia'; font-weight:600; font-style:normal; font-display:swap;
-  src:url('fonts/anomalia-demibold-aaa.woff2') format('woff2');
+  font-family:'Cousine'; font-weight:700; font-style:normal; font-display:swap;
+  src:url('fonts/cousine-bold-hebrew.woff2') format('woff2');
+  unicode-range:U+0307-0308, U+0590-05FF, U+200C-2010, U+20AA, U+25CC, U+FB1D-FB4F;
 }
 @font-face{
-  font-family:'Anomalia'; font-weight:800; font-style:normal; font-display:swap;
-  src:url('fonts/anomalia-ultrabold-aaa.woff2') format('woff2');
+  font-family:'Cousine'; font-weight:700; font-style:normal; font-display:swap;
+  src:url('fonts/cousine-bold-latin.woff2') format('woff2');
+  unicode-range:U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215;
 }
 
 :root{
@@ -28,11 +32,11 @@
   --accent:#ef4444;
   --line:rgba(0,0,0,.10);
   --line-2:rgba(0,0,0,.18);
-  --grotesk: 'Anomalia', system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-  --display: 'Anomalia', 'Helvetica Neue', Arial, system-ui, sans-serif;
-  --mono: 'Consolas', 'Courier New', ui-monospace, monospace;
-  /* Anomalia is a Hebrew display face only — English/Latin text (marked dir="ltr"
-     throughout the markup) keeps the original system grotesque, unchanged */
+  --grotesk: 'Cousine', system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --display: 'Cousine', 'Helvetica Neue', Arial, system-ui, sans-serif;
+  --mono: 'Cousine', 'Consolas', 'Courier New', ui-monospace, monospace;
+  /* Cousine only ships as a Hebrew display face here — English/Latin text (marked
+     dir="ltr" throughout the markup) keeps the original system grotesque, unchanged */
   --grotesk-en: system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
 
   /* schedule "pasted flyer" paper tones — brand palette: red / black / white / a touch of beige */
@@ -53,7 +57,7 @@ body{
   background:var(--bg);
   color:var(--ink);
   font-family:var(--grotesk);
-  font-weight:300;
+  font-weight:400;
   font-size:16px;
   line-height:1.55;
   -webkit-font-smoothing:antialiased;
