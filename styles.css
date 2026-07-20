@@ -1,8 +1,25 @@
 /* ============================================================
-   STUDIO TUTLAVI — faithful reproduction of the Base44 "HomeAlt"
-   design: white canvas, black ink, vivid red pop (#ef4444),
-   system grotesque type. Normal vertical scroll.
+   STUDIO TUTLAVI — brand identity restored: Anomalia (the
+   studio's own blocky poster/logo typeface) sitewide, black
+   ink, vivid red pop (#ef4444). Normal vertical scroll.
    ============================================================ */
+
+@font-face{
+  font-family:'Anomalia'; font-weight:300; font-style:normal; font-display:swap;
+  src:url('fonts/anomalia-light-aaa.woff2') format('woff2');
+}
+@font-face{
+  font-family:'Anomalia'; font-weight:500; font-style:normal; font-display:swap;
+  src:url('fonts/anomalia-medium-aaa.woff2') format('woff2');
+}
+@font-face{
+  font-family:'Anomalia'; font-weight:600; font-style:normal; font-display:swap;
+  src:url('fonts/anomalia-demibold-aaa.woff2') format('woff2');
+}
+@font-face{
+  font-family:'Anomalia'; font-weight:800; font-style:normal; font-display:swap;
+  src:url('fonts/anomalia-ultrabold-aaa.woff2') format('woff2');
+}
 
 :root{
   --bg:#ffffff;
@@ -11,8 +28,8 @@
   --accent:#ef4444;
   --line:rgba(0,0,0,.10);
   --line-2:rgba(0,0,0,.18);
-  --grotesk: system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-  --display: 'Helvetica Neue', Arial, system-ui, sans-serif;
+  --grotesk: 'Anomalia', system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --display: 'Anomalia', 'Helvetica Neue', Arial, system-ui, sans-serif;
   --mono: 'Consolas', 'Courier New', ui-monospace, monospace;
 
   /* schedule "pasted flyer" paper tones — brand palette: red / black / white / a touch of beige */
@@ -33,7 +50,7 @@ body{
   background:var(--bg);
   color:var(--ink);
   font-family:var(--grotesk);
-  font-weight:400;
+  font-weight:300;
   font-size:16px;
   line-height:1.55;
   -webkit-font-smoothing:antialiased;
