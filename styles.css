@@ -379,6 +379,8 @@ html.js .reveal.in-view{ opacity:1; transform:none; }
   padding-top:2rem; border-top:1px solid var(--line);
   font-size:10px; letter-spacing:.25em; text-transform:uppercase; color:var(--muted);
 }
+.footer-admin{ color:var(--muted); text-decoration:none; transition:color .2s; }
+.footer-admin:hover{ color:var(--accent); }
 
 /* ============ FLOATING PLAY BUTTON ============ */
 .play-btn{
