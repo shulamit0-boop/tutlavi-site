@@ -38,11 +38,6 @@
   /* schedule "pasted flyer" paper tones — brand palette: red / black / white / a touch of beige */
   --p1:#f6f1e4; --p2:#18130f; --p3:#a8291d; --p4:#ddcfa0; --p5:#221c16;
   --p1-fg:#1c1712; --p2-fg:#f6f0e2; --p3-fg:#f6f0e2; --p4-fg:#1c1712; --p5-fg:#f6f0e2;
-  --p1-stamp-bg:#18130f; --p1-stamp-fg:#f6f0e2;
-  --p2-stamp-bg:#f6f0e2; --p2-stamp-fg:#18130f;
-  --p3-stamp-bg:#f6f0e2; --p3-stamp-fg:#a8291d;
-  --p4-stamp-bg:#18130f; --p4-stamp-fg:#ddcfa0;
-  --p5-stamp-bg:#f6f0e2; --p5-stamp-fg:#18130f;
   --paper-ink:#201b16;
   --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
@@ -279,17 +274,11 @@ html.js .reveal.in-view{ opacity:1; transform:none; }
   background:linear-gradient(rgba(255,255,255,.55),rgba(255,255,255,.32));
   box-shadow:0 1px 2px rgba(0,0,0,.15);
 }
-.sched-row::after{
-  content:'תות.'; position:absolute; bottom:.8rem; inset-inline-start:.8rem; z-index:2;
-  background:var(--stamp-bg); color:var(--stamp-fg);
-  font-family:var(--display); font-weight:800; font-size:10px;
-  padding:.22rem .4rem; transform:rotate(-2deg);
-}
-.sched-row:nth-child(5n+1){ background-color:var(--p1); --fg:var(--p1-fg); --stamp-bg:var(--p1-stamp-bg); --stamp-fg:var(--p1-stamp-fg); --tilt:-1.1deg; }
-.sched-row:nth-child(5n+2){ background-color:var(--p2); --fg:var(--p2-fg); --stamp-bg:var(--p2-stamp-bg); --stamp-fg:var(--p2-stamp-fg); --tilt:.9deg; }
-.sched-row:nth-child(5n+3){ background-color:var(--p3); --fg:var(--p3-fg); --stamp-bg:var(--p3-stamp-bg); --stamp-fg:var(--p3-stamp-fg); --tilt:-.6deg; }
-.sched-row:nth-child(5n+4){ background-color:var(--p4); --fg:var(--p4-fg); --stamp-bg:var(--p4-stamp-bg); --stamp-fg:var(--p4-stamp-fg); --tilt:1.3deg; }
-.sched-row:nth-child(5n+5){ background-color:var(--p5); --fg:var(--p5-fg); --stamp-bg:var(--p5-stamp-bg); --stamp-fg:var(--p5-stamp-fg); --tilt:-.9deg; }
+.sched-row:nth-child(5n+1){ background-color:var(--p1); --fg:var(--p1-fg); --tilt:-1.1deg; }
+.sched-row:nth-child(5n+2){ background-color:var(--p2); --fg:var(--p2-fg); --tilt:.9deg; }
+.sched-row:nth-child(5n+3){ background-color:var(--p3); --fg:var(--p3-fg); --tilt:-.6deg; }
+.sched-row:nth-child(5n+4){ background-color:var(--p4); --fg:var(--p4-fg); --tilt:1.3deg; }
+.sched-row:nth-child(5n+5){ background-color:var(--p5); --fg:var(--p5-fg); --tilt:-.9deg; }
 /* matches the specificity of `html.js .reveal.in-view` so the tilt survives the reveal-in transition */
 html.js .sched-row.reveal.in-view{ transform:rotate(var(--tilt, 0deg)); }
 .sched-flag{ display:none; }
