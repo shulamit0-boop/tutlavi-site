@@ -29,10 +29,21 @@ function initVideos(overrideSrc) {
     video.setAttribute('loop', 'true');
     video.setAttribute('autoplay', 'true');
     video.load();
-    video.play().catch(() => {});
+    const tryPlay = () => video.play().catch(() => {});
+    tryPlay();
+    video.addEventListener('canplay', tryPlay, { once: true });
   });
 }
 setTimeout(() => { if (!videosInited) initVideos(null); }, 2500);
+
+/* deferred init can leave autoplay stuck in some browsers — kick paused
+   autoplay videos on the first interaction / tab focus */
+function kickVideos() {
+  document.querySelectorAll('video[autoplay]').forEach(v => { if (v.paused) v.play().catch(() => {}); });
+}
+window.addEventListener('scroll', kickVideos, { once: true, passive: true });
+window.addEventListener('pointerdown', kickVideos, { once: true });
+document.addEventListener('visibilitychange', () => { if (!document.hidden) kickVideos(); });
 
 /* ---------- editable site content (managed at /admin → "תוכן האתר") ----------
    Overrides stored in KV under the `content` key. Empty/missing value = the
