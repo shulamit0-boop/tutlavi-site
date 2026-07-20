@@ -176,10 +176,11 @@ function onScroll() {
     header.classList.toggle('on-dark', r.top <= 80 && r.bottom >= 80);
   }
 
-  // floating play button hides once we scroll past the split section
+  // floating play button hides as soon as the video (split section) reaches the viewport,
+  // so it never floats on top of the video — it's a hero-only affordance
   if (playBtn && introSection) {
-    const pastSplit = introSection.getBoundingClientRect().bottom < window.innerHeight * 0.4;
-    playBtn.classList.toggle('hide', pastSplit || document.body.classList.contains('menu-open'));
+    const overSplit = introSection.getBoundingClientRect().top < window.innerHeight;
+    playBtn.classList.toggle('hide', overSplit || document.body.classList.contains('menu-open'));
   }
 }
 window.addEventListener('scroll', onScroll, { passive: true });
