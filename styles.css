@@ -198,9 +198,15 @@ html.js .reveal.in-view{ opacity:1; transform:none; }
   background-image:linear-gradient(rgba(255,255,255,.12), rgba(255,255,255,.28)),
     url("/media/hero.jpg");
   background-size:cover; background-repeat:no-repeat;
-  /* nudged left + anchored to the image top so the hands stay clear of the title */
-  background-position:left -13vw top;
+  /* biased so the hands silhouette stays clear of the title.
+     narrow screens crop the photo horizontally — bias the crop window right */
+  background-position:calc(50% - 8vw) top;
   background-attachment:fixed;
+}
+/* wide screens fit the photo to their width (no horizontal crop) —
+   shift the photo itself left; the exposed sliver matches the bg color */
+@media (min-aspect-ratio: 3/2){
+  .hero-bg{ background-position:left -13vw top; }
 }
 .hero-title{
   position:relative; z-index:1;
