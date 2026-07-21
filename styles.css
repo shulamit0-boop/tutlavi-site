@@ -194,9 +194,13 @@ html.js .reveal.in-view{ opacity:1; transform:none; }
 }
 .hero-bg{
   position:absolute; inset:0; z-index:0;
+  background-color:#dddddd; /* matches the photo's edge — fills the sliver the shift exposes */
   background-image:linear-gradient(rgba(255,255,255,.12), rgba(255,255,255,.28)),
     url("/media/hero.jpg");
-  background-size:cover; background-position:center; background-attachment:fixed;
+  background-size:cover; background-repeat:no-repeat;
+  /* nudged left + anchored to the image top so the hands stay clear of the title */
+  background-position:left -13vw top;
+  background-attachment:fixed;
 }
 .hero-title{
   position:relative; z-index:1;
@@ -557,7 +561,8 @@ html.js .sched-row.reveal.in-view{ transform:rotate(var(--tilt, 0deg)); }
   .footer-cols{ grid-template-columns:1fr 1fr; gap:2rem; }
 }
 @media (max-width:520px){
-  .hero-bg{ background-attachment:scroll; }
+  /* portrait crop differs — recenter with a smaller left nudge */
+  .hero-bg{ background-attachment:scroll; background-position:calc(50% - 10vw) top; }
   .footer-cols{ grid-template-columns:1fr; }
   .menu-item-sub{ display:none; }
 }
