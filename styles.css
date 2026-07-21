@@ -195,7 +195,7 @@ html.js .reveal.in-view{ opacity:1; transform:none; }
 .hero-bg{
   position:absolute; inset:0; z-index:0;
   background-image:linear-gradient(rgba(255,255,255,.12), rgba(255,255,255,.28)),
-    url("https://media.base44.com/images/public/6a5644595cc0504757b80ced/9217f0cc4_WhatsAppImage2026-07-15at132637.jpg");
+    url("/media/hero.jpg");
   background-size:cover; background-position:center; background-attachment:fixed;
 }
 .hero-title{
