@@ -426,6 +426,34 @@ html.js .sched-row.reveal.in-view{ transform:rotate(var(--tilt, 0deg)); }
 .footer-admin{ color:var(--muted); text-decoration:none; transition:color .2s; }
 .footer-admin:hover{ color:var(--accent); }
 
+/* ============ GALLERY ============ */
+.gallery{ padding:6.5rem 0 0; background:#fff; }
+.gal-head{ margin-bottom:2.6rem; }
+.gal-title{
+  font-size:clamp(2.2rem,5vw,3.4rem); font-weight:300; letter-spacing:-.02em;
+  margin-top:.5rem;
+}
+.gal-grid{ columns:3; column-gap:14px; }
+.gal-item{ break-inside:avoid; margin:0 0 14px; }
+.gal-item img, .gal-item video{ width:100%; display:block; }
+.gal-film{ position:relative; margin-top:5rem; }
+.gal-film video{ width:100%; max-height:92vh; object-fit:cover; display:block; }
+.film-sound{
+  position:absolute; bottom:1.4rem; inset-inline-start:1.4rem;
+  width:64px; height:64px; border-radius:50%;
+  background:var(--accent, #ef4444); color:#fff; border:none; cursor:pointer;
+  font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+  transition:transform .25s;
+}
+.film-sound:hover{ transform:scale(1.08); }
+.film-sound.on{ background:#000; }
+@media (max-width:900px){ .gal-grid{ columns:2; } }
+@media (max-width:520px){
+  .gallery{ padding-top:4.5rem; }
+  .gal-grid{ columns:2; column-gap:10px; }
+  .gal-item{ margin-bottom:10px; }
+}
+
 /* ============ FLOATING PLAY BUTTON ============ */
 .play-btn{
   position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:800;

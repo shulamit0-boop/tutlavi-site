@@ -56,6 +56,10 @@
 1. Hero מסך-מלא — תמונת רקע קבועה + `TUTLAVI.` ענק (clamp עד 10rem)
 2. Split — וידאו בחצי + "CREATIVITY CANVAS FOR EVERYTHING WE LOVE" בחצי
 3. `#schedule` — טבלת לו"ז עריכתית על רקע אפרפר `rgba(245,245,247,.5)`
+3.5. `#gallery` — גלריית masonry (CSS columns) של צילומי הסטודיו/הבר + סרטון קוקטיילים כאריח,
+   ובסוף סרט תדמית full-width (`media/brandfilm.mp4`, מושתק בלולאה, כפתור עיגול "Sound" להפעלת סאונד).
+   התמונות ב-`media/gallery/` (נדחסו מ-`Desktop\tut-...\tut` עם ffmpeg; המקור נשאר אצל המשתמשת).
+   הגלריה סטטית — לא נערכת מהפאנל.
 4. `#about` — סקשן **שחור מוחלט** עם טקסט לבן דק
 5. `#contact` — פרטי קשר + טופס underline + CTA שפותח את מודאל ההשכרה
 6. פוטר רב-טורי · תפריט מלא-מסך (clip-path עיגול) · כפתור עיגול אדום צף "Come play with us"

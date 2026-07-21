@@ -15,7 +15,8 @@ let videosInited = false;
 function initVideos(overrideSrc) {
   videosInited = true;
   document.querySelectorAll('video').forEach(video => {
-    const src = overrideSrc || video.dataset.videoSrc || STUDIO_VIDEO;
+    // the CMS override replaces only the split-section video, never gallery clips
+    const src = (video.dataset.role === 'split' ? overrideSrc : null) || video.dataset.videoSrc || STUDIO_VIDEO;
     const source = video.querySelector('source');
     if (source) {
       if (source.getAttribute('src') === src) return;
@@ -159,6 +160,17 @@ if ('IntersectionObserver' in window) {
   // no IO support → just show everything
   revealEls.forEach(showReveal);
 }
+
+/* ---------- brand film sound toggle ---------- */
+const brandFilm = document.getElementById('brandFilm');
+const filmSound = document.getElementById('filmSound');
+filmSound?.addEventListener('click', () => {
+  if (!brandFilm) return;
+  brandFilm.muted = !brandFilm.muted;
+  if (!brandFilm.muted) brandFilm.play().catch(() => {});
+  filmSound.classList.toggle('on', !brandFilm.muted);
+  filmSound.textContent = brandFilm.muted ? 'Sound' : 'Mute';
+});
 
 /* ---------- header state (scrolled + on-dark over the black section) ---------- */
 const header = document.getElementById('siteHeader');
