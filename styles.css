@@ -394,65 +394,6 @@ html.js .reveal.in-view{ opacity:1; transform:none; }
 .footer-admin{ color:var(--muted); text-decoration:none; transition:color .2s; }
 .footer-admin:hover{ color:var(--accent); }
 
-/* ============ GALLERY — brand film + gapless asymmetric collage ============ */
-.gallery{ padding:0; background:#fff; }
-.gal-film{ position:relative; }
-.gal-film video{ width:100%; max-height:92vh; object-fit:cover; display:block; }
-.film-sound{
-  position:absolute; bottom:1.4rem; inset-inline-start:1.4rem;
-  width:64px; height:64px; border-radius:50%;
-  background:var(--accent, #ef4444); color:#fff; border:none; cursor:pointer;
-  font-size:11px; letter-spacing:.14em; text-transform:uppercase;
-  transition:transform .25s;
-}
-.film-sound:hover{ transform:scale(1.08); }
-.film-sound.on{ background:#000; }
-
-/* infinite WebGL band: the strip defines the loop layout; the canvas renders it.
-   Without WebGL the strip itself stays visible as a static scattered collage. */
-/* the pin wrapper gives the band scroll room: while the user scrolls through
-   its height the wall stays stuck on screen and the strip scrubs through */
-.gal-pin{ height:340vh; position:relative; }
-.gal-wall{
-  position:sticky; top:0; height:100vh; overflow:hidden; background:#fff;
-  cursor:grab;
-}
-.gal-wall:active{ cursor:grabbing; }
-.gal-canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
-.gal-wall.gl-on .gal-strip{ visibility:hidden; }
-.gal-strip{ position:absolute; top:0; left:0; width:100%; height:154vw; }
-.gal-item{ position:absolute; margin:0; overflow:hidden; }
-.gal-item img, .gal-item video{ width:100%; height:100%; object-fit:cover; display:block; }
-/* scattered layout — ported from the Codrops demo (its rem grid → vw) */
-.f1 { left:0;        top:0;        width:36.5vw; height:20.8vw; }
-.f2 { left:44.3vw;   top:15.6vw;   width:20.8vw; height:26vw; }
-.f3 { left:7.8vw;    top:31.2vw;   width:31.2vw; height:26vw; }
-.f4 { right:0;       top:5.2vw;    width:26vw;   height:15.6vw; }
-.f5 { right:7.8vw;   top:28.6vw;   width:20.8vw; height:31.2vw; }
-.f6 { left:2.6vw;    top:62.5vw;   width:30vw;   height:39vw; }
-.f7 { right:0;       top:67.7vw;   width:26vw;   height:36.5vw; }
-.f8 { left:44.3vw;   top:49.5vw;   width:20.8vw; height:26vw; }
-.f9 { left:39vw;     top:80.7vw;   width:26vw;   height:33.9vw; }
-.f10{ right:0;       top:112vw;    width:15.6vw; height:22.4vw; }
-.f11{ left:36.5vw;   top:122.4vw;  width:41.7vw; height:26vw; }
-.f12{ left:0;        top:109.4vw;  width:26vw;   height:36.5vw; }
-
-@media (max-width:700px){
-  .gal-strip{ height:395vw; }
-  .f1 { left:0;      top:0;      width:55vw; height:33vw; }
-  .f2 { left:auto; right:0;      top:10vw;   width:40vw; height:55vw; }
-  .f3 { left:5vw;    top:40vw;   width:48vw; height:40vw; }
-  .f4 { right:0;     top:72vw;   width:38vw; height:30vw; }
-  .f5 { right:auto; left:0;      top:87vw;   width:42vw; height:60vw; }
-  .f6 { left:auto; right:2vw;    top:108vw;  width:50vw; height:72vw; }
-  .f7 { right:auto; left:0;      top:154vw;  width:44vw; height:58vw; }
-  .f8 { left:auto; right:0;      top:187vw;  width:42vw; height:28vw; }
-  .f9 { left:8vw;    top:219vw;  width:40vw; height:55vw; }
-  .f10{ right:0;     top:222vw;  width:34vw; height:48vw; }
-  .f11{ left:0;      top:281vw;  width:60vw; height:38vw; }
-  .f12{ left:auto; right:4vw;    top:326vw;  width:44vw; height:60vw; }
-}
-
 /* ============ FLOATING PLAY BUTTON ============ */
 .play-btn{
   position:fixed; bottom:24px; left:50%; transform:translateX(-50%); z-index:800;
