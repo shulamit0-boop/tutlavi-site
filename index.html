@@ -5,14 +5,17 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>תות - Studio Tutlavi | מרחב לאירוח ואוצרות</title>
 <meta name="description" content="סטודיו תות - מרחב לאירוח ואוצרות. מפגש ישיר בין קולינריה ליצירה. 24.07 אירוע פתיחה.">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 
 <!-- ============ HEADER ============ -->
 <header class="site-header" id="siteHeader">
-  <a href="#top" class="brand">
-    <span class="brand-he">תות</span><span class="brand-dot">.</span>
+  <a href="#top" class="brand" aria-label="תות">
+    <img class="brand-logo brand-logo-dark" src="media/logo-mark.png" alt="תות" width="645" height="249">
+    <img class="brand-logo brand-logo-light" src="media/logo-mark-white.png" alt="" aria-hidden="true" width="645" height="249">
   </a>
   <button class="menu-btn" id="menuBtn" aria-label="תפריט" aria-expanded="false">
     <span></span><span></span><span></span>
@@ -23,7 +26,7 @@
 <div class="menu-overlay" id="menuOverlay" aria-hidden="true">
   <div class="menu-noise" aria-hidden="true"></div>
   <div class="menu-top">
-    <span class="brand"><span class="brand-he">תות</span><span class="brand-dot">.</span></span>
+    <span class="brand"><img class="brand-logo" src="media/logo-mark.png" alt="תות" width="645" height="249"></span>
     <button class="menu-close" id="menuClose" aria-label="סגירה">&times;</button>
   </div>
   <nav class="menu-list">
@@ -165,6 +168,59 @@
   </div>
 </section>
 
+<!-- ============ 4.5 · RENT / COLLAB (highlighted) ============ -->
+<section class="rentspace" id="rent">
+  <div class="wrap">
+    <div class="rent-head reveal">
+      <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span><span>השכרת החלל · שיתופי פעולה</span></p>
+      <h2 class="rent-title" data-dot>המרחב שלכם<br>לאירוע הבא<span class="dot">.</span></h2>
+    </div>
+
+    <div class="rent-main">
+      <div class="rent-media reveal">
+        <img src="media/gallery/space.jpg" alt="חלל הסטודיו של תות" loading="lazy">
+        <span class="rent-media-tag" dir="ltr">Magen Avraham 6 · TLV</span>
+      </div>
+      <div class="rent-body reveal">
+        <p class="rent-lead">
+          החלל של <strong>תות</strong> פתוח ליוצרים, מותגים וקהילות — מרחב מעוצב,
+          מותאם ומלא אופי בלב תל אביב, לאירוע שלכם.
+        </p>
+        <ul class="rent-uses">
+          <li>השקות ואירועי מותג</li>
+          <li>ימי צילום והפקות</li>
+          <li>סדנאות והרצאות</li>
+          <li>ארוחות ואירוח פרטי</li>
+          <li>הרמות כוסית וכנסים</li>
+        </ul>
+        <div class="rent-actions">
+          <button type="button" class="rent-cta-main" data-open-inquiry="rental">
+            לבדיקת זמינות והזמנת החלל <span dir="ltr">←</span>
+          </button>
+          <button type="button" class="rent-cta-alt" data-open-inquiry="collab">
+            רוצים לשתף פעולה? דברו איתנו
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="rent-feats reveal">
+      <div class="rent-feat">
+        <b>יומן זמינות חי</b>
+        <span>בוחרים תאריך וחלון שעות, ורואים מיד מה פנוי.</span>
+      </div>
+      <div class="rent-feat">
+        <b>חוזה דיגיטלי</b>
+        <span>נחתם אונליין תוך דקות, עם כל הפרטים שלכם.</span>
+      </div>
+      <div class="rent-feat">
+        <b>מתחם כשר</b>
+        <span>אירוח פרימיום שמתאים לקהל רחב.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- ============ 5 · CONTACT ============ -->
 <section class="contact" id="contact">
   <div class="wrap contact-grid">
@@ -223,7 +279,7 @@
   <div class="wrap">
     <div class="footer-cols">
       <div class="footer-brand">
-        <span class="brand"><span class="brand-he">תות</span><span class="brand-dot">.</span></span>
+        <span class="brand"><img class="brand-logo" src="media/logo-mark.png" alt="תות" width="645" height="249"></span>
         <p data-edit="footerBrand">מרחב לאירוח, יצירה ואוצרות במרכז תל אביב.</p>
       </div>
       <div class="footer-col">
@@ -282,14 +338,16 @@
         </div>
       </div>
 
-      <div class="field">
-        <label class="field-label" for="f-name">שם</label>
-        <input id="f-name" type="text" name="name" required>
-      </div>
+      <div class="modal-grid">
+        <div class="field">
+          <label class="field-label" for="f-name">שם</label>
+          <input id="f-name" type="text" name="name" required>
+        </div>
 
-      <div class="field">
-        <label class="field-label" for="f-email">מייל</label>
-        <input id="f-email" type="email" name="email" dir="ltr" required>
+        <div class="field">
+          <label class="field-label" for="f-email">מייל</label>
+          <input id="f-email" type="email" name="email" dir="ltr" required>
+        </div>
       </div>
 
       <div class="field">
@@ -300,14 +358,16 @@
       <!-- rental-only fields -->
       <div class="rental-fields" id="rentalFields" hidden>
 
-        <div class="field">
-          <label class="field-label" for="f-idnum">ת.ז / ח.פ (לחוזה)</label>
-          <input id="f-idnum" type="text" name="id-number" inputmode="numeric" dir="ltr">
-        </div>
+        <div class="modal-grid">
+          <div class="field">
+            <label class="field-label" for="f-idnum">ת.ז / ח.פ (לחוזה)</label>
+            <input id="f-idnum" type="text" name="id-number" inputmode="numeric" dir="ltr">
+          </div>
 
-        <div class="field">
-          <label class="field-label" for="f-phone">טלפון</label>
-          <input id="f-phone" type="tel" name="phone" inputmode="tel" dir="ltr">
+          <div class="field">
+            <label class="field-label" for="f-phone">טלפון</label>
+            <input id="f-phone" type="tel" name="phone" inputmode="tel" dir="ltr">
+          </div>
         </div>
 
         <div class="field">
@@ -342,30 +402,32 @@
           </div>
         </div>
 
-        <div class="field">
-          <label class="field-label" for="f-purpose">מטרת ההשכרה</label>
-          <select id="f-purpose" name="event-purpose">
-            <option value="">בחרו מטרה…</option>
-            <option>השקה</option>
-            <option>יום צילומים</option>
-            <option>אירוע חברה</option>
-            <option>סדנה</option>
-            <option>ארוחה פרטית</option>
-            <option>הרמת כוסית</option>
-            <option>אחר</option>
-          </select>
-        </div>
+        <div class="modal-grid">
+          <div class="field">
+            <label class="field-label" for="f-purpose">מטרת ההשכרה</label>
+            <select id="f-purpose" name="event-purpose">
+              <option value="">בחרו מטרה…</option>
+              <option>השקה</option>
+              <option>יום צילומים</option>
+              <option>אירוע חברה</option>
+              <option>סדנה</option>
+              <option>ארוחה פרטית</option>
+              <option>הרמת כוסית</option>
+              <option>אחר</option>
+            </select>
+          </div>
 
-        <div class="field">
-          <label class="field-label" for="f-participants">מספר משתתפים</label>
-          <select id="f-participants" name="participants">
-            <option value="">בחרו…</option>
-            <option>עד 10</option>
-            <option>11–20</option>
-            <option>21–30</option>
-            <option>31–50</option>
-            <option>50+</option>
-          </select>
+          <div class="field">
+            <label class="field-label" for="f-participants">מספר משתתפים</label>
+            <select id="f-participants" name="participants">
+              <option value="">בחרו…</option>
+              <option>עד 10</option>
+              <option>11–20</option>
+              <option>21–30</option>
+              <option>31–50</option>
+              <option>50+</option>
+            </select>
+          </div>
         </div>
 
         <input type="hidden" name="estimated-cost" id="f-cost">

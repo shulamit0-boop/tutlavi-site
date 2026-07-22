@@ -506,6 +506,9 @@ function openInquiry(mode) {
   if (mode === 'rental') {
     inquiryForm.querySelector('input[value="השכרת חלל"]').checked = true;
     setRentalVisible(true);
+  } else {
+    inquiryForm.querySelector('input[value="שיתוף פעולה"]').checked = true;
+    setRentalVisible(false);
   }
   inquiryModal.classList.add('open');
   inquiryModal.setAttribute('aria-hidden', 'false');
