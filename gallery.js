@@ -283,6 +283,13 @@ class GalleryGL {
 
   addEventListeners() {
     window.addEventListener('resize', this.onResize.bind(this));
+    // the module can run before the stylesheet applies (wall measures 0) —
+    // ResizeObserver re-measures as soon as the real size lands
+    if ('ResizeObserver' in window) {
+      new ResizeObserver(() => this.onResize()).observe(this.wall);
+    } else {
+      window.addEventListener('load', this.onResize.bind(this));
+    }
     window.addEventListener('scroll', this.onPageScroll.bind(this), { passive: true });
 
     this.wall.addEventListener('mousedown', e => { e.preventDefault(); this.onDown(e); });
