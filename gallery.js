@@ -238,10 +238,11 @@ class GalleryGL {
   }
   onUp() { this.isDown = false; }
 
-  /* page scroll feeds velocity into the strip (extra bend on fast scrolls) */
+  /* page scroll feeds velocity into the strip (extra bend on fast scrolls).
+     factor tuned so one pass through the pinned section ≈ one full loop */
   onPageScroll() {
     const y = window.scrollY;
-    this.scroll.target += (y - this.lastPageY) * 0.6;
+    this.scroll.target += (y - this.lastPageY) * 1.1;
     this.lastPageY = y;
   }
 

@@ -442,8 +442,11 @@ html.js .sched-row.reveal.in-view{ transform:rotate(var(--tilt, 0deg)); }
 
 /* infinite WebGL band: the strip defines the loop layout; the canvas renders it.
    Without WebGL the strip itself stays visible as a static scattered collage. */
+/* the pin wrapper gives the band scroll room: while the user scrolls through
+   its height the wall stays stuck on screen and the strip scrubs through */
+.gal-pin{ height:340vh; position:relative; }
 .gal-wall{
-  position:relative; height:100vh; overflow:hidden; background:#fff;
+  position:sticky; top:0; height:100vh; overflow:hidden; background:#fff;
   cursor:grab;
 }
 .gal-wall:active{ cursor:grabbing; }
