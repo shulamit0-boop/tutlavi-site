@@ -1,25 +1,8 @@
 /* ============================================================
-   STUDIO TUTLAVI — brand identity: Miriam Mono CLM, a Hebrew
-   typewriter monospace (Culmus project, GPL), self-hosted.
-   Black ink, vivid red pop (#ef4444).
+   STUDIO TUTLAVI — faithful reproduction of the Base44 "HomeAlt"
+   design: white canvas, black ink, vivid red pop (#ef4444),
+   system grotesque type. Normal vertical scroll.
    ============================================================ */
-
-@font-face{
-  font-family:'Miriam Mono CLM'; font-weight:400; font-style:normal; font-display:swap;
-  src:url('fonts/miriam-mono-clm-book.woff2') format('woff2');
-}
-@font-face{
-  font-family:'Miriam Mono CLM'; font-weight:400; font-style:italic; font-display:swap;
-  src:url('fonts/miriam-mono-clm-book-oblique.woff2') format('woff2');
-}
-@font-face{
-  font-family:'Miriam Mono CLM'; font-weight:700; font-style:normal; font-display:swap;
-  src:url('fonts/miriam-mono-clm-bold.woff2') format('woff2');
-}
-@font-face{
-  font-family:'Miriam Mono CLM'; font-weight:700; font-style:italic; font-display:swap;
-  src:url('fonts/miriam-mono-clm-bold-oblique.woff2') format('woff2');
-}
 
 :root{
   --bg:#ffffff;
@@ -28,18 +11,8 @@
   --accent:#ef4444;
   --line:rgba(0,0,0,.10);
   --line-2:rgba(0,0,0,.18);
-  --grotesk: 'Miriam Mono CLM', system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-  --display: 'Miriam Mono CLM', 'Helvetica Neue', Arial, system-ui, sans-serif;
-  --mono: 'Miriam Mono CLM', 'Consolas', 'Courier New', ui-monospace, monospace;
-  /* English/Latin text (marked dir="ltr" throughout the markup) keeps the
-     original system grotesque, unchanged, per earlier request */
-  --grotesk-en: system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-
-  /* schedule "pasted flyer" paper tones — brand palette: red / black / white / a touch of beige */
-  --p1:#f6f1e4; --p2:#18130f; --p3:#a8291d; --p4:#ddcfa0; --p5:#221c16;
-  --p1-fg:#1c1712; --p2-fg:#f6f0e2; --p3-fg:#f6f0e2; --p4-fg:#1c1712; --p5-fg:#f6f0e2;
-  --paper-ink:#201b16;
-  --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  --grotesk: system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --display: 'Helvetica Neue', Arial, system-ui, sans-serif;
 }
 
 *{ box-sizing:border-box; margin:0; padding:0; }
@@ -53,7 +26,6 @@ body{
   line-height:1.55;
   -webkit-font-smoothing:antialiased;
   -moz-osx-font-smoothing:grayscale;
-  font-synthesis:none;
   overflow-x:clip;
 }
 body.modal-open{ overflow:hidden; }
@@ -241,15 +213,17 @@ html.js .reveal.in-view{ opacity:1; transform:none; }
   text-wrap:balance;
 }
 
-/* ============ 3 · SCHEDULE — pasted flyer wall ============ */
+/* ============ 3 · SCHEDULE ============ */
 .schedule{
-  background:#dbd6c9;
+  background:rgba(245,245,247,.5);
   padding:clamp(80px,12vw,128px) 0;
   position:relative;
 }
 .schedule::before{
-  content:''; position:absolute; inset:0; pointer-events:none; opacity:.05; mix-blend-mode:multiply;
-  background-image:var(--grain);
+  content:''; position:absolute; inset:0; pointer-events:none; opacity:.04;
+  background-image:linear-gradient(rgba(0,0,0,1) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,0,0,1) 1px, transparent 1px);
+  background-size:48px 48px;
 }
 .schedule .wrap{ position:relative; z-index:1; }
 .sched-head{
@@ -257,59 +231,53 @@ html.js .reveal.in-view{ opacity:1; transform:none; }
   gap:1rem; flex-wrap:wrap; margin-bottom:clamp(2.5rem,5vw,4rem);
 }
 .sched-title{
-  font-family:var(--display); font-weight:800; letter-spacing:-.01em;
-  font-size:clamp(2.1rem,5vw,3.4rem); margin-top:1rem; text-wrap:balance;
+  font-size:clamp(2.2rem,5vw,3.75rem); font-weight:300; letter-spacing:-.025em;
+  margin-top:1rem;
 }
 .sched-count{
   font-size:11px; letter-spacing:.2em; text-transform:uppercase; color:var(--ink);
   padding:.5rem 1rem; border:1px solid var(--line-2); white-space:nowrap;
 }
-.sched-cols{ display:none; }
-.sched-list{
-  margin-top:.5rem; display:grid;
-  grid-template-columns:repeat(auto-fit, minmax(230px,1fr));
-  gap:1.4rem;
+.sched-cols{
+  display:grid;
+  grid-template-columns:40px 150px 1fr 130px 120px;
+  gap:1rem; padding-bottom:1rem; border-bottom:1px solid rgba(0,0,0,.12);
 }
+.sched-cols span{ font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); }
+.sched-cols .col-status{ text-align:end; }
+.sched-list{ margin-top:.5rem; }
 .sched-row{
-  position:relative; isolation:isolate;
-  display:flex; flex-direction:column; align-items:flex-start;
-  padding:1.4rem 1.3rem 1.7rem;
-  background-image:var(--grain);
-  background-blend-mode:multiply;
-  box-shadow:1px 8px 18px -8px rgba(0,0,0,.28);
+  display:grid;
+  grid-template-columns:40px 150px 1fr 130px 120px;
+  gap:1rem; align-items:start;
+  padding:clamp(1.2rem,2.5vw,1.8rem) 1rem;
+  border:1px solid transparent; margin-top:.5rem;
+  transition:background .4s cubic-bezier(.22,1,.36,1), box-shadow .4s ease, border-color .4s ease;
 }
-.sched-row::before{
-  content:''; position:absolute; top:-9px; inset-inline-end:22px; z-index:2;
-  width:46px; height:18px; transform:rotate(-5deg);
-  background:linear-gradient(rgba(255,255,255,.55),rgba(255,255,255,.32));
-  box-shadow:0 1px 2px rgba(0,0,0,.15);
+.sched-row:hover{
+  background:rgba(255,255,255,.85); border-color:var(--line);
+  box-shadow:0 10px 40px -12px rgba(0,0,0,.12);
 }
-.sched-row:nth-child(5n+1){ background-color:var(--p1); --fg:var(--p1-fg); --tilt:-1.1deg; }
-.sched-row:nth-child(5n+2){ background-color:var(--p2); --fg:var(--p2-fg); --tilt:.9deg; }
-.sched-row:nth-child(5n+3){ background-color:var(--p3); --fg:var(--p3-fg); --tilt:-.6deg; }
-.sched-row:nth-child(5n+4){ background-color:var(--p4); --fg:var(--p4-fg); --tilt:1.3deg; }
-.sched-row:nth-child(5n+5){ background-color:var(--p5); --fg:var(--p5-fg); --tilt:-.9deg; }
-/* matches the specificity of `html.js .reveal.in-view` so the tilt survives the reveal-in transition */
-html.js .sched-row.reveal.in-view{ transform:rotate(var(--tilt, 0deg)); }
-.sched-flag{ display:none; }
-.sched-date{
-  position:relative; z-index:2;
-  font-family:var(--mono); font-size:.78rem; letter-spacing:.04em; color:var(--fg);
-  opacity:.7; padding-top:0; font-variant-numeric:tabular-nums;
+.sched-flag{
+  width:12px; height:12px; margin-top:4px; border:1px solid var(--line-2);
 }
-.sched-main{ position:relative; z-index:2; display:flex; flex-direction:column; gap:.5rem; margin-top:.5rem; }
-.sched-name{
-  font-family:var(--display); font-weight:800; font-size:1.05rem; line-height:1.2;
-  color:var(--fg);
+.sched-flag.on{ background:var(--accent); border-color:var(--accent); box-shadow:0 0 12px rgba(239,68,68,.4); }
+.sched-date{ font-size:.85rem; color:var(--muted); padding-top:2px; }
+.sched-main{ display:flex; flex-direction:column; gap:.4rem; }
+.sched-name{ font-size:1.05rem; font-weight:500; color:var(--ink); }
+.sched-row:hover .sched-name{ color:var(--accent); }
+.sched-desc{ font-size:.85rem; color:var(--muted); line-height:1.5; max-width:44ch; }
+.sched-cat{
+  align-self:start; padding:.25rem .6rem; margin-top:1px;
+  border:1px solid var(--line-2);
+  font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted);
+  justify-self:start;
 }
-.sched-desc{ font-size:.8rem; color:var(--fg); opacity:.75; line-height:1.5; max-width:30ch; text-wrap:pretty; }
-.sched-cat{ display:none; }
 .sched-status{
-  position:relative; z-index:2; margin-top:.9rem;
-  font-size:9px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
-  color:var(--fg); opacity:.75; padding:.25rem .55rem; border:1px solid currentColor;
+  justify-self:end; text-align:end; padding-top:2px;
+  font-size:10px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:var(--muted);
 }
-.sched-status.on{ background:#f6f0e2; color:var(--accent); opacity:1; border-color:var(--accent); }
+.sched-status.on{ color:var(--accent); }
 
 /* ============ 4 · ABOUT (dark) ============ */
 .about{
@@ -624,6 +592,18 @@ html.js .sched-row.reveal.in-view{ transform:rotate(var(--tilt, 0deg)); }
   .about-grid{ grid-template-columns:1fr; gap:2rem; }
   .contact-grid{ grid-template-columns:1fr; }
   .footer-cols{ grid-template-columns:1fr 1fr; gap:2rem; }
+  .sched-cols{ display:none; }
+  .sched-row{
+    grid-template-columns:1fr auto; gap:.4rem 1rem;
+    grid-template-areas:"flag status" "date date" "main main" "cat cat";
+    padding:1.4rem 0; border-bottom:1px solid var(--line); border-top:none;
+  }
+  .sched-row:hover{ box-shadow:none; background:transparent; }
+  .sched-flag{ grid-area:flag; }
+  .sched-date{ grid-area:date; }
+  .sched-main{ grid-area:main; }
+  .sched-cat{ grid-area:cat; }
+  .sched-status{ grid-area:status; justify-self:end; }
 }
 @media (max-width:520px){
   /* portrait crop differs — recenter with a smaller left nudge */
@@ -641,8 +621,3 @@ html.js .sched-row.reveal.in-view{ transform:rotate(var(--tilt, 0deg)); }
   video{ display:none; }
   .split-media{ background:var(--ink); }
 }
-
-/* ============ English/Latin text keeps its original font ============ */
-/* `html` bumps specificity to match ".field input{ font-family:inherit }" etc.,
-   and it's placed last so it also wins same-specificity ties against rules above */
-html [dir="ltr"]{ font-family:var(--grotesk-en); }
