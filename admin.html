@@ -118,7 +118,11 @@ button.danger{ background:var(--accent); border-color:var(--accent); }
 .ev-grid input{ width:100%; border:1px solid var(--line); padding:.45rem .6rem; font:inherit; margin-top:.25rem; }
 .ev-desc-wrap{ grid-column:1 / -1; }
 .ev-actions{ display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; }
-.ev-actions .ev-hot{ display:flex; align-items:center; gap:.4rem; font-size:.88rem; margin-inline-end:auto; cursor:pointer; }
+.ev-actions .ev-hot{ display:flex; align-items:center; gap:.4rem; font-size:.88rem; cursor:pointer; }
+.ev-actions .ev-badge{ margin-inline-end:auto; font-size:.72rem; font-weight:700; padding:.22rem .55rem; border-radius:3px; letter-spacing:.02em; white-space:nowrap; }
+.ev-badge.live{ background:#eafaef; color:#137a3a; }
+.ev-badge.draft{ background:#ececec; color:#555; }
+.ev-badge.past{ background:#fbeaea; color:#b3261e; }
 .ev-actions button{ padding:.3rem .7rem; font-size:.9rem; }
 .ev-actions .del{ color:var(--accent); border-color:var(--accent); background:none; }
 .ev-actions .del:hover{ background:var(--accent); color:#fff; }
@@ -494,6 +498,22 @@ function renderEvents() {
 
     const actions = document.createElement('div');
     actions.className = 'ev-actions';
+
+    // status badge: draft (hidden) or past-date events won't show on the public site
+    const isPastDate = (d) => {
+      const m = /^\s*(\d{1,2})\.(\d{1,2})\.(\d{4})\s*$/.exec(d || '');
+      if (!m) return false;
+      const dt = new Date(+m[3], +m[2] - 1, +m[1]);
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      return dt < today;
+    };
+    const badge = document.createElement('span');
+    badge.className = 'ev-badge';
+    if (ev.hidden === true) { badge.textContent = 'טיוטה — לא מוצג'; badge.classList.add('draft'); }
+    else if (isPastDate(ev.date)) { badge.textContent = 'עבר — הוסתר אוטומטית'; badge.classList.add('past'); }
+    else { badge.textContent = 'מוצג באתר'; badge.classList.add('live'); }
+    actions.appendChild(badge);
+
     const hot = document.createElement('label');
     hot.className = 'ev-hot';
     const cb = document.createElement('input');
@@ -503,6 +523,16 @@ function renderEvents() {
     hot.appendChild(cb);
     hot.appendChild(document.createTextNode('הדגשה באדום'));
     actions.appendChild(hot);
+
+    const draft = document.createElement('label');
+    draft.className = 'ev-hot';
+    const dcb = document.createElement('input');
+    dcb.type = 'checkbox';
+    dcb.checked = ev.hidden === true;
+    dcb.addEventListener('change', () => { ev.hidden = dcb.checked; queueContentSave(); renderEvents(); });
+    draft.appendChild(dcb);
+    draft.appendChild(document.createTextNode('לא מוצג (טיוטה)'));
+    actions.appendChild(draft);
 
     const mkBtn = (txt, title, cls, fn) => {
       const b = document.createElement('button');
@@ -531,7 +561,7 @@ function renderEvents() {
 }
 
 $('addEvent').addEventListener('click', () => {
-  content.events.push({ date: '', name: '', desc: '', cat: '', status: 'בקרוב', hot: false });
+  content.events.push({ date: '', name: '', desc: '', cat: '', status: 'בקרוב', hot: false, hidden: false });
   queueContentSave();
   renderEvents();
   const cards = $('eventsList').querySelectorAll('.ev-card');

@@ -121,10 +121,20 @@ function applySiteContent(c) {
   if (Array.isArray(c.events)) {
     const section = document.getElementById('schedule');
     const list = document.getElementById('schedList');
-    if (!c.events.length) {
+    // hide drafts (hidden) and events whose date has already passed.
+    // date is "dd.mm.yyyy"; unparseable/empty dates are kept (never treated as past).
+    const isPast = (d) => {
+      const m = /^\s*(\d{1,2})\.(\d{1,2})\.(\d{4})\s*$/.exec(d || '');
+      if (!m) return false;
+      const ev = new Date(+m[3], +m[2] - 1, +m[1]);
+      const today = new Date(); today.setHours(0, 0, 0, 0);
+      return ev < today;
+    };
+    const visible = c.events.filter(ev => ev && ev.hidden !== true && !isPast(ev.date));
+    if (!visible.length) {
       if (section) section.style.display = 'none';
     } else if (list) {
-      list.innerHTML = c.events.map(ev => {
+      list.innerHTML = visible.map(ev => {
         const hot = ev.hot ? ' on' : '';
         return '<li class="sched-row reveal in-view">' +
           '<span class="sched-flag' + hot + '"></span>' +
@@ -138,7 +148,7 @@ function applySiteContent(c) {
         '</li>';
       }).join('');
       const count = document.getElementById('schedCount');
-      if (count) count.textContent = c.events.length === 1 ? 'אירוע קרוב אחד' : c.events.length + ' אירועים קרובים';
+      if (count) count.textContent = visible.length === 1 ? 'אירוע קרוב אחד' : visible.length + ' אירועים קרובים';
     }
   }
 }
@@ -166,6 +176,7 @@ const header = document.getElementById('siteHeader');
 const aboutSection = document.getElementById('about');
 const playBtn = document.getElementById('playBtn');
 const introSection = document.getElementById('intro');
+const scheduleSection = document.getElementById('schedule');
 
 function onScroll() {
   const y = window.scrollY;
@@ -177,11 +188,11 @@ function onScroll() {
     header.classList.toggle('on-dark', r.top <= 80 && r.bottom >= 80);
   }
 
-  // floating play button hides as soon as the video (split section) reaches the viewport,
-  // so it never floats on top of the video — it's a hero-only affordance
-  if (playBtn && introSection) {
-    const overSplit = introSection.getBoundingClientRect().top < window.innerHeight;
-    playBtn.classList.toggle('hide', overSplit || document.body.classList.contains('menu-open'));
+  // floating play button stays visible through the scroll and hides once the
+  // schedule section reaches the viewport (its top rises into view)
+  if (playBtn && scheduleSection) {
+    const reachedSchedule = scheduleSection.getBoundingClientRect().top < window.innerHeight;
+    playBtn.classList.toggle('hide', reachedSchedule || document.body.classList.contains('menu-open'));
   }
 }
 window.addEventListener('scroll', onScroll, { passive: true });

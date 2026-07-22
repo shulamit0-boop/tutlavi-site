@@ -164,21 +164,16 @@ html.js .reveal.in-view{ opacity:1; transform:none; }
   display:flex; align-items:center; justify-content:center;
   text-align:center; overflow:hidden;
 }
+/* clean off-white surface with a faint running-bond brick texture + subtle grain,
+   drawn entirely in CSS (no image asset, no upload dependency) */
 .hero-bg{
   position:absolute; inset:0; z-index:0;
-  background-color:#dddddd; /* matches the photo's edge — fills the sliver the shift exposes */
-  background-image:linear-gradient(rgba(255,255,255,.12), rgba(255,255,255,.28)),
-    url("/media/hero.jpg");
-  background-size:cover; background-repeat:no-repeat;
-  /* biased so the hands silhouette stays clear of the title.
-     narrow screens crop the photo horizontally — bias the crop window right */
-  background-position:calc(50% - 8vw) top;
-  background-attachment:fixed;
-}
-/* wide screens fit the photo to their width (no horizontal crop) —
-   shift the photo itself left; the exposed sliver matches the bg color */
-@media (min-aspect-ratio: 3/2){
-  .hero-bg{ background-position:left -13vw top; }
+  background-color:#efedea;
+  background-image:
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='170' height='170'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)' opacity='0.05'/%3E%3C/svg%3E"),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='60'%3E%3Cg fill='none' stroke='%23d9d7d2' stroke-width='1'%3E%3Cpath d='M0 .5H120M0 30.5H120'/%3E%3Cpath d='M.5 0V30M60.5 30V60'/%3E%3C/g%3E%3C/svg%3E");
+  background-size:170px 170px, 116px 58px;
+  background-repeat:repeat, repeat;
 }
 .hero-title{
   position:relative; z-index:1;
@@ -547,8 +542,6 @@ html.js .reveal.in-view{ opacity:1; transform:none; }
   .sched-status{ grid-area:status; justify-self:end; }
 }
 @media (max-width:520px){
-  /* portrait crop differs — recenter with a smaller left nudge */
-  .hero-bg{ background-attachment:scroll; background-position:calc(50% - 10vw) top; }
   .footer-cols{ grid-template-columns:1fr; }
   .menu-item-sub{ display:none; }
 }

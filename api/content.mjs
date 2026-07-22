@@ -24,6 +24,7 @@ const sanitize = (body) => {
           cat: String(e.cat || '').slice(0, 60),
           status: String(e.status || '').slice(0, 60),
           hot: e.hot === true,
+          hidden: e.hidden === true,
         }))
         .slice(0, 100)
     : null;
