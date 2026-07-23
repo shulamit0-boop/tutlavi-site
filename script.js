@@ -601,7 +601,9 @@ const FORM_ENDPOINT = 'https://formsubmit.co/ajax/vivian.office.info@gmail.com';
 
 inquiryForm.addEventListener('submit', (e) => {
   e.preventDefault();
-  if (!rentalFields.hidden && availability && dateInput.value && availability.locked.includes(dateInput.value)) {
+  // a partial /api/availability response used to throw here, which killed the
+  // submit button silently and lost the enquiry
+  if (!rentalFields.hidden && dateInput.value && (availability?.locked || []).includes(dateInput.value)) {
     formStatus.className = 'form-status err';
     formStatus.textContent = 'התאריך שנבחר נעול — בחרו תאריך אחר.';
     return;
@@ -647,6 +649,12 @@ inquiryForm.addEventListener('submit', (e) => {
         (payload['window-id'] ? 'החלון שבחרתם נשמר עבורכם וממתין לאישורנו.\n' : '') +
         '\nסטודיו תות · מגן אברהם 6, תל אביב · 054-312-9933';
     }
+
+    /* The ID number never goes through FormSubmit. It is already stored with
+       the signed contract, which the studio opens from the link below and
+       reveals with the admin key — mailing it through a third party as well
+       adds nothing and puts it in someone else's pipeline. */
+    delete payload['id-number'];
 
     const res = await fetch(FORM_ENDPOINT, {
       method: 'POST',
