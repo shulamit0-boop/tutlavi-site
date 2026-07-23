@@ -154,7 +154,19 @@
   <div class="wrap about-grid">
     <div class="about-left reveal">
       <p class="eyebrow light"><span class="rule" aria-hidden="true"></span><span data-edit="aboutEyebrow">מי אנחנו</span></p>
-      <h2 class="about-title" data-edit="aboutTitle" data-dot>מי אנחנו<span class="dot">.</span></h2>
+      <div class="about-rings">
+        <svg class="rings-svg" viewBox="0 0 600 600" aria-hidden="true">
+          <defs>
+            <path id="ar-1" d="M60,300 A240,240 0 1,1 540,300 A240,240 0 1,1 60,300"/>
+            <path id="ar-2" d="M125,300 A175,175 0 1,1 475,300 A175,175 0 1,1 125,300"/>
+            <path id="ar-3" d="M185,300 A115,115 0 1,1 415,300 A115,115 0 1,1 185,300"/>
+          </defs>
+          <text class="rings-text rings-text--1"><textPath href="#ar-1" xlink:href="#ar-1" textLength="1508">TUTLAVI · TOUTE LA VIE · STUDIO · </textPath></text>
+          <text class="rings-text rings-text--2"><textPath href="#ar-2" xlink:href="#ar-2" textLength="1100">HOSPITALITY · CURATION · CREATION · CULINARY · </textPath></text>
+          <text class="rings-text rings-text--3"><textPath href="#ar-3" xlink:href="#ar-3" textLength="722">MAGEN AVRAHAM 6 · TEL AVIV · </textPath></text>
+        </svg>
+        <h2 class="about-title" data-edit="aboutTitle" data-dot>מי אנחנו<span class="dot">.</span></h2>
+      </div>
     </div>
     <div class="about-right reveal">
       <p class="about-lead" data-edit="aboutLead">
@@ -191,54 +203,25 @@
 
 <!-- ============ 5 · CONTACT ============ -->
 <section class="contact" id="contact">
-  <div class="wrap contact-grid">
-    <div class="contact-left reveal">
-      <div>
-        <p class="eyebrow"><span class="rule dark" aria-hidden="true"></span><span dir="ltr">Contact</span></p>
-        <h2 class="contact-title" data-edit="contactTitle" data-dot>דברו<br>איתנו<span class="dot">.</span></h2>
-      </div>
-      <div class="contact-links">
-        <a href="mailto:vivian.office.info@gmail.com" class="contact-link" data-email>
-          <span class="ci" aria-hidden="true">✉</span><span dir="ltr">vivian.office.info@gmail.com</span>
-        </a>
-        <a href="tel:+972543129933" class="contact-link" data-phone>
-          <span class="ci" aria-hidden="true">☎</span><span dir="ltr">054-312-9933</span>
-        </a>
-        <a href="https://www.instagram.com/tutlavi_studio" target="_blank" rel="noopener" class="contact-link" data-insta>
-          <span class="ci" aria-hidden="true">◎</span><span dir="ltr">@tutlavi_studio</span>
-        </a>
-        <p class="contact-addr" data-edit="contactAddr">מגן אברהם 6, תל אביב · מתחם כשר</p>
-      </div>
+  <div class="wrap contact-min reveal">
+    <p class="eyebrow"><span class="rule dark" aria-hidden="true"></span><span dir="ltr">Contact</span></p>
+    <h2 class="contact-title" data-edit="contactTitle" data-dot>דברו איתנו<span class="dot">.</span></h2>
+
+    <div class="contact-actions">
+      <!-- החליפו את # בקישור ההזמנה לקבוצה: https://chat.whatsapp.com/XXXX -->
+      <a href="#" target="_blank" rel="noopener" class="wa-join" data-wa-group>
+        <span class="wa-ico" aria-hidden="true">✆</span>
+        הצטרפו לקבוצת הוואטסאפ הסודית
+      </a>
+      <a href="https://wa.me/972543129933" target="_blank" rel="noopener" class="wa-write">כתבו לנו ישירות <span dir="ltr" aria-hidden="true">←</span></a>
     </div>
 
-    <div class="contact-card reveal">
-      <form id="contactForm" class="contact-form">
-        <input type="hidden" name="_subject" value="פנייה חדשה מאתר תות">
-        <input type="hidden" name="_template" value="table">
-        <input type="hidden" name="_captcha" value="false">
-        <p class="hp-field"><label>אל תמלאו: <input name="_honey"></label></p>
-
-        <div class="cf-field">
-          <label for="cf-name">שם</label>
-          <input id="cf-name" type="text" name="name" required>
-        </div>
-        <div class="cf-field">
-          <label for="cf-email">מייל</label>
-          <input id="cf-email" type="email" name="email" dir="ltr" required>
-        </div>
-        <div class="cf-field">
-          <label for="cf-message">הודעה</label>
-          <textarea id="cf-message" name="message" rows="4" required></textarea>
-        </div>
-        <button type="submit" class="btn-send">
-          <span>שליחת הודעה</span>
-        </button>
-        <p class="cf-status" id="cfStatus" role="status" aria-live="polite"></p>
-      </form>
-      <button type="button" class="rental-cta" data-open-inquiry="rental">
-        שיתופי פעולה והשכרת החלל <span dir="ltr">←</span>
-      </button>
+    <div class="contact-mini">
+      <a href="mailto:vivian.office.info@gmail.com" dir="ltr" data-email>vivian.office.info@gmail.com</a>
+      <span aria-hidden="true">·</span>
+      <a href="https://www.instagram.com/tutlavi_studio" target="_blank" rel="noopener" dir="ltr" data-insta>@tutlavi_studio</a>
     </div>
+    <p class="contact-addr" data-edit="contactAddr">מגן אברהם 6, תל אביב · מתחם כשר</p>
   </div>
 </section>
 
