@@ -30,7 +30,8 @@
     <button class="menu-close" id="menuClose" aria-label="סגירה">&times;</button>
   </div>
   <nav class="menu-list">
-    <a href="#schedule" class="menu-item">
+    <!-- להשקה: הופנה זמנית מ-#schedule ל-#rent כי הלו"ז מוסתר — להחזרה: החליפו #rent חזרה ל-#schedule -->
+    <a href="#rent" class="menu-item">
       <span class="menu-item-main">בואו ליצור בסטודיו</span>
       <span class="menu-item-sub" dir="ltr">Come create in studio</span>
       <span class="menu-arrow" aria-hidden="true">↗</span>
@@ -76,7 +77,8 @@
 </section>
 
 <!-- ============ 3 · SCHEDULE ============ -->
-<section class="schedule" id="schedule">
+<!-- לו"ז מוסתר זמנית לצורך ההשקה — להחזרה: מחקו את style="display:none" מהשורה הבאה -->
+<section class="schedule" id="schedule" style="display:none">
   <div class="wrap">
     <div class="sched-head reveal">
       <div>
@@ -208,8 +210,7 @@
     <h2 class="contact-title" data-edit="contactTitle" data-dot>דברו איתנו<span class="dot">.</span></h2>
 
     <div class="contact-actions">
-      <!-- החליפו את # בקישור ההזמנה לקבוצה: https://chat.whatsapp.com/XXXX -->
-      <a href="#" target="_blank" rel="noopener" class="wa-join" data-wa-group>
+      <a href="https://chat.whatsapp.com/Hbqqk4mGVwJ484JZAbEH8y" target="_blank" rel="noopener" class="wa-join" data-wa-group>
         <span class="wa-ico" aria-hidden="true">✆</span>
         הצטרפו לקבוצת הוואטסאפ הסודית
       </a>
@@ -228,32 +229,6 @@
 <!-- ============ FOOTER ============ -->
 <footer class="site-footer">
   <div class="wrap">
-    <div class="footer-cols">
-      <div class="footer-brand">
-        <span class="brand"><img class="brand-logo" src="media/logo-mark.png" alt="תות" width="645" height="249"></span>
-        <p data-edit="footerBrand">מרחב לאירוח, יצירה ואוצרות במרכז תל אביב.</p>
-      </div>
-      <div class="footer-col">
-        <p class="footer-label" dir="ltr">Explore</p>
-        <a href="#schedule">לו"ז הסטודיו</a>
-        <a href="#about">מי אנחנו</a>
-        <a href="#contact">צרו קשר</a>
-        <button type="button" class="footer-linkbtn" data-open-inquiry="rental">השכרת החלל</button>
-      </div>
-      <div class="footer-col" id="footerStudioCol">
-        <p class="footer-label" dir="ltr">Studio</p>
-        <span class="footer-static">שישי בצהריים</span>
-        <span class="footer-static">ערבי אמצע שבוע</span>
-        <span class="footer-static">סדנאות ואירועים</span>
-        <span class="footer-static">אירוח פרטי</span>
-      </div>
-      <div class="footer-col">
-        <p class="footer-label" dir="ltr">Contact</p>
-        <a href="mailto:vivian.office.info@gmail.com" dir="ltr" data-email>vivian.office.info@gmail.com</a>
-        <a href="https://www.instagram.com/tutlavi_studio" target="_blank" rel="noopener" dir="ltr" data-insta>@tutlavi_studio</a>
-        <span class="footer-static" data-edit="footerAddr">מגן אברהם 6, תל אביב</span>
-      </div>
-    </div>
     <div class="footer-bottom">
       <p dir="ltr">© 2026 תות Studio — All rights reserved</p>
       <a href="/admin" class="footer-admin">ניהול האתר</a>
