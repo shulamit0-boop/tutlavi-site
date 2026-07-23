@@ -75,10 +75,54 @@ fetch('/api/content')
   .catch(() => null)
   .then(c => {
     try { applySiteContent(c); } catch { /* never break the page */ }
+    try { initSplitHeadlineFX(); } catch { /* animation is optional */ }
     const t = (c && c.texts) || {};
     const vid = typeof t.splitVideo === 'string' && t.splitVideo.trim() ? t.splitVideo.trim() : null;
     if (!videosInited || vid) initVideos(vid);
   });
+
+/* Kinetic reveal for the "Creativity Canvas…" headline — each line rises and
+   scales in one after another (GSAP), adapted from the wonjyou.studio effect
+   (snorkltv CodePen). Degrades gracefully: no GSAP / reduced-motion → the line
+   simply shows via the normal CSS reveal. */
+function initSplitHeadlineFX() {
+  const h = document.querySelector('.split-headline');
+  if (!h || h.dataset.fx) return;
+  h.dataset.fx = '1';
+
+  // wrap each visual line (split on <br>) in a block-level span
+  const parts = h.innerHTML.split(/<br\s*\/?>/i);
+  h.innerHTML = parts.map(p => '<span class="sh-line">' + p + '</span>').join('');
+  const lines = [...h.querySelectorAll('.sh-line')];
+
+  const reduced = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!window.gsap || !lines.length || reduced) return; // show normally via CSS reveal
+
+  // take over from the CSS reveal so it doesn't fight the timeline
+  h.classList.remove('reveal');
+  h.classList.add('in-view');
+  gsap.set(lines, { opacity: 0 });
+
+  let played = false;
+  const play = () => {
+    if (played) return;
+    played = true;
+    const tl = gsap.timeline();
+    lines.forEach(line => {
+      tl.set(line, { opacity: 1 });
+      tl.from(line, { duration: 0.55, yPercent: 120, scale: 0.6, ease: 'power3' });
+    });
+  };
+
+  if ('IntersectionObserver' in window) {
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => { if (e.isIntersecting) { play(); io.disconnect(); } });
+    }, { threshold: 0.25 });
+    io.observe(h);
+  } else {
+    play();
+  }
+}
 
 function applySiteContent(c) {
   if (!c) return;

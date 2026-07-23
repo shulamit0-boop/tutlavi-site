@@ -208,6 +208,8 @@ html.js .reveal.in-view{ opacity:1; transform:none; }
   text-align:center; color:var(--ink);
   text-wrap:balance;
 }
+/* kinetic reveal: each line rises + scales in (GSAP) */
+.split-headline .sh-line{ display:block; will-change:transform, opacity; }
 
 /* ============ 3 · SCHEDULE ============ */
 .schedule{
