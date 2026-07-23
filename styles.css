@@ -236,7 +236,7 @@ html.js .reveal.in-view{ opacity:1; transform:none; }
 }
 .sched-cols{
   display:grid;
-  grid-template-columns:40px 150px 1fr 130px 120px;
+  grid-template-columns:40px 150px 1fr 120px minmax(120px,auto);
   gap:1rem; padding-bottom:1rem; border-bottom:1px solid rgba(0,0,0,.12);
 }
 .sched-cols span{ font-size:10px; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); }
@@ -244,7 +244,7 @@ html.js .reveal.in-view{ opacity:1; transform:none; }
 .sched-list{ margin-top:.5rem; }
 .sched-row{
   display:grid;
-  grid-template-columns:40px 150px 1fr 130px 120px;
+  grid-template-columns:40px 150px 1fr 120px minmax(120px,auto);
   gap:1rem; align-items:start;
   padding:clamp(1.2rem,2.5vw,1.8rem) 1rem;
   border:1px solid transparent; margin-top:.5rem;
@@ -274,6 +274,7 @@ html.js .reveal.in-view{ opacity:1; transform:none; }
   font-size:10px; font-weight:700; letter-spacing:.2em; text-transform:uppercase; color:var(--muted);
 }
 .sched-status.on{ color:var(--accent); }
+.sched-status-col{ justify-self:end; text-align:end; }
 
 /* ============ 4 · ABOUT (dark) ============ */
 .about{
@@ -580,8 +581,8 @@ html.js .reveal.in-view{ opacity:1; transform:none; }
 
 /* ---- event registration: schedule button ---- */
 .sched-reg{
-  display:inline-flex; align-items:center; gap:.4rem; align-self:start;
-  margin-top:.7rem; padding:.5rem 1.05rem;
+  display:inline-flex; align-items:center; gap:.4rem;
+  padding:.5rem 1.05rem; white-space:nowrap;
   font-size:.82rem; font-weight:600; letter-spacing:.02em;
   border:1px solid var(--ink); color:var(--ink); background:none;
   transition:background .25s ease, color .25s ease, border-color .25s ease;
@@ -630,6 +631,7 @@ html.js .reveal.in-view{ opacity:1; transform:none; }
   .sched-main{ grid-area:main; }
   .sched-cat{ grid-area:cat; }
   .sched-status{ grid-area:status; justify-self:end; }
+  .sched-status-col{ grid-area:status; justify-self:end; }
 }
 @media (max-width:520px){
   .footer-cols{ grid-template-columns:1fr; }

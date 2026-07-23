@@ -162,16 +162,19 @@ function applySiteContent(c) {
     } else if (list) {
       list.innerHTML = visible.map(ev => {
         const hot = ev.hot ? ' on' : '';
+        const action = regAction(ev);
         return '<li class="sched-row reveal in-view">' +
           '<span class="sched-flag' + hot + '"></span>' +
           '<span class="sched-date" dir="ltr">' + escHtml(ev.date || '') + '</span>' +
           '<span class="sched-main">' +
             '<span class="sched-name">' + escHtml(ev.name || '') + '</span>' +
             (ev.desc ? '<span class="sched-desc">' + escHtml(ev.desc) + '</span>' : '') +
-            regAction(ev) +
           '</span>' +
           '<span class="sched-cat">' + escHtml(ev.cat || '') + '</span>' +
-          '<span class="sched-status' + hot + '">' + escHtml(ev.status || '') + '</span>' +
+          // registration CTA takes the status slot; falls back to the status text
+          (action
+            ? '<span class="sched-status-col">' + action + '</span>'
+            : '<span class="sched-status' + hot + '">' + escHtml(ev.status || '') + '</span>') +
         '</li>';
       }).join('');
       const count = document.getElementById('schedCount');
