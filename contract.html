@@ -55,8 +55,13 @@ ol{ padding-inline-start:1.2rem; }
 }
 .studio-sign-row button:hover{ background:var(--accent); border-color:var(--accent); }
 #ssMsg{ font-size:.85rem; margin-top:.5rem; color:var(--soft); }
+.reveal-row{ margin-top:1rem; }
+.reveal-row button{
+  background:none; border:0; padding:0; font:inherit; font-size:.85rem;
+  color:var(--soft); text-decoration:underline; cursor:pointer;
+}
 .back{ display:inline-block; margin-top:1.6rem; font-weight:600; color:var(--accent); }
-@media print{ .back, .studio-sign-row{ display:none; } }
+@media print{ .back, .studio-sign-row, .reveal-row{ display:none; } }
 </style>
 </head>
 <body>
@@ -129,6 +134,10 @@ ol{ padding-inline-start:1.2rem; }
   <p id="ssMsg"></p>
 </div>
 
+<div class="reveal-row" id="revealRow" hidden>
+  <button id="revealBtn">הצגת ת.ז מלאה (למשכיר)</button>
+</div>
+
 <a href="/" class="back">← חזרה לאתר</a>
 
 <script>
@@ -171,6 +180,9 @@ if (bid) {
       if (b.signedAt) {
         $('renterWhen').textContent = ' · נחתם ' + new Date(b.signedAt).toLocaleDateString('he-IL');
       }
+      // the API masks the ID number for anyone holding the link; the studio
+      // can reveal it with the admin key
+      $('revealRow').hidden = false;
       if (b.studioSigned) {
         $('docStatus').textContent = 'נחתם על ידי שני הצדדים';
         $('docStatus').className = 'status done';
@@ -185,15 +197,37 @@ if (bid) {
       }
     })
     .catch(() => { $('docStatus').textContent = 'שגיאה בטעינה'; });
-} else if ([...qs.keys()].length) {
-  // live preview straight from the form
-  applyData({
-    name: qs.get('name'), idnum: qs.get('idnum'), date: qs.get('date'),
-    start: qs.get('start'), end: qs.get('end'), purpose: qs.get('purpose'),
-    price: qs.get('price'), participants: qs.get('participants'),
-  });
-  $('docStatus').textContent = 'תצוגה מקדימה — טרם נחתם';
+} else {
+  // live preview handed over by the booking form through localStorage rather
+  // than the query string, so the ID number never lands in a URL. Read once,
+  // then delete — and ignore a stale handoff left by an old tab.
+  let preview = null;
+  try {
+    const raw = localStorage.getItem('tut-contract-preview');
+    localStorage.removeItem('tut-contract-preview');
+    const p = raw ? JSON.parse(raw) : null;
+    if (p && Date.now() - (p.at || 0) < 15 * 60 * 1000) preview = p;
+  } catch { /* ignore */ }
+  if (preview) {
+    applyData(preview);
+    $('docStatus').textContent = 'תצוגה מקדימה — טרם נחתם';
+  }
 }
+
+$('revealBtn')?.addEventListener('click', async () => {
+  const key = prompt('מפתח ניהול להצגת ת.ז מלאה:');
+  if (!key) return;
+  try {
+    const res = await fetch('/api/booking?id=' + encodeURIComponent(bid), {
+      headers: { 'x-admin-key': key },
+    });
+    const b = await res.json();
+    // a wrong key still gets a 200 — it just comes back masked
+    if (!res.ok || !b.idnum || b.idnum.includes('•')) { alert('מפתח שגוי'); return; }
+    $('c-idnum').textContent = b.idnum;
+    $('revealRow').hidden = true;
+  } catch { alert('שגיאה — נסו שוב'); }
+});
 
 $('studioSignBtn')?.addEventListener('click', async () => {
   const key = prompt('מפתח ניהול לחתימת הסטודיו:');

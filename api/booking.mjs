@@ -1,16 +1,39 @@
 import { kvGet, kvSet, storeReady } from './_store.mjs';
+import { isAdmin, limitPublic, requireAdmin } from './_guard.mjs';
 
 export const config = { runtime: 'edge' };
 
-const rid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+/* The contract link is the only thing guarding a signed contract, so the id
+   has to be unguessable: Math.random() is not a CSPRNG and Date.now() made
+   half of the old id predictable. 128 random bits, hex, still matches the
+   [a-z0-9]{6,40} shape of the ids already stored. */
+const rid = () => {
+  const b = new Uint8Array(16);
+  crypto.getRandomValues(b);
+  return Array.from(b, (x) => x.toString(16).padStart(2, '0')).join('');
+};
+
+// whoever holds the link sees only the last 4 digits; the studio sees it all
+const maskId = (s) => {
+  const v = String(s || '');
+  return v.length > 4 ? '•'.repeat(Math.min(v.length - 4, 8)) + v.slice(-4) : v;
+};
 
 export default async function handler(req) {
   if (req.method === 'GET') {
+    // generous for a person opening their contract, useless for a scanner
+    if (!isAdmin(req)) {
+      const limited = await limitPublic(req, 'contractview', 60);
+      if (limited) return limited;
+    }
     const id = new URL(req.url).searchParams.get('id') || '';
     if (!/^[a-z0-9]{6,40}$/.test(id)) return Response.json({ error: 'bad id' }, { status: 400 });
     const b = await kvGet('booking:' + id);
     if (!b) return Response.json({ error: 'not found' }, { status: 404 });
-    return Response.json(b, { headers: { 'Cache-Control': 'no-store' } });
+    const out = isAdmin(req) ? b : { ...b, idnum: maskId(b.idnum) };
+    return Response.json(out, {
+      headers: { 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' },
+    });
   }
 
   if (req.method === 'POST') {
@@ -23,6 +46,10 @@ export default async function handler(req) {
 
     // client creates a signed booking/contract
     if (body.action === 'create') {
+      // each contract stores a signature image, so this is the most expensive
+      // thing an anonymous caller can write
+      const limited = await limitPublic(req, 'contract', 5);
+      if (limited) return limited;
       const d = body.data || {};
       const sig = String(body.signature || '');
       if (!sig.startsWith('data:image/png;base64,') || sig.length > 300000) {
@@ -54,10 +81,8 @@ export default async function handler(req) {
 
     // studio counter-signs (requires the admin key)
     if (body.action === 'studio-sign') {
-      const key = req.headers.get('x-admin-key') || '';
-      if (!process.env.ADMIN_KEY || key !== process.env.ADMIN_KEY) {
-        return Response.json({ error: 'unauthorized' }, { status: 401 });
-      }
+      const denied = await requireAdmin(req);
+      if (denied) return denied;
       const id = String(body.id || '');
       const b = await kvGet('booking:' + id);
       if (!b) return Response.json({ error: 'not found' }, { status: 404 });
