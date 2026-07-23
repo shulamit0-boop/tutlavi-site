@@ -105,6 +105,13 @@ function applySiteContent(c) {
         'linear-gradient(rgba(255,255,255,.12), rgba(255,255,255,.28)), url("' + t.heroImage.trim() + '")';
     }
   }
+  if (has('rentUses')) {
+    const ul = document.getElementById('rentUses');
+    if (ul) {
+      ul.innerHTML = t.rentUses.split('\n').map(l => l.trim()).filter(Boolean)
+        .map(line => '<li>' + escHtml(line) + '</li>').join('');
+    }
+  }
   if (has('footerStudio')) {
     const col = document.getElementById('footerStudioCol');
     if (col) {

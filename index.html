@@ -172,8 +172,8 @@
 <section class="rentspace" id="rent">
   <div class="wrap">
     <div class="rent-head reveal">
-      <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span><span>השכרת החלל · שיתופי פעולה</span></p>
-      <h2 class="rent-title" data-dot>המרחב שלכם<br>לאירוע הבא<span class="dot">.</span></h2>
+      <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span><span data-edit="rentEyebrow">השכרת החלל · שיתופי פעולה</span></p>
+      <h2 class="rent-title" data-edit="rentTitle" data-dot>המרחב שלכם<br>לאירוע הבא<span class="dot">.</span></h2>
     </div>
 
     <div class="rent-main">
@@ -182,11 +182,11 @@
         <span class="rent-media-tag" dir="ltr">Magen Avraham 6 · TLV</span>
       </div>
       <div class="rent-body reveal">
-        <p class="rent-lead">
+        <p class="rent-lead" data-edit="rentLead">
           החלל של <strong>תות</strong> פתוח ליוצרים, מותגים וקהילות — מרחב מעוצב,
           מותאם ומלא אופי בלב תל אביב, לאירוע שלכם.
         </p>
-        <ul class="rent-uses">
+        <ul class="rent-uses" id="rentUses">
           <li>השקות ואירועי מותג</li>
           <li>ימי צילום והפקות</li>
           <li>סדנאות והרצאות</li>
@@ -195,7 +195,7 @@
         </ul>
         <div class="rent-actions">
           <button type="button" class="rent-cta-main" data-open-inquiry="rental">
-            לבדיקת זמינות והזמנת החלל <span dir="ltr">←</span>
+            <span data-edit="rentCta">לבדיקת זמינות והזמנת החלל</span> <span dir="ltr">←</span>
           </button>
           <button type="button" class="rent-cta-alt" data-open-inquiry="collab">
             רוצים לשתף פעולה? דברו איתנו
@@ -206,16 +206,16 @@
 
     <div class="rent-feats reveal">
       <div class="rent-feat">
-        <b>יומן זמינות חי</b>
-        <span>בוחרים תאריך וחלון שעות, ורואים מיד מה פנוי.</span>
+        <b data-edit="rentFeat1Title">יומן זמינות חי</b>
+        <span data-edit="rentFeat1Body">בוחרים תאריך וחלון שעות, ורואים מיד מה פנוי.</span>
       </div>
       <div class="rent-feat">
-        <b>חוזה דיגיטלי</b>
-        <span>נחתם אונליין תוך דקות, עם כל הפרטים שלכם.</span>
+        <b data-edit="rentFeat2Title">חוזה דיגיטלי</b>
+        <span data-edit="rentFeat2Body">נחתם אונליין תוך דקות, עם כל הפרטים שלכם.</span>
       </div>
       <div class="rent-feat">
-        <b>מתחם כשר</b>
-        <span>אירוח פרימיום שמתאים לקהל רחב.</span>
+        <b data-edit="rentFeat3Title">מתחם כשר</b>
+        <span data-edit="rentFeat3Body">אירוח פרימיום שמתאים לקהל רחב.</span>
       </div>
     </div>
   </div>
