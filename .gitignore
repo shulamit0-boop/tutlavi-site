@@ -6,3 +6,9 @@ Thumbs.db
 .claude/
 node_modules/
 .netlify/
+.vercel/
+
+# secrets — ADMIN_KEY, the KV token, the Green Invoice credentials
+.env
+.env.*
+!.env.example

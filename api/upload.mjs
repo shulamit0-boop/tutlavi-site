@@ -6,6 +6,7 @@
 
 import { handleUpload } from '@vercel/blob/client';
 import { del } from '@vercel/blob';
+import { safeEqual } from './_guard.mjs';
 
 const ALLOWED_TYPES = [
   'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif',
@@ -20,7 +21,7 @@ export default async function handler(req, res) {
 
   const body = req.body || {};
   const headerKey = req.headers['x-admin-key'] || '';
-  const isAdmin = (k) => Boolean(process.env.ADMIN_KEY) && k === process.env.ADMIN_KEY;
+  const isAdmin = (k) => Boolean(process.env.ADMIN_KEY) && safeEqual(String(k || ''), process.env.ADMIN_KEY);
 
   // deletion of a replaced blob
   if (body.type === 'delete') {
