@@ -6,24 +6,21 @@
 <title>ניהול האתר — סטודיו תות</title>
 <meta name="robots" content="noindex, nofollow">
 <style>
-@font-face{ font-family:'Anomalia'; src:url('fonts/anomalia-demibold-aaa.otf') format('opentype'); font-weight:600; }
-@font-face{ font-family:'Almoni Tzar'; src:url('fonts/almoni-tzar-light-aaa.otf') format('opentype'); font-weight:300; }
-@font-face{ font-family:'Almoni Tzar'; src:url('fonts/almoni-tzar-demibold-aaa.otf') format('opentype'); font-weight:600; }
-@font-face{ font-family:'Index Mono'; src:url('fonts/index-mono-regular-aaa.otf') format('opentype'); font-weight:400; }
-
 :root{
   --bg:#fff; --ink:#17140f; --soft:#57524a; --line:rgba(25,22,17,.14);
   --accent:#a91e1c; --open:#1e7a3c; --openbg:#e8f5ec; --lockbg:#fbeaea;
+  --sans: system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --display: 'Helvetica Neue', Arial, system-ui, sans-serif;
 }
 *{ box-sizing:border-box; margin:0; padding:0; }
 body{
   background:var(--bg); color:var(--ink);
-  font-family:'Almoni Tzar', sans-serif; font-weight:300; font-size:17px;
+  font-family:var(--sans); font-weight:300; font-size:17px;
   padding:2rem clamp(16px,4vw,48px); max-width:1080px; margin:0 auto;
 }
-h1{ font-family:'Anomalia', sans-serif; font-weight:600; font-size:1.7rem; margin-bottom:.2rem; }
+h1{ font-family:var(--display); font-weight:600; font-size:1.7rem; margin-bottom:.2rem; }
 .sub{ color:var(--soft); font-size:.95rem; margin-bottom:2rem; }
-.mono{ font-family:'Index Mono', monospace; font-size:.8em; letter-spacing:.02em; }
+.mono{ font-family:var(--sans); font-size:.8em; letter-spacing:.02em; }
 
 /* login */
 #login{ max-width:380px; margin:12vh auto; text-align:center; }
@@ -32,7 +29,7 @@ h1{ font-family:'Anomalia', sans-serif; font-weight:600; font-size:1.7rem; margi
   font:inherit; margin:1rem 0; text-align:center;
 }
 button{
-  font-family:'Almoni Tzar', sans-serif; font-weight:600; font-size:1rem;
+  font-family:var(--sans); font-weight:600; font-size:1rem;
   background:var(--ink); color:#fff; border:1px solid var(--ink);
   padding:.7rem 1.6rem; cursor:pointer;
 }
@@ -55,7 +52,7 @@ button.danger{ background:var(--accent); border-color:var(--accent); }
 #saveState.saving{ color:var(--accent); }
 #saveState.saved{ color:var(--open); }
 .month-nav{ display:flex; align-items:center; gap:.8rem; margin-bottom:1.2rem; }
-.month-nav b{ font-family:'Anomalia'; font-weight:600; font-size:1.2rem; min-width:150px; text-align:center; }
+.month-nav b{ font-family:var(--display); font-weight:600; font-size:1.2rem; min-width:150px; text-align:center; }
 
 /* calendar */
 .cal{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:2rem; }
@@ -78,7 +75,7 @@ button.danger{ background:var(--accent); border-color:var(--accent); }
 
 /* day panel */
 .panel{ border:1px solid var(--line); padding:1.4rem; }
-.panel h2{ font-family:'Anomalia'; font-weight:600; font-size:1.15rem; margin-bottom:1rem; }
+.panel h2{ font-family:var(--display); font-weight:600; font-size:1.15rem; margin-bottom:1rem; }
 .row{ display:flex; gap:.8rem; align-items:center; flex-wrap:wrap; margin-bottom:1rem; }
 .row input[type=time], .row input[type=text]{
   border:1px solid var(--line); padding:.55rem .7rem; font:inherit;
@@ -97,7 +94,7 @@ button.danger{ background:var(--accent); border-color:var(--accent); }
 
 /* content editor */
 .cgroup{ border:1px solid var(--line); padding:1.4rem; margin-bottom:1.6rem; }
-.cgroup > h2{ font-family:'Anomalia'; font-weight:600; font-size:1.15rem; margin-bottom:1.1rem; }
+.cgroup > h2{ font-family:var(--display); font-weight:600; font-size:1.15rem; margin-bottom:1.1rem; }
 .cfield{ margin-bottom:1.1rem; }
 .cfield:last-child{ margin-bottom:0; }
 .cfield > label{ display:block; font-weight:600; font-size:.92rem; margin-bottom:.35rem; }

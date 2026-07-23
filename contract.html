@@ -6,31 +6,30 @@
 <title>הסכם השכרת חלל — סטודיו תות</title>
 <meta name="robots" content="noindex">
 <style>
-@font-face{ font-family:'Anomalia'; src:url('fonts/anomalia-demibold-aaa.otf') format('opentype'); font-weight:600; }
-@font-face{ font-family:'Almoni Tzar'; src:url('fonts/almoni-tzar-light-aaa.otf') format('opentype'); font-weight:300; }
-@font-face{ font-family:'Almoni Tzar'; src:url('fonts/almoni-tzar-demibold-aaa.otf') format('opentype'); font-weight:600; }
-@font-face{ font-family:'Index Mono'; src:url('fonts/index-mono-regular-aaa.otf') format('opentype'); font-weight:400; }
-
-:root{ --ink:#17140f; --soft:#57524a; --line:rgba(25,22,17,.16); --accent:#a91e1c; --ok:#1e7a3c; }
+:root{
+  --ink:#17140f; --soft:#57524a; --line:rgba(25,22,17,.16); --accent:#a91e1c; --ok:#1e7a3c;
+  --sans: system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
+  --display: 'Helvetica Neue', Arial, system-ui, sans-serif;
+}
 *{ box-sizing:border-box; margin:0; padding:0; }
 body{
   background:#fff; color:var(--ink);
-  font-family:'Almoni Tzar', sans-serif; font-weight:300; font-size:17px; line-height:1.55;
+  font-family:var(--sans); font-weight:300; font-size:17px; line-height:1.55;
   max-width:760px; margin:0 auto; padding:3rem clamp(18px,5vw,44px) 4rem;
 }
 header{ border-bottom:2px solid var(--ink); padding-bottom:1.2rem; margin-bottom:2rem; }
-.brand{ font-family:'Anomalia', sans-serif; font-weight:600; font-size:1.5rem; }
-.brand small{ font-family:'Index Mono', monospace; font-size:.6rem; letter-spacing:.14em; color:var(--soft); margin-inline-start:.6rem; }
-h1{ font-family:'Anomalia', sans-serif; font-weight:600; font-size:1.6rem; margin-top:.6rem; }
+.brand{ font-family:var(--display); font-weight:600; font-size:1.5rem; }
+.brand small{ font-family:var(--sans); font-size:.6rem; letter-spacing:.14em; color:var(--soft); margin-inline-start:.6rem; }
+h1{ font-family:var(--display); font-weight:600; font-size:1.6rem; margin-top:.6rem; }
 .status{
   display:inline-block; margin-top:.8rem;
-  font-family:'Index Mono', monospace; font-size:.62rem; letter-spacing:.12em;
+  font-family:var(--sans); font-size:.62rem; letter-spacing:.12em;
   border:1px solid var(--soft); color:var(--soft); padding:.25rem .7rem;
 }
 .status.signed{ border-color:var(--accent); color:var(--accent); }
 .status.done{ border-color:var(--ok); color:var(--ok); }
 h2{
-  font-family:'Anomalia', sans-serif; font-weight:600; font-size:1.05rem;
+  font-family:var(--display); font-weight:600; font-size:1.05rem;
   margin:1.8rem 0 .5rem;
 }
 p, li{ margin-bottom:.5rem; }
@@ -44,13 +43,13 @@ ol{ padding-inline-start:1.2rem; }
 .sigbox img{ max-height:90px; max-width:100%; object-fit:contain; align-self:flex-start; }
 .sigline{ border-top:1px solid var(--ink); padding-top:.5rem; font-size:.9rem; color:var(--soft); }
 .stamp{
-  font-family:'Anomalia', sans-serif; font-weight:600; color:var(--ok);
+  font-family:var(--display); font-weight:600; color:var(--ok);
   border:2px solid var(--ok); display:inline-block; padding:.3rem .9rem;
   transform:rotate(-3deg); margin-bottom:.6rem; align-self:flex-start;
 }
 .studio-sign-row{ margin-top:2rem; }
 .studio-sign-row button{
-  font-family:'Almoni Tzar', sans-serif; font-weight:600; font-size:1rem;
+  font-family:var(--sans); font-weight:600; font-size:1rem;
   background:var(--ink); color:#fff; border:1px solid var(--ink);
   padding:.7rem 1.6rem; cursor:pointer;
 }
