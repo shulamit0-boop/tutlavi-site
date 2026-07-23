@@ -26,6 +26,32 @@ export async function kvGet(key) {
   }
 }
 
+/* Atomic counter used by the rate limiter. The first hit in a window starts
+   the TTL, so the key disappears on its own and nothing has to be swept. */
+export async function kvIncr(key, ttlSec) {
+  if (!storeReady()) return null;
+  try {
+    const res = await fetch(`${BASE}/incr/${encodeURIComponent(key)}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${TOKEN}` },
+      cache: 'no-store',
+    });
+    if (!res.ok) return null;
+    const body = await res.json();
+    const n = Number(body?.result);
+    if (!Number.isFinite(n)) return null;
+    if (n === 1 && ttlSec) {
+      await fetch(`${BASE}/expire/${encodeURIComponent(key)}/${ttlSec}`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${TOKEN}` },
+      });
+    }
+    return n;
+  } catch {
+    return null;
+  }
+}
+
 export async function kvSet(key, value) {
   if (!storeReady()) return false;
   try {

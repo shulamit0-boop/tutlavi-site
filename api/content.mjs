@@ -1,4 +1,5 @@
 import { kvGet, kvSet, storeReady } from './_store.mjs';
+import { requireAdmin } from './_guard.mjs';
 
 export const config = { runtime: 'edge' };
 
@@ -6,6 +7,15 @@ const KEY = 'content';
 // events: null = never configured (site keeps its built-in defaults);
 //         []   = explicitly cleared by the admin (site hides the schedule)
 const EMPTY = { texts: {}, events: null };
+
+/* The registration link is rendered straight into an href. Without a scheme
+   check a "javascript:" URL saved in the panel would run on the public site. */
+const safeUrl = (v) => {
+  const s = String(v || '').trim().slice(0, 500);
+  if (!s) return '';
+  if (s.startsWith('/')) return s;
+  return /^https?:\/\//i.test(s) ? s : '';
+};
 
 const sanitize = (body) => {
   const texts = {};
@@ -33,7 +43,7 @@ const sanitize = (body) => {
             hot: e.hot === true,
             hidden: e.hidden === true,
             reg,
-            regUrl: reg === 'external' ? String(e.regUrl || '').slice(0, 500) : '',
+            regUrl: reg === 'external' ? safeUrl(e.regUrl) : '',
             regMode: reg === 'internal' ? regMode : 'free',
             price: reg === 'internal' && regMode === 'paid' ? price : 0,
           };
@@ -49,10 +59,8 @@ export default async function handler(req) {
     return Response.json(data, { headers: { 'Cache-Control': 'no-store' } });
   }
 
-  const key = req.headers.get('x-admin-key') || '';
-  if (!process.env.ADMIN_KEY || key !== process.env.ADMIN_KEY) {
-    return Response.json({ error: 'unauthorized' }, { status: 401 });
-  }
+  const denied = await requireAdmin(req);
+  if (denied) return denied;
 
   if (req.method === 'PUT') {
     let body;

@@ -1,0 +1,17 @@
+# Files that belong in the repo but must not be served from tutlavi.com.
+# CLAUDE.md in particular was reachable at /CLAUDE.md and describes the whole
+# architecture: env var names, the KV store, the admin flow.
+#
+# This file is only honoured for CLI deploys — a Git deployment clones the
+# whole repo — so the same paths are also redirected away in vercel.json,
+# which is what actually makes them unreachable in production. Keep both in
+# sync if you add a file here.
+CLAUDE.md
+deploy-marker.txt
+availability-backup.json
+_menu-anim-preview.html
+experiment.html
+
+# leftovers from the Netlify host, superseded by api/
+netlify.toml
+netlify/

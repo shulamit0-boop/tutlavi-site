@@ -8,8 +8,9 @@
      Meta webhook config (used only for the GET verification handshake).
    - WA_ALLOWED       — comma-separated phone numbers allowed to add events
      (digits only or with +, e.g. "972542451297"). Others are ignored.
-   - WA_APP_SECRET    — (recommended) the Meta app secret; enables request
-     signature verification (X-Hub-Signature-256).
+   - WA_APP_SECRET    — (required) the Meta app secret, used to verify the
+     X-Hub-Signature-256 on every call. Until it is set the webhook refuses
+     every POST: an unverified caller could otherwise post events to the site.
    - WA_ACCESS_TOKEN + WA_PHONE_NUMBER_ID — (optional) enable a WhatsApp reply
      confirming the event was added / explaining the format on a parse miss.
 
@@ -129,21 +130,29 @@ export default async function handler(req, res) {
   }
   if (req.method !== 'POST') return res.status(405).json({ error: 'method not allowed' });
 
-  const { raw, fromStream } = await readRawBody(req);
-  const rawBody = fromStream && raw ? raw : (req.body ? JSON.stringify(req.body) : '');
-
-  // signature verification (only strict when we have the true raw bytes)
+  /* Signature verification. This endpoint writes to the live site, and the
+     sender allow-list is no protection on its own because `from` is just a
+     field in the payload the caller sends. So every branch that cannot prove
+     the request came from Meta refuses it: no app secret configured, or no
+     raw bytes to hash, means no write. */
   const secret = process.env.WA_APP_SECRET;
-  if (secret && fromStream && raw) {
-    const expected = 'sha256=' + crypto.createHmac('sha256', secret).update(raw).digest('hex');
-    const sig = String(req.headers['x-hub-signature-256'] || '');
-    const ok = sig.length === expected.length &&
-      crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected));
-    if (!ok) return res.status(401).json({ error: 'bad signature' });
+  if (!secret) {
+    return res.status(503).json({ error: 'webhook not configured' });
   }
 
+  const { raw, fromStream } = await readRawBody(req);
+  if (!fromStream || !raw) {
+    return res.status(400).json({ error: 'no raw body' });
+  }
+
+  const expected = 'sha256=' + crypto.createHmac('sha256', secret).update(raw).digest('hex');
+  const sig = String(req.headers['x-hub-signature-256'] || '');
+  const ok = sig.length === expected.length &&
+    crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected));
+  if (!ok) return res.status(401).json({ error: 'bad signature' });
+
   let body;
-  try { body = JSON.parse(rawBody || '{}'); } catch { body = {}; }
+  try { body = JSON.parse(raw); } catch { body = {}; }
 
   // always answer 200 fast so Meta does not retry-storm; process best-effort
   try {

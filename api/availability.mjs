@@ -1,4 +1,5 @@
 import { kvGet, kvSet, storeReady } from './_store.mjs';
+import { limitPublic, requireAdmin } from './_guard.mjs';
 
 export const config = { runtime: 'edge' };
 
@@ -37,8 +38,12 @@ export default async function handler(req) {
     return Response.json(data, { headers: { 'Cache-Control': 'no-store' } });
   }
 
-  // public reservation: a visitor books a specific open window
+  // Public reservation: a visitor books a specific open window. Anonymous and
+  // irreversible from the visitor's side, so without a budget one script can
+  // mark the whole calendar as taken.
   if (req.method === 'POST') {
+    const limited = await limitPublic(req, 'reserve', 5);
+    if (limited) return limited;
     let body;
     try {
       body = await req.json();
@@ -62,10 +67,8 @@ export default async function handler(req) {
   }
 
   // admin mutations require the key
-  const key = req.headers.get('x-admin-key') || '';
-  if (!process.env.ADMIN_KEY || key !== process.env.ADMIN_KEY) {
-    return Response.json({ error: 'unauthorized' }, { status: 401 });
-  }
+  const denied = await requireAdmin(req);
+  if (denied) return denied;
 
   if (req.method === 'PUT') {
     let body;

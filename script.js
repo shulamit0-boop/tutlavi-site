@@ -162,10 +162,13 @@ function applySiteContent(c) {
     });
   }
   if (has('heroImage')) {
+    // this value lands inside a CSS url(); quotes and parens would let it
+    // close the declaration and inject rules of its own
+    const src = encodeURI(t.heroImage.trim()).replace(/["'()\\]/g, '');
     const bg = document.querySelector('.hero-bg');
-    if (bg) {
+    if (bg && (src.startsWith('/') || /^https?:\/\//i.test(src))) {
       bg.style.backgroundImage =
-        'linear-gradient(rgba(255,255,255,.12), rgba(255,255,255,.28)), url("' + t.heroImage.trim() + '")';
+        'linear-gradient(rgba(255,255,255,.12), rgba(255,255,255,.28)), url("' + src + '")';
     }
   }
   if (has('footerStudio')) {
@@ -432,7 +435,6 @@ function selectDay(dIso) {
         availStatus.textContent = 'נבחר: ' + fmtHe(dIso) + ' · ' + w.start + '–' + w.end +
           (w.price ? ' · ₪' + w.price.toLocaleString() : '') + ' — החלון יישמר עבורכם עם השליחה.';
         availStatus.className = 'avail-status ok';
-        refreshContractLink();
       });
       availChips.appendChild(chip);
     });
@@ -445,7 +447,6 @@ function selectDay(dIso) {
     availStatus.textContent = fmtHe(dIso) + ' — אין חלון מוגדר; בחרו שעות מבוקשות ושלחו, ונחזור אליכם.';
     availStatus.className = 'avail-status';
   }
-  refreshContractLink();
 }
 
 function fmtHe(isoDate) {
@@ -470,34 +471,32 @@ async function reserveWindow() {
   }
 }
 
-/* ---------- contract preview link mirrors the form live ---------- */
-function contractParams() {
-  const p = new URLSearchParams();
-  const set = (k, v) => { if (v) p.set(k, v); };
-  set('name', document.getElementById('f-name').value.trim());
-  set('idnum', document.getElementById('f-idnum').value.trim());
-  set('date', dateInput.value);
-  set('start', startSel.value);
-  set('end', endSel.value);
-  set('purpose', document.getElementById('f-purpose').value);
-  set('participants', document.getElementById('f-participants').value);
-  set('price', document.getElementById('f-cost').value);
-  return p;
+/* ---------- contract preview handoff ----------
+   These fields include the renter's ID number. They used to ride in the query
+   string of /contract, which put them in the browser history, in the server
+   access logs and in the Referer header of anything that page loads. They now
+   go through a short-lived localStorage handoff written on click, which
+   /contract deletes the moment it reads it. */
+const CONTRACT_PREVIEW_KEY = 'tut-contract-preview';
+
+function stashContractPreview() {
+  const val = (id) => (document.getElementById(id)?.value || '').trim();
+  try {
+    localStorage.setItem(CONTRACT_PREVIEW_KEY, JSON.stringify({
+      at: Date.now(),
+      name: val('f-name'),
+      idnum: val('f-idnum'),
+      date: dateInput.value,
+      start: startSel.value,
+      end: endSel.value,
+      purpose: val('f-purpose'),
+      participants: val('f-participants'),
+      price: val('f-cost'),
+    }));
+  } catch { /* private mode — the contract just opens blank */ }
 }
 
-function refreshContractLink() {
-  const link = document.getElementById('contractLink');
-  if (!link) return;
-  const p = contractParams();
-  link.href = '/contract' + (p.toString() ? '?' + p.toString() : '');
-}
-
-['f-name', 'f-idnum', 'f-purpose', 'f-participants'].forEach(id => {
-  document.getElementById(id)?.addEventListener('input', refreshContractLink);
-  document.getElementById(id)?.addEventListener('change', refreshContractLink);
-});
-startSel?.addEventListener('change', refreshContractLink);
-endSel?.addEventListener('change', refreshContractLink);
+document.getElementById('contractLink')?.addEventListener('click', stashContractPreview);
 
 /* ---------- signature pad ---------- */
 const sigPad = document.getElementById('sigPad');

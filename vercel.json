@@ -3,5 +3,44 @@
   "rewrites": [
     { "source": "/admin", "destination": "/admin.html" },
     { "source": "/contract", "destination": "/contract.html" }
+  ],
+  "redirects": [
+    {
+      "source": "/(CLAUDE.md|netlify.toml|deploy-marker.txt|availability-backup.json|experiment.html|_menu-anim-preview.html)",
+      "destination": "/",
+      "permanent": false
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; frame-src 'none'; script-src 'self' 'unsafe-inline' https://unpkg.com https://esm.sh; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.public.blob.vercel-storage.com; media-src 'self' blob: https://*.public.blob.vercel-storage.com; font-src 'self'; connect-src 'self' https://formsubmit.co https://blob.vercel-storage.com https://*.public.blob.vercel-storage.com; form-action 'self' https://formsubmit.co; upgrade-insecure-requests"
+        },
+        { "key": "X-Frame-Options", "value": "DENY" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=(), payment=(), usb=()"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=63072000; includeSubDomains; preload"
+        },
+        { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" },
+        { "key": "Access-Control-Allow-Origin", "value": "https://tutlavi.com" }
+      ]
+    },
+    {
+      "source": "/admin(.*)",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    },
+    {
+      "source": "/contract(.*)",
+      "headers": [{ "key": "X-Robots-Tag", "value": "noindex, nofollow" }]
+    }
   ]
 }
