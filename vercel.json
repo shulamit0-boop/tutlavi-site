@@ -4,6 +4,13 @@
     { "source": "/admin", "destination": "/admin.html" },
     { "source": "/contract", "destination": "/contract.html" }
   ],
+  "redirects": [
+    {
+      "source": "/(CLAUDE.md|netlify.toml|deploy-marker.txt|availability-backup.json|experiment.html|_menu-anim-preview.html)",
+      "destination": "/",
+      "permanent": false
+    }
+  ],
   "headers": [
     {
       "source": "/(.*)",
