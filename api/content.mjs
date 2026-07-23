@@ -17,15 +17,27 @@ const sanitize = (body) => {
   const events = Array.isArray(body?.events)
     ? body.events
         .filter((e) => e && typeof e === 'object')
-        .map((e) => ({
-          date: String(e.date || '').slice(0, 40),
-          name: String(e.name || '').slice(0, 200),
-          desc: String(e.desc || '').slice(0, 400),
-          cat: String(e.cat || '').slice(0, 60),
-          status: String(e.status || '').slice(0, 60),
-          hot: e.hot === true,
-          hidden: e.hidden === true,
-        }))
+        .map((e) => {
+          // registration mode: 'none' (info only), 'external' (link out),
+          // 'internal' (register on-site); internal sub-mode 'free' | 'paid'
+          const reg = ['external', 'internal'].includes(e.reg) ? e.reg : 'none';
+          const regMode = e.regMode === 'paid' ? 'paid' : 'free';
+          const price = Math.max(0, Math.min(100000, parseInt(e.price, 10) || 0));
+          return {
+            id: /^[a-z0-9]{4,40}$/.test(String(e.id || '')) ? String(e.id) : '',
+            date: String(e.date || '').slice(0, 40),
+            name: String(e.name || '').slice(0, 200),
+            desc: String(e.desc || '').slice(0, 400),
+            cat: String(e.cat || '').slice(0, 60),
+            status: String(e.status || '').slice(0, 60),
+            hot: e.hot === true,
+            hidden: e.hidden === true,
+            reg,
+            regUrl: reg === 'external' ? String(e.regUrl || '').slice(0, 500) : '',
+            regMode: reg === 'internal' ? regMode : 'free',
+            price: reg === 'internal' && regMode === 'paid' ? price : 0,
+          };
+        })
         .slice(0, 100)
     : null;
   return { texts, events };

@@ -457,6 +457,52 @@
   </div>
 </div>
 
+<!-- ============ EVENT REGISTRATION MODAL ============ -->
+<div class="modal" id="eventModal" aria-hidden="true">
+  <div class="modal-backdrop" data-close-event></div>
+  <div class="modal-panel modal-panel-sm" role="dialog" aria-modal="true" aria-labelledby="eventModalTitle">
+    <button class="modal-close" data-close-event aria-label="סגירה">&times;</button>
+    <p class="modal-eyebrow" dir="ltr">Register</p>
+    <h2 class="modal-title" id="eventModalTitle">הרשמה לאירוע</h2>
+    <p class="event-modal-sub" id="eventModalSub"></p>
+
+    <form id="eventForm">
+      <p class="hp-field"><label>אל תמלאו: <input name="_honey"></label></p>
+
+      <div class="modal-grid">
+        <div class="field">
+          <label class="field-label" for="ev-name">שם מלא</label>
+          <input id="ev-name" name="name" type="text" required>
+        </div>
+        <div class="field">
+          <label class="field-label" for="ev-email">מייל</label>
+          <input id="ev-email" name="email" type="email" dir="ltr" required>
+        </div>
+      </div>
+
+      <div class="modal-grid">
+        <div class="field">
+          <label class="field-label" for="ev-phone">טלפון</label>
+          <input id="ev-phone" name="phone" type="tel" inputmode="tel" dir="ltr">
+        </div>
+        <div class="field">
+          <label class="field-label" for="ev-qty" id="ev-qty-label">כמות</label>
+          <select id="ev-qty" name="qty">
+            <option>1</option><option>2</option><option>3</option><option>4</option>
+            <option>5</option><option>6</option><option>7</option><option>8</option>
+            <option>9</option><option>10</option>
+          </select>
+        </div>
+      </div>
+
+      <p class="cost-line" id="evCostLine" hidden>סה"כ לתשלום: <b id="evCostVal"></b></p>
+
+      <button type="submit" class="modal-submit" id="evSubmit">אישור הרשמה</button>
+      <p class="form-status" id="evStatus" role="status" aria-live="polite"></p>
+    </form>
+  </div>
+</div>
+
 <script src="script.js"></script>
 </body>
 </html>

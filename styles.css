@@ -577,6 +577,34 @@ html.js .reveal.in-view{ opacity:1; transform:none; }
 }
 .modal-submit:hover{ background:var(--accent); border-color:var(--accent); }
 .modal-submit:disabled{ opacity:.5; cursor:default; }
+
+/* ---- event registration: schedule button ---- */
+.sched-reg{
+  display:inline-flex; align-items:center; gap:.4rem; align-self:start;
+  margin-top:.7rem; padding:.5rem 1.05rem;
+  font-size:.82rem; font-weight:600; letter-spacing:.02em;
+  border:1px solid var(--ink); color:var(--ink); background:none;
+  transition:background .25s ease, color .25s ease, border-color .25s ease;
+}
+.sched-reg:hover{ background:var(--ink); color:#fff; }
+.sched-reg.paid{ background:var(--accent); border-color:var(--accent); color:#fff; }
+.sched-reg.paid:hover{ background:var(--ink); border-color:var(--ink); }
+
+/* ---- event modal (smaller than the rental modal) ---- */
+.modal-panel-sm{ width:min(520px,100%); }
+.event-modal-sub{ font-size:1rem; color:var(--muted); margin:-1rem 0 1.6rem; }
+
+/* ---- payment-return toast ---- */
+.toast{
+  position:fixed; left:50%; bottom:26px; transform:translate(-50%,140%);
+  z-index:3000; max-width:calc(100vw - 32px);
+  background:var(--ink); color:#fff; padding:.9rem 1.4rem;
+  font-size:.92rem; font-weight:500; box-shadow:0 16px 40px rgba(0,0,0,.28);
+  transition:transform .45s cubic-bezier(.22,1,.36,1);
+}
+.toast.ok{ background:#1e7a3c; }
+.toast.err{ background:var(--accent); }
+.toast.show{ transform:translate(-50%,0); }
 .form-status{ margin-top:.9rem; font-size:11px; letter-spacing:.06em; min-height:1em; text-align:center; }
 .form-status.ok{ color:#2e7d32; }
 .form-status.err{ color:var(--accent); }

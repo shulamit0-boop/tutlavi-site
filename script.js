@@ -50,6 +50,25 @@ document.addEventListener('visibilitychange', () => { if (!document.hidden) kick
    Overrides stored in KV under the `content` key. Empty/missing value = the
    built-in text in this HTML stays as-is. events: null = defaults, [] = hide. */
 const escHtml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+const escAttr = (s) => escHtml(String(s == null ? '' : s)).replace(/"/g, '&quot;');
+
+/* per-event registration action in the schedule (external link / register /
+   buy ticket). Internal registration needs a stable event id to attach to. */
+function regAction(ev) {
+  if (ev.reg === 'external' && ev.regUrl) {
+    return '<a class="sched-reg" href="' + escAttr(ev.regUrl) + '" target="_blank" rel="noopener">' +
+      'הרשמה <span dir="ltr" aria-hidden="true">↗</span></a>';
+  }
+  if (ev.reg === 'internal' && ev.id) {
+    const paid = ev.regMode === 'paid' && ev.price > 0;
+    const label = paid ? 'רכישת כרטיס · ₪' + ev.price : 'הרשמה';
+    return '<button type="button" class="sched-reg' + (paid ? ' paid' : '') + '" ' +
+      'data-ev-reg="1" data-ev-id="' + escAttr(ev.id) + '" data-ev-name="' + escAttr(ev.name) + '" ' +
+      'data-ev-date="' + escAttr(ev.date) + '" data-ev-mode="' + (paid ? 'paid' : 'free') + '" ' +
+      'data-ev-price="' + (paid ? ev.price : 0) + '">' + escHtml(label) + '</button>';
+  }
+  return '';
+}
 
 fetch('/api/content')
   .then(r => (r.ok ? r.json() : null))
@@ -149,6 +168,7 @@ function applySiteContent(c) {
           '<span class="sched-main">' +
             '<span class="sched-name">' + escHtml(ev.name || '') + '</span>' +
             (ev.desc ? '<span class="sched-desc">' + escHtml(ev.desc) + '</span>' : '') +
+            regAction(ev) +
           '</span>' +
           '<span class="sched-cat">' + escHtml(ev.cat || '') + '</span>' +
           '<span class="sched-status' + hot + '">' + escHtml(ev.status || '') + '</span>' +
@@ -647,3 +667,143 @@ contactForm?.addEventListener('submit', (e) => {
     })
     .finally(() => { btn.disabled = false; });
 });
+
+/* ============================================================
+   EVENT REGISTRATION (free entry / paid ticket via Green Invoice)
+   ============================================================ */
+const eventModal = document.getElementById('eventModal');
+if (eventModal) {
+  const eventForm = document.getElementById('eventForm');
+  const evStatus = document.getElementById('evStatus');
+  const evSubmit = document.getElementById('evSubmit');
+  const evQty = document.getElementById('ev-qty');
+  const evCostLine = document.getElementById('evCostLine');
+  let currentEvent = null;
+
+  const isPaid = () => currentEvent && currentEvent.mode === 'paid' && currentEvent.price > 0;
+
+  function updateEvCost() {
+    if (isPaid()) {
+      const qty = parseInt(evQty.value, 10) || 1;
+      document.getElementById('evCostVal').textContent = '₪' + (currentEvent.price * qty);
+      evCostLine.hidden = false;
+    } else {
+      evCostLine.hidden = true;
+    }
+  }
+
+  function openEvent(ev) {
+    currentEvent = ev;
+    eventForm.reset();
+    evStatus.textContent = '';
+    evStatus.className = 'form-status';
+    document.getElementById('eventModalSub').textContent =
+      ev.name + (ev.date ? ' · ' + ev.date : '');
+    const paid = ev.mode === 'paid' && ev.price > 0;
+    document.getElementById('ev-qty-label').textContent = paid ? 'כמות כרטיסים' : 'מספר משתתפים';
+    evSubmit.textContent = paid ? 'מעבר לתשלום · ₪' + ev.price : 'אישור הרשמה';
+    updateEvCost();
+    eventModal.classList.add('open');
+    eventModal.setAttribute('aria-hidden', 'false');
+    document.body.classList.add('modal-open');
+    setTimeout(() => document.getElementById('ev-name').focus(), 300);
+  }
+  function closeEvent() {
+    eventModal.classList.remove('open');
+    eventModal.setAttribute('aria-hidden', 'true');
+    if (!document.body.classList.contains('menu-open')) document.body.classList.remove('modal-open');
+  }
+
+  evQty?.addEventListener('change', updateEvCost);
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-ev-reg]');
+    if (!btn) return;
+    if (menuOverlay.classList.contains('open')) closeMenu();
+    openEvent({
+      id: btn.dataset.evId,
+      name: btn.dataset.evName,
+      date: btn.dataset.evDate,
+      mode: btn.dataset.evMode,
+      price: parseInt(btn.dataset.evPrice, 10) || 0,
+    });
+  });
+  document.querySelectorAll('[data-close-event]').forEach(el => el.addEventListener('click', closeEvent));
+  window.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && eventModal.classList.contains('open')) closeEvent();
+  });
+
+  eventForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const paid = isPaid();
+    evStatus.className = 'form-status';
+    evStatus.textContent = paid ? 'מעבר לתשלום…' : 'שולח…';
+    evSubmit.disabled = true;
+    const f = Object.fromEntries(new FormData(eventForm).entries());
+
+    (async () => {
+      const res = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          eventId: currentEvent.id, eventName: currentEvent.name, eventDate: currentEvent.date,
+          name: f.name, email: f.email, phone: f.phone, qty: f.qty,
+          mode: currentEvent.mode, price: currentEvent.price,
+        }),
+      });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        if (res.status === 503 && data.error === 'payments not configured') {
+          throw new Error('רכישת כרטיסים בהקמה כרגע — כתבו לנו ונשריין לכם מקום.');
+        }
+        throw new Error('משהו השתבש. נסו שוב או כתבו ל-vivian.office.info@gmail.com');
+      }
+      // email copy to the studio (both free and paid)
+      try {
+        await fetch(FORM_ENDPOINT, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+          body: JSON.stringify({
+            _subject: 'הרשמה חדשה לאירוע — ' + currentEvent.name,
+            _template: 'table',
+            אירוע: currentEvent.name, תאריך: currentEvent.date || '',
+            שם: f.name, מייל: f.email, טלפון: f.phone || '', כמות: f.qty,
+            סוג: paid ? 'כרטיס בתשלום · ₪' + currentEvent.price : 'כניסה חינם',
+            סטטוס: paid ? 'ממתין לתשלום' : 'רשום',
+          }),
+        });
+      } catch { /* email is best-effort */ }
+
+      if (paid && data.paymentUrl) {
+        evStatus.className = 'form-status ok';
+        evStatus.textContent = 'מעבירים אתכם לתשלום מאובטח…';
+        window.location.href = data.paymentUrl;
+        return;
+      }
+      evStatus.className = 'form-status ok';
+      evStatus.textContent = 'תודה! ההרשמה נקלטה — נתראה באירוע 🎉';
+      eventForm.reset();
+      setTimeout(closeEvent, 2400);
+    })()
+      .catch((err) => {
+        evStatus.className = 'form-status err';
+        evStatus.textContent = err.message || 'משהו השתבש. נסו שוב.';
+      })
+      .finally(() => { evSubmit.disabled = false; });
+  });
+}
+
+/* payment-return toast (Green Invoice redirects back with ?paid / ?payfail) */
+(function () {
+  const p = new URLSearchParams(location.search);
+  const done = p.get('paid'); const failed = p.get('payfail');
+  if (!done && !failed) return;
+  const t = document.createElement('div');
+  t.className = 'toast ' + (done ? 'ok' : 'err');
+  t.textContent = done
+    ? 'התשלום התקבל — נתראה באירוע! 🎉'
+    : 'התשלום לא הושלם. אפשר לנסות שוב מהאתר.';
+  (document.body || document.documentElement).appendChild(t);
+  requestAnimationFrame(() => t.classList.add('show'));
+  setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 6000);
+  history.replaceState(null, '', location.pathname);
+})();

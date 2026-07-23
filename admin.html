@@ -124,6 +124,28 @@ button.danger{ background:var(--accent); border-color:var(--accent); }
 .ev-actions .del{ color:var(--accent); border-color:var(--accent); background:none; }
 .ev-actions .del:hover{ background:var(--accent); color:#fff; }
 @media (max-width:640px){ .ev-grid{ grid-template-columns:1fr; } }
+/* per-event registration config */
+.ev-reg{ margin-top:.9rem; padding-top:.9rem; border-top:1px dashed var(--line);
+  display:flex; flex-wrap:wrap; gap:.7rem 1.1rem; align-items:flex-end; }
+.ev-reg label{ display:flex; flex-direction:column; gap:.25rem; font-size:.8rem; font-weight:600; color:var(--soft); }
+.ev-reg select, .ev-reg input{ border:1px solid var(--line); padding:.45rem .6rem; font:inherit; background:#fff; min-width:150px; }
+.ev-reg .ev-reg-full{ flex-basis:100%; }
+.ev-reg .ev-reg-full input{ width:100%; }
+.ev-reg-note{ flex-basis:100%; font-size:.74rem; color:var(--soft); margin:0; }
+/* registrations tab */
+.regs-head{ display:flex; align-items:center; gap:1rem; margin-bottom:1.2rem; }
+.regs-head .hint{ margin:0; }
+.regs-group{ border:1px solid var(--line); padding:1rem 1.2rem; margin-bottom:1rem; }
+.regs-group h3{ font-family:var(--display); font-weight:600; font-size:1.05rem; margin-bottom:.7rem; }
+.regs-row{ display:grid; grid-template-columns:1.2fr 1.6fr auto auto auto auto; gap:.6rem 1rem;
+  align-items:center; padding:.5rem 0; border-top:1px solid var(--line); font-size:.9rem; }
+.rg-contact{ color:var(--soft); font-size:.84rem; }
+.rg-status{ font-size:.76rem; font-weight:700; padding:.18rem .55rem; border-radius:3px; white-space:nowrap; justify-self:start; }
+.rg-status.paid{ background:var(--openbg); color:var(--open); }
+.rg-status.pending{ background:var(--lockbg); color:var(--accent); }
+.rg-status.free{ background:rgba(25,22,17,.06); color:var(--ink); }
+.rg-date{ color:var(--soft); font-size:.78rem; }
+@media (max-width:640px){ .regs-row{ grid-template-columns:1fr 1fr; } }
 #app{ display:none; }
 </style>
 </head>
@@ -145,6 +167,7 @@ button.danger{ background:var(--accent); border-color:var(--accent); }
     <div class="tabs">
       <button id="tabCalBtn" class="active">יומן השכרות</button>
       <button id="tabContentBtn">תוכן האתר</button>
+      <button id="tabRegsBtn">הרשמות לאירועים</button>
     </div>
     <div class="bar-side">
       <span id="saveState"></span>
@@ -225,6 +248,16 @@ button.danger{ background:var(--accent); border-color:var(--accent); }
       <p class="hint">האירועים מוצגים בסדר הזה בטבלת הלו"ז באתר. "הדגשה באדום" מסמנת את האירוע בנקודה אדומה וסטטוס אדום.</p>
     </div>
   </div>
+
+  <!-- ============ TAB: EVENT REGISTRATIONS ============ -->
+  <div id="tabRegs" hidden>
+    <div class="regs-head">
+      <button class="ghost" id="regsRefresh">רענון</button>
+      <span class="hint" id="regsCount"></span>
+    </div>
+    <div id="regsList"></div>
+    <p class="hint">רשימת הנרשמים לכל אירוע. "שולם" מתעדכן אוטומטית לאחר תשלום דרך חשבונית ירוקה; "ממתין לתשלום" = נרשם אך טרם שילם.</p>
+  </div>
 </div>
 
 <script>
@@ -249,11 +282,15 @@ function setSaveState(txt, cls) { $('saveState').textContent = txt; $('saveState
 function showTab(which) {
   $('tabCal').hidden = which !== 'cal';
   $('tabContent').hidden = which !== 'content';
+  $('tabRegs').hidden = which !== 'regs';
   $('tabCalBtn').classList.toggle('active', which === 'cal');
   $('tabContentBtn').classList.toggle('active', which === 'content');
+  $('tabRegsBtn').classList.toggle('active', which === 'regs');
+  if (which === 'regs') loadRegs();
 }
 $('tabCalBtn').addEventListener('click', () => showTab('cal'));
 $('tabContentBtn').addEventListener('click', () => showTab('content'));
+$('tabRegsBtn').addEventListener('click', () => showTab('regs'));
 
 /* ================= CALENDAR (availability) ================= */
 async function load() {
@@ -420,10 +457,16 @@ async function loadContent() {
   } catch { /* keep empty */ }
   content.texts = content.texts && typeof content.texts === 'object' ? content.texts : {};
   if (!Array.isArray(content.events)) content.events = DEFAULT_EVENTS.map(e => ({ ...e }));
+  // every event needs a stable id so registrations can attach to it
+  let backfilled = false;
+  content.events.forEach(e => { if (!e.id) { e.id = genId(); backfilled = true; } });
+  if (backfilled) queueContentSave();
   renderContentForm();
   renderEvents();
   window.renderMediaUI?.();
 }
+
+const genId = () => Math.random().toString(36).slice(2, 10);
 
 function queueContentSave() {
   setSaveState('שומר…', 'saving');
@@ -565,17 +608,157 @@ function renderEvents() {
       queueContentSave(); renderEvents();
     });
     card.appendChild(actions);
+    renderRegBox(ev, card);
     wrap.appendChild(card);
   });
 }
 
+/* per-event registration config (external link / on-site free / on-site paid) */
+function renderRegBox(ev, card) {
+  const box = document.createElement('div');
+  box.className = 'ev-reg';
+
+  const mkSelect = (labelTxt, options, current, onChange) => {
+    const l = document.createElement('label');
+    l.appendChild(document.createTextNode(labelTxt));
+    const s = document.createElement('select');
+    options.forEach(([v, t]) => {
+      const o = document.createElement('option');
+      o.value = v; o.textContent = t; if (current === v) o.selected = true;
+      s.appendChild(o);
+    });
+    s.addEventListener('change', onChange);
+    l.appendChild(s);
+    box.appendChild(l);
+    return s;
+  };
+
+  mkSelect('הרשמה לאירוע', [
+    ['none', 'ללא הרשמה'],
+    ['external', 'קישור חיצוני (מארגן אחר)'],
+    ['internal', 'הרשמה באתר'],
+  ], ev.reg || 'none', (e) => {
+    ev.reg = e.target.value;
+    if (ev.reg !== 'external') ev.regUrl = '';
+    queueContentSave(); renderEvents();
+  });
+
+  if (ev.reg === 'external') {
+    const l = document.createElement('label');
+    l.className = 'ev-reg-full';
+    l.appendChild(document.createTextNode('קישור ההרשמה של המארגן'));
+    const inp = document.createElement('input');
+    inp.dir = 'ltr'; inp.placeholder = 'https://...'; inp.value = ev.regUrl || '';
+    inp.addEventListener('input', () => { ev.regUrl = inp.value; queueContentSave(); });
+    l.appendChild(inp);
+    box.appendChild(l);
+  }
+
+  if (ev.reg === 'internal') {
+    mkSelect('סוג הרשמה', [
+      ['free', 'כניסה חינם'],
+      ['paid', 'כרטיס בתשלום'],
+    ], ev.regMode || 'free', (e) => {
+      ev.regMode = e.target.value; queueContentSave(); renderEvents();
+    });
+
+    if (ev.regMode === 'paid') {
+      const l = document.createElement('label');
+      l.appendChild(document.createTextNode('מחיר לכרטיס (₪)'));
+      const inp = document.createElement('input');
+      inp.type = 'number'; inp.min = '0'; inp.step = '10'; inp.dir = 'ltr';
+      inp.value = ev.price || '';
+      inp.addEventListener('input', () => { ev.price = parseInt(inp.value, 10) || 0; queueContentSave(); });
+      l.appendChild(inp);
+      box.appendChild(l);
+
+      const note = document.createElement('p');
+      note.className = 'ev-reg-note';
+      note.textContent = 'התשלום נגבה בכרטיס אשראי דרך חשבונית ירוקה (Morning). דורש הגדרת GI_API_ID ו-GI_API_SECRET ב-Vercel; עד אז יוצג "בהקמה".';
+      box.appendChild(note);
+    }
+  }
+
+  card.appendChild(box);
+}
+
 $('addEvent').addEventListener('click', () => {
-  content.events.push({ date: '', name: '', desc: '', cat: '', status: 'בקרוב', hot: false, hidden: false });
+  content.events.push({ id: genId(), date: '', name: '', desc: '', cat: '', status: 'בקרוב', hot: false, hidden: false, reg: 'none', regUrl: '', regMode: 'free', price: 0 });
   queueContentSave();
   renderEvents();
   const cards = $('eventsList').querySelectorAll('.ev-card');
   cards[cards.length - 1]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
 });
+
+/* ================= EVENT REGISTRATIONS ================= */
+async function loadRegs() {
+  const wrap = $('regsList');
+  wrap.innerHTML = '';
+  const loading = document.createElement('p');
+  loading.className = 'hint'; loading.textContent = 'טוען…';
+  wrap.appendChild(loading);
+
+  let list = [];
+  try {
+    const res = await fetch('/api/register', { headers: { 'x-admin-key': key() } });
+    if (!res.ok) throw new Error();
+    const j = await res.json();
+    list = Array.isArray(j.registrations) ? j.registrations : [];
+  } catch {
+    wrap.innerHTML = '';
+    const p = document.createElement('p'); p.className = 'hint';
+    p.textContent = 'שגיאה בטעינת ההרשמות.'; wrap.appendChild(p);
+    $('regsCount').textContent = '';
+    return;
+  }
+
+  wrap.innerHTML = '';
+  if (!list.length) {
+    const p = document.createElement('p'); p.className = 'hint';
+    p.textContent = 'אין עדיין הרשמות.'; wrap.appendChild(p);
+    $('regsCount').textContent = '';
+    return;
+  }
+
+  const groups = new Map();
+  list.forEach(r => {
+    const gk = r.eventId || r.eventName || '—';
+    if (!groups.has(gk)) groups.set(gk, { name: r.eventName || 'ללא שם', date: r.eventDate || '', items: [] });
+    groups.get(gk).items.push(r);
+  });
+  $('regsCount').textContent = list.length + ' הרשמות · ' + groups.size + ' אירועים';
+
+  const fmt = (isoStr) => {
+    try { const d = new Date(isoStr); return pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+    catch { return ''; }
+  };
+
+  groups.forEach(g => {
+    const card = document.createElement('div'); card.className = 'regs-group';
+    const paid = g.items.filter(r => r.status === 'שולם').length;
+    const h = document.createElement('h3');
+    h.textContent = g.name + (g.date ? ' · ' + g.date : '') + ' (' + g.items.length + (paid ? ' · ' + paid + ' שולמו' : '') + ')';
+    card.appendChild(h);
+
+    g.items.slice().reverse().forEach(r => {
+      const row = document.createElement('div'); row.className = 'regs-row';
+      const mk = (cls, txt, ltr) => {
+        const s = document.createElement('span'); s.className = cls;
+        if (ltr) s.dir = 'ltr'; s.textContent = txt; row.appendChild(s);
+      };
+      const st = r.status || 'רשום';
+      mk('rg-name', r.name || '');
+      mk('rg-contact', (r.email || '') + (r.phone ? ' · ' + r.phone : ''), true);
+      mk('rg-qty', '×' + (r.qty || 1));
+      mk('rg-amount', r.amount ? '₪' + r.amount : '—', true);
+      mk('rg-status ' + (st === 'שולם' ? 'paid' : st === 'ממתין לתשלום' ? 'pending' : 'free'), st);
+      mk('rg-date', fmt(r.at), true);
+      card.appendChild(row);
+    });
+    wrap.appendChild(card);
+  });
+}
+$('regsRefresh').addEventListener('click', loadRegs);
 
 /* ================= LOGIN ================= */
 $('logoutBtn').addEventListener('click', () => { sessionStorage.removeItem('tut-admin-key'); location.reload(); });
