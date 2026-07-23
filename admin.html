@@ -169,6 +169,7 @@ button.danger{ background:var(--accent); border-color:var(--accent); }
     <div class="tabs">
       <button id="tabCalBtn" class="active">יומן השכרות</button>
       <button id="tabContentBtn">תוכן האתר</button>
+      <button id="tabEventsBtn">אירועים</button>
       <button id="tabRegsBtn">הרשמות לאירועים</button>
     </div>
     <div class="bar-side">
@@ -242,12 +243,15 @@ button.danger{ background:var(--accent); border-color:var(--accent); }
       </div>
       <p class="hint">תמונה עד 20MB, וידאו עד 300MB. ההעלאה נשמרת אוטומטית ומופיעה באתר תוך שניות.</p>
     </div>
+  </div>
 
+  <!-- ============ TAB: EVENTS ============ -->
+  <div id="tabEvents" hidden>
     <div class="cgroup">
       <h2>אירועי הלו"ז</h2>
       <div id="eventsList"></div>
       <button id="addEvent">+ אירוע חדש</button>
-      <p class="hint">האירועים מוצגים בסדר הזה בטבלת הלו"ז באתר. "הדגשה באדום" מסמנת את האירוע בנקודה אדומה וסטטוס אדום.</p>
+      <p class="hint">האירועים מוצגים בסדר הזה בטבלת הלו"ז באתר. "הדגשה באדום" מסמנת את האירוע בנקודה אדומה וסטטוס אדום. לכל אירוע אפשר להגדיר הרשמה (קישור חיצוני / כניסה חינם / כרטיס בתשלום).</p>
     </div>
   </div>
 
@@ -284,14 +288,17 @@ function setSaveState(txt, cls) { $('saveState').textContent = txt; $('saveState
 function showTab(which) {
   $('tabCal').hidden = which !== 'cal';
   $('tabContent').hidden = which !== 'content';
+  $('tabEvents').hidden = which !== 'events';
   $('tabRegs').hidden = which !== 'regs';
   $('tabCalBtn').classList.toggle('active', which === 'cal');
   $('tabContentBtn').classList.toggle('active', which === 'content');
+  $('tabEventsBtn').classList.toggle('active', which === 'events');
   $('tabRegsBtn').classList.toggle('active', which === 'regs');
   if (which === 'regs') loadRegs();
 }
 $('tabCalBtn').addEventListener('click', () => showTab('cal'));
 $('tabContentBtn').addEventListener('click', () => showTab('content'));
+$('tabEventsBtn').addEventListener('click', () => showTab('events'));
 $('tabRegsBtn').addEventListener('click', () => showTab('regs'));
 
 /* ================= CALENDAR (availability) ================= */
@@ -474,13 +481,18 @@ function queueContentSave() {
   setSaveState('שומר…', 'saving');
   clearTimeout(contentTimer);
   contentTimer = setTimeout(async () => {
-    const res = await fetch(CONTENT_API, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'x-admin-key': key() },
-      body: JSON.stringify({ texts: content.texts, events: content.events }),
-    });
-    if (res.ok) setSaveState('✓ נשמר', 'saved');
-    else setSaveState('שגיאת שמירה!', 'saving');
+    try {
+      const res = await fetch(CONTENT_API, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': key() },
+        body: JSON.stringify({ texts: content.texts, events: content.events }),
+      });
+      if (res.ok) setSaveState('✓ נשמר', 'saved');
+      else if (res.status === 401) setSaveState('מפתח ניהול שגוי — התחברו מחדש', 'saving');
+      else setSaveState('שגיאת שמירה!', 'saving');
+    } catch {
+      setSaveState('שגיאת שמירה — אין חיבור לרשת', 'saving');
+    }
   }, 700);
 }
 
