@@ -137,8 +137,10 @@ button.danger{ background:var(--accent); border-color:var(--accent); }
 .regs-head .hint{ margin:0; }
 .regs-group{ border:1px solid var(--line); padding:1rem 1.2rem; margin-bottom:1rem; }
 .regs-group h3{ font-family:var(--display); font-weight:600; font-size:1.05rem; margin-bottom:.7rem; }
-.regs-row{ display:grid; grid-template-columns:1.2fr 1.6fr auto auto auto auto; gap:.6rem 1rem;
+.regs-row{ display:grid; grid-template-columns:1.2fr 1.6fr auto auto auto auto auto; gap:.6rem 1rem;
   align-items:center; padding:.5rem 0; border-top:1px solid var(--line); font-size:.9rem; }
+.rg-del{ background:none; border:none; color:var(--accent); font-size:1.2rem; line-height:1; padding:0 .3rem; cursor:pointer; justify-self:end; }
+.rg-del:hover{ background:none; color:var(--ink); }
 .rg-contact{ color:var(--soft); font-size:.84rem; }
 .rg-status{ font-size:.76rem; font-weight:700; padding:.18rem .55rem; border-radius:3px; white-space:nowrap; justify-self:start; }
 .rg-status.paid{ background:var(--openbg); color:var(--open); }
@@ -753,6 +755,21 @@ async function loadRegs() {
       mk('rg-amount', r.amount ? '₪' + r.amount : '—', true);
       mk('rg-status ' + (st === 'שולם' ? 'paid' : st === 'ממתין לתשלום' ? 'pending' : 'free'), st);
       mk('rg-date', fmt(r.at), true);
+      const del = document.createElement('button');
+      del.className = 'rg-del'; del.textContent = '×'; del.title = 'מחיקת ההרשמה';
+      del.addEventListener('click', async () => {
+        if (!confirm('למחוק את ההרשמה של "' + (r.name || '') + '"?')) return;
+        del.disabled = true;
+        try {
+          const res = await fetch('/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-admin-key': key() },
+            body: JSON.stringify({ action: 'delete', id: r.id }),
+          });
+          if (res.ok) loadRegs(); else { del.disabled = false; alert('מחיקה נכשלה'); }
+        } catch { del.disabled = false; alert('מחיקה נכשלה'); }
+      });
+      row.appendChild(del);
       card.appendChild(row);
     });
     wrap.appendChild(card);

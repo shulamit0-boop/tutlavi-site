@@ -126,6 +126,20 @@ export default async function handler(req) {
       return Response.json({ error: 'bad json' }, { status: 400 });
     }
 
+    // admin: delete a registration (test entries / spam)
+    if (body && body.action === 'delete') {
+      const key = req.headers.get('x-admin-key') || '';
+      if (!process.env.ADMIN_KEY || key !== process.env.ADMIN_KEY) {
+        return Response.json({ error: 'unauthorized' }, { status: 401 });
+      }
+      const id = String(body.id || '');
+      const list = (await kvGet(KEY)) || [];
+      const next = list.filter((x) => x && x.id !== id);
+      const saved = await kvSet(KEY, next);
+      if (!saved) return Response.json({ error: 'store write failed' }, { status: 500 });
+      return Response.json({ ok: true, removed: list.length - next.length });
+    }
+
     const d = body || {};
     const paid = d.mode === 'paid';
     const price = Math.max(0, Math.min(100000, parseInt(d.price, 10) || 0));
