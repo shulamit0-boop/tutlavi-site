@@ -319,7 +319,10 @@ html.js .reveal.in-view{ opacity:1; transform:none; }
 .rings-text{
   fill:#fff; font-family:var(--grotesk); font-weight:600;
   text-transform:uppercase; letter-spacing:.04em;
-  transform-box:fill-box; transform-origin:center;
+  /* rotate around the true SVG centre (300,300 in the 0 0 600 600 viewBox).
+     fill-box is unreliable for textPath — its bbox collapses, sending the
+     rotation off-screen. view-box pins the origin to the viewBox centre. */
+  transform-box:view-box; transform-origin:300px 300px;
 }
 .rings-text--1{ font-size:30px; opacity:.45; animation:ringSpin 48s linear infinite; }
 .rings-text--2{ font-size:28px; opacity:.8;  animation:ringSpin 36s linear infinite reverse; }
@@ -434,23 +437,9 @@ html.js .reveal.in-view{ opacity:1; transform:none; }
 }
 
 /* ============ FOOTER ============ */
-.site-footer{ background:var(--bg); border-top:1px solid var(--line); padding:clamp(3rem,7vw,5rem) 0 2.5rem; }
-.footer-cols{
-  display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:2.5rem;
-  margin-bottom:4rem;
-}
-.footer-brand .brand{ margin-bottom:1rem; }
-.footer-brand p{ font-size:.85rem; color:var(--muted); line-height:1.6; max-width:22ch; margin-top:.6rem; text-wrap:pretty; }
-.footer-col{ display:flex; flex-direction:column; gap:.9rem; }
-.footer-label{ font-size:10px; letter-spacing:.35em; text-transform:uppercase; color:var(--muted); margin-bottom:.4rem; }
-.footer-col a, .footer-linkbtn, .footer-static{
-  font-size:.85rem; color:var(--ink); text-align:start;
-}
-.footer-static{ color:var(--muted); }
-.footer-col a:hover, .footer-linkbtn:hover{ color:var(--accent); }
+.site-footer{ background:var(--bg); border-top:1px solid var(--line); padding:clamp(1.8rem,3.5vw,2.5rem) 0; }
 .footer-bottom{
   display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap;
-  padding-top:2rem; border-top:1px solid var(--line);
   font-size:10px; letter-spacing:.25em; text-transform:uppercase; color:var(--muted);
 }
 .footer-admin{ color:var(--muted); text-decoration:none; transition:color .2s; }
@@ -625,7 +614,6 @@ html.js .reveal.in-view{ opacity:1; transform:none; }
   .split-media{ height:52vh; }
   .split-text{ height:auto; padding:4rem 1.5rem; }
   .about-grid{ grid-template-columns:1fr; gap:2rem; }
-  .footer-cols{ grid-template-columns:1fr 1fr; gap:2rem; }
   .sched-cols{ display:none; }
   .sched-row{
     grid-template-columns:1fr auto; gap:.4rem 1rem;
@@ -641,7 +629,6 @@ html.js .reveal.in-view{ opacity:1; transform:none; }
   .sched-status-col{ grid-area:status; justify-self:end; }
 }
 @media (max-width:520px){
-  .footer-cols{ grid-template-columns:1fr; }
   .menu-item-sub{ display:none; }
 }
 
