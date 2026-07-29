@@ -98,57 +98,51 @@
       <rect x="673.5" y="1.5" width="285" height="397"/>
     </g>
 
-    <!-- ================= LEFT PANEL: turntable · blob · pendant lamp ================= -->
+    <!-- ============ LEFT PANEL: DJ booth, after the opening-party poster ============ -->
     <clipPath id="cL"><rect x="3" y="3" width="331" height="394"/></clipPath>
     <g clip-path="url(#cL)">
-      <!-- red sun, cropped by the panel edge -->
-      <circle cx="72" cy="8" r="60" fill="#ef1c21"/>
-      <circle cx="72" cy="8" r="44" fill="none" stroke="#fffbff" stroke-width="3"/>
-
+      <!-- arch -->
+      <path d="M28 397 V150 a136 136 0 0 1 272 0 V397" fill="none" stroke="#000" stroke-width="3"/>
+      <!-- red sun -->
+      <circle cx="188" cy="122" r="70" fill="#ef1c21"/>
       <!-- organic blob -->
-      <path d="M50 266 C28 234 44 200 70 180 C96 160 108 132 94 108
-               C78 80 104 50 136 56 C172 63 190 100 178 134
-               C166 168 142 186 150 216 C156 238 172 250 170 266 Z" fill="#000"/>
+      <path d="M28 120 C78 116 114 148 108 188
+               C102 224 132 232 170 240
+               C208 248 234 250 248 258
+               L28 258 Z" fill="#000"/>
 
-      <!-- thin vertical rules -->
-      <g stroke="#000" stroke-width="2">
-        <path d="M226 3 V262 M240 3 V262 M254 3 V262"/>
+      <!-- ---- console ---- -->
+      <!-- deck slab -->
+      <path d="M24 262 Q166 253 312 262 L312 300 L24 300 Z" fill="#fffbff" stroke="#000" stroke-width="3"/>
+      <!-- laptop, standing on the deck -->
+      <g stroke="#000" stroke-width="3" fill="#fffbff">
+        <path d="M58 250 L120 250 L132 196 L70 196 Z"/>
+        <path d="M40 250 L132 250 L142 264 L30 264 Z"/>
       </g>
-
-      <!-- pendant lamp -->
-      <path d="M300 3 V150" stroke="#000" stroke-width="3" fill="none"/>
-      <path d="M266 152 a34 34 0 0 1 68 0 Z" fill="#000"/>
-      <path d="M286 152 a14 14 0 0 0 28 0 Z" fill="#ef1c21"/>
-
-      <!-- ---- turntable, plan view ---- -->
-      <rect x="18" y="284" width="300" height="104" fill="#fffbff" stroke="#000" stroke-width="3"/>
-      <!-- platter -->
-      <circle cx="110" cy="330" r="44" fill="#000"/>
-      <circle cx="110" cy="330" r="35" fill="none" stroke="#fffbff" stroke-width="1.5"/>
-      <circle cx="110" cy="330" r="26" fill="none" stroke="#fffbff" stroke-width="1.5"/>
-      <circle cx="110" cy="330" r="15" fill="#ef1c21"/>
-      <circle cx="110" cy="330" r="3"  fill="#fffbff"/>
-      <!-- tone arm -->
-      <circle cx="258" cy="302" r="11" fill="#000"/>
-      <path d="M258 302 L170 336" stroke="#000" stroke-width="5" fill="none"/>
-      <path d="M176 328 l16 -6 6 15 -16 6 Z" fill="#000"/>
-      <!-- pitch fader -->
-      <rect x="291" y="314" width="6" height="56" fill="#000"/>
-      <rect x="283" y="336" width="22" height="8" fill="#fffbff" stroke="#000" stroke-width="2"/>
-      <!-- knob -->
-      <circle cx="256" cy="356" r="12" fill="none" stroke="#000" stroke-width="3"/>
-      <circle cx="256" cy="356" r="4"  fill="#000"/>
-      <!-- buttons -->
-      <g fill="#000">
-        <rect x="36" y="296" width="24" height="12"/>
-        <rect x="36" y="366" width="15" height="9"/>
-        <rect x="57" y="366" width="15" height="9"/>
-        <rect x="78" y="366" width="15" height="9"/>
-        <rect x="99" y="366" width="15" height="9"/>
+      <!-- left controller -->
+      <g stroke="#000" stroke-width="2" fill="none">
+        <rect x="32" y="270" width="46" height="22"/>
+        <path d="M38 276 h34 M38 282 h34 M38 288 h34"/>
       </g>
+      <!-- turntable 1 -->
+      <ellipse cx="122" cy="281" rx="32" ry="15" fill="#000"/>
+      <ellipse cx="122" cy="281" rx="9"  ry="4.5" fill="#ef1c21"/>
+      <!-- mixer -->
+      <g stroke="#000" stroke-width="2" fill="none">
+        <rect x="166" y="266" width="42" height="30"/>
+        <path d="M174 272 v18 M187 272 v18 M200 272 v18"/>
+      </g>
+      <circle cx="174" cy="292" r="3" fill="#000"/>
+      <circle cx="200" cy="292" r="3" fill="#000"/>
+      <!-- turntable 2 -->
+      <ellipse cx="256" cy="281" rx="32" ry="15" fill="#000"/>
+      <ellipse cx="256" cy="281" rx="9"  ry="4.5" fill="#ef1c21"/>
 
-      <!-- floor -->
-      <rect x="3" y="390" width="331" height="6" fill="#000"/>
+      <!-- ---- stepped riser ---- -->
+      <g stroke="#000" stroke-width="2" fill="none">
+        <path d="M30 318 H310 M30 336 H310 M30 354 H310 M30 372 H310 M30 388 H310"/>
+      </g>
+      <path d="M312 300 H248 V318 H188 V336 H126 V354 H24" fill="none" stroke="#000" stroke-width="3"/>
     </g>
 
     <!-- ================= MIDDLE PANEL ================= -->
