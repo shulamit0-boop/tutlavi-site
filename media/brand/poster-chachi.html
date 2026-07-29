@@ -98,58 +98,57 @@
       <rect x="673.5" y="1.5" width="285" height="397"/>
     </g>
 
-    <!-- ================= LEFT PANEL: DJ booth ================= -->
+    <!-- ================= LEFT PANEL: turntable · blob · pendant lamp ================= -->
     <clipPath id="cL"><rect x="3" y="3" width="331" height="394"/></clipPath>
     <g clip-path="url(#cL)">
-      <!-- red sun / disco light -->
-      <circle cx="276" cy="66" r="42" fill="#ef1c21"/>
+      <!-- red sun, cropped by the panel edge -->
+      <circle cx="72" cy="8" r="60" fill="#ef1c21"/>
+      <circle cx="72" cy="8" r="44" fill="none" stroke="#fffbff" stroke-width="3"/>
 
-      <!-- speaker stack -->
-      <g stroke="#000" stroke-width="3" fill="#fffbff">
-        <rect x="16" y="146" width="76" height="98"/>
-        <rect x="16" y="248" width="76" height="110"/>
-      </g>
-      <circle cx="54" cy="200" r="26" fill="#000"/><circle cx="54" cy="200" r="8" fill="#fffbff"/>
-      <circle cx="54" cy="167" r="8"  fill="#000"/>
-      <circle cx="54" cy="308" r="30" fill="#000"/><circle cx="54" cy="308" r="9" fill="#fffbff"/>
-      <circle cx="54" cy="268" r="8"  fill="#000"/>
+      <!-- organic blob -->
+      <path d="M50 266 C28 234 44 200 70 180 C96 160 108 132 94 108
+               C78 80 104 50 136 56 C172 63 190 100 178 134
+               C166 168 142 186 150 216 C156 238 172 250 170 266 Z" fill="#000"/>
 
-      <!-- DJ silhouette behind the booth -->
-      <path d="M124 286 C124 232 152 208 188 208 C224 208 252 232 252 286 Z" fill="#000"/>
-      <path d="M242 268 L284 194 L296 201 L254 275 Z" fill="#000"/>
-      <circle cx="292" cy="196" r="11" fill="#000"/>
-      <circle cx="188" cy="164" r="38" fill="#000"/>
-      <path d="M146 164 a42 42 0 0 1 84 0" fill="none" stroke="#000" stroke-width="10"/>
-      <rect x="138" y="152" width="18" height="30" fill="#000"/>
-      <rect x="220" y="152" width="18" height="30" fill="#000"/>
-
-      <!-- sound waves -->
-      <g fill="none" stroke="#000" stroke-linecap="round">
-        <path d="M262 172 a46 46 0 0 1 0 -66" stroke-width="7"/>
-        <path d="M280 186 a66 66 0 0 0 0 -94" stroke-width="5" opacity="0"/>
-        <path d="M100 176 a44 44 0 0 0 0 62" stroke-width="6"/>
-        <path d="M114 164 a62 62 0 0 0 0 86" stroke-width="4"/>
+      <!-- thin vertical rules -->
+      <g stroke="#000" stroke-width="2">
+        <path d="M226 3 V262 M240 3 V262 M254 3 V262"/>
       </g>
 
-      <!-- booth -->
-      <rect x="104" y="286" width="216" height="16" fill="#000"/>
-      <rect x="104" y="302" width="216" height="70" fill="#fffbff" stroke="#000" stroke-width="3"/>
-      <g stroke="#000" stroke-width="3"><path d="M104 336 H320"/></g>
-      <!-- turntable on the booth face -->
-      <circle cx="160" cy="337" r="26" fill="#000"/><circle cx="160" cy="337" r="8" fill="#ef1c21"/>
-      <circle cx="264" cy="337" r="26" fill="#000"/><circle cx="264" cy="337" r="8" fill="#ef1c21"/>
-      <g class="s-clay" stroke="#c2603c" stroke-width="4"><path d="M204 322 v30 M216 322 v30 M228 322 v30"/></g>
+      <!-- pendant lamp -->
+      <path d="M300 3 V150" stroke="#000" stroke-width="3" fill="none"/>
+      <path d="M266 152 a34 34 0 0 1 68 0 Z" fill="#000"/>
+      <path d="M286 152 a14 14 0 0 0 28 0 Z" fill="#ef1c21"/>
 
-      <!-- confetti -->
+      <!-- ---- turntable, plan view ---- -->
+      <rect x="18" y="284" width="300" height="104" fill="#fffbff" stroke="#000" stroke-width="3"/>
+      <!-- platter -->
+      <circle cx="110" cy="330" r="44" fill="#000"/>
+      <circle cx="110" cy="330" r="35" fill="none" stroke="#fffbff" stroke-width="1.5"/>
+      <circle cx="110" cy="330" r="26" fill="none" stroke="#fffbff" stroke-width="1.5"/>
+      <circle cx="110" cy="330" r="15" fill="#ef1c21"/>
+      <circle cx="110" cy="330" r="3"  fill="#fffbff"/>
+      <!-- tone arm -->
+      <circle cx="258" cy="302" r="11" fill="#000"/>
+      <path d="M258 302 L170 336" stroke="#000" stroke-width="5" fill="none"/>
+      <path d="M176 328 l16 -6 6 15 -16 6 Z" fill="#000"/>
+      <!-- pitch fader -->
+      <rect x="291" y="314" width="6" height="56" fill="#000"/>
+      <rect x="283" y="336" width="22" height="8" fill="#fffbff" stroke="#000" stroke-width="2"/>
+      <!-- knob -->
+      <circle cx="256" cy="356" r="12" fill="none" stroke="#000" stroke-width="3"/>
+      <circle cx="256" cy="356" r="4"  fill="#000"/>
+      <!-- buttons -->
       <g fill="#000">
-        <rect x="118" y="60"  width="12" height="12" transform="rotate(20 124 66)"/>
-        <rect x="196" y="46"  width="9"  height="9"  transform="rotate(-15 200 50)"/>
-        <rect x="86"  y="104" width="9"  height="9"  transform="rotate(35 90 108)"/>
-        <rect x="308" y="126" width="11" height="11" transform="rotate(-25 313 131)"/>
+        <rect x="36" y="296" width="24" height="12"/>
+        <rect x="36" y="366" width="15" height="9"/>
+        <rect x="57" y="366" width="15" height="9"/>
+        <rect x="78" y="366" width="15" height="9"/>
+        <rect x="99" y="366" width="15" height="9"/>
       </g>
 
       <!-- floor -->
-      <rect x="3" y="372" width="331" height="6" fill="#000"/>
+      <rect x="3" y="390" width="331" height="6" fill="#000"/>
     </g>
 
     <!-- ================= MIDDLE PANEL ================= -->
@@ -179,10 +178,10 @@
 
     <!-- version B: giant badge on a clean panel -->
     <g class="v-illus">
-      <rect x="349" y="372" width="313" height="6" fill="#000"/>
-      <g transform="translate(505 190)">
-        <circle r="151" fill="#fffbff" stroke="#000" stroke-width="5"/>
-        <circle r="138" fill="none" stroke="#000" stroke-width="2"/>
+      <g clip-path="url(#cM)"><rect x="349" y="222" width="313" height="175" fill="#000"/></g>
+      <g transform="translate(505 222)">
+        <circle r="147" fill="#fffbff" stroke="#000" stroke-width="5"/>
+        <circle r="134" fill="none" stroke="#000" stroke-width="2"/>
         <path id="arcTop" d="M -112 0 A 112 112 0 0 1 112 0" fill="none"/>
         <path id="arcBot" d="M -112 0 A 112 112 0 0 0 112 0" fill="none"/>
         <text font-family="Tut" font-weight="900" font-size="34" letter-spacing="3" fill="#000">
