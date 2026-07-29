@@ -9,7 +9,8 @@
   @font-face{font-family:TutText;src:url('../../fonts/almoni-tzar-demibold-aaa.otf');font-weight:600}
   @font-face{font-family:TutMono;src:url('../../fonts/index-mono-bold-aaa.otf')}
 
-  :root{ --red:#ef1c21; --clay:#c2603c; --olive:#3f6b52; --deep:#264234; --ink:#000; --paper:#fffbff; }
+  :root{ --red:#ef1c21; --ink:#000; --paper:#fffbff;
+          --clay:#000; --olive:#000; --deep:#000; }
   *{margin:0;padding:0;box-sizing:border-box}
   body{background:#e9e9e9;display:flex;justify-content:center}
 
@@ -48,7 +49,7 @@
 
   .lede{flex:0 0 auto;font:300 38px/1.3 TutText;text-align:center;margin:16px 0 0}
   .lede em{font-weight:600;font-style:normal}
-  .lede b{color:var(--clay);font-weight:600}
+  .lede b{color:var(--red);font-weight:600}
 
   /* ---- details ---- */
   .details{flex:0 0 auto;display:flex;align-items:center;margin-top:18px}
@@ -71,9 +72,9 @@
   .f-olive{fill:var(--olive)} .s-olive{stroke:var(--olive)}
   .f-deep{fill:var(--deep)}
 
-  /* classic run: red · black · white only */
-  .poster.classic{ --clay:#000; --olive:#000; --deep:#000; }
-  .poster.classic .lede b{color:var(--red)}
+  /* optional run: riso tones (clay + bottle green) */
+  .poster.tones{ --clay:#c2603c; --olive:#3f6b52; --deep:#264234; }
+  .poster.tones .lede b{color:var(--clay)}
 </style>
 
 <div class="poster"><div class="paper">
@@ -130,43 +131,18 @@
       </g>
     </g>
 
-    <!-- ================= MIDDLE PANEL: bar shelf + badge ================= -->
-    <clipPath id="cM"><rect x="349" y="3" width="311" height="394"/></clipPath>
-    <g clip-path="url(#cM)"><g transform="translate(51,0)">
-      <rect class="f-deep" x="298" y="222" width="313" height="178" fill="#264234"/>
-      <!-- shaker -->
-      <g stroke="#000" stroke-width="4" fill="#fffbff">
-        <path d="M330 222 V126 l12 -32 h54 l12 32 V222 Z"/>
-        <rect class="f-clay" x="338" y="66" width="66" height="26" fill="#c2603c"/>
-        <path d="M350 66 V50 h42 v16"/>
-      </g>
-      <!-- striped bottle -->
-      <g stroke="#000" stroke-width="4" fill="#fffbff">
-        <path d="M432 222 V116 c0 -22 15 -26 15 -45 V40 h-30 v31 c0 19 15 23 15 45 V222 Z"/>
-      </g>
-      <g class="s-clay" stroke="#c2603c" stroke-width="5">
-        <path class="s-clay" d="M419 132 h26 M419 146 h26 M419 160 h26 M419 174 h26 M419 188 h26"/>
-      </g>
-      <!-- olive bottle -->
-      <path class="f-olive" d="M498 222 V122 c0 -22 -14 -26 -14 -44 V46 h28 v32 c0 18 14 22 14 44 V222 Z" fill="#3f6b52"/>
-      <!-- coupe with citrus -->
-      <g stroke="#000" stroke-width="4" fill="none">
-        <path d="M540 150 h56 a28 28 0 0 1 -56 0 Z" fill="#000"/>
-        <path d="M568 178 V210 M548 214 h40"/>
-      </g>
-      <circle cx="600" cy="140" r="20" fill="#ef1c21" stroke="#000" stroke-width="3"/>
-      <g stroke="#000" stroke-width="2">
-        <path d="M600 120 v40 M580 140 h40 M586 126 l28 28 M614 126 l-28 28"/>
-      </g>
-      <!-- shelf -->
-      <rect x="298" y="216" width="313" height="7" fill="#000"/>
-    </g></g>
-    <!-- badge, straddling the block edge -->
-    <g transform="translate(505 222)">
-      <circle r="97" fill="#fffbff" stroke="#000" stroke-width="4"/>
-      <circle r="86" fill="none" stroke="#000" stroke-width="2"/>
-      <text y="-2" text-anchor="middle" font-family="Tut" font-weight="900" font-size="46" fill="#000">POP UP</text>
-      <text class="f-clay" y="40" text-anchor="middle" font-family="TutMono" font-size="14" letter-spacing="1.5" fill="#c2603c">COCKTAIL PARTY</text>
+    <!-- ================= MIDDLE PANEL: צ'אצ'י — halftone portrait ================= -->
+    <clipPath id="cM"><rect x="348.5" y="2.5" width="314" height="395"/></clipPath>
+    <g clip-path="url(#cM)">
+      <image href="chachi-halftone.png" x="346" y="0" width="320" height="400"
+             preserveAspectRatio="xMidYMid slice"/>
+    </g>
+    <!-- badge, sitting over the lower third of the portrait -->
+    <g transform="translate(505 318)">
+      <circle r="78" fill="#fffbff" stroke="#000" stroke-width="4"/>
+      <circle r="69" fill="none" stroke="#000" stroke-width="2"/>
+      <text y="-2" text-anchor="middle" font-family="Tut" font-weight="900" font-size="36" fill="#000">POP UP</text>
+      <text class="f-clay" y="30" text-anchor="middle" font-family="TutMono" font-size="12" letter-spacing="1.2" fill="#c2603c">COCKTAIL PARTY</text>
     </g>
 
     <!-- ================= RIGHT PANEL: coupe + highball ================= -->

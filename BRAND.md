@@ -12,8 +12,8 @@
 | `media/brand/wordmark-studio-tut.png` | וורדמארק **סטודיו תות** בשתי שורות, שחור על שקוף (408×214) |
 | `media/brand/poster-opening-party.png` | הפוסטר המלא של מסיבת הפתיחה — ייחוס לשפה |
 | `media/brand/poster-chachi.html` | מודעת צ'אצ'י X ויויאן — קובץ המקור הנערך |
-| `media/brand/poster-chachi-recovery-bar.png` | הפלט — גרסת הגוונים (חמרה + ירוק) |
-| `media/brand/poster-chachi-recovery-bar-classic.png` | הפלט — גרסת הליבה (אדום · שחור · לבן) |
+| `media/brand/poster-chachi-recovery-bar.png` | **הפלט הנבחר** — פלטת הליבה (אדום · שחור · לבן) |
+| `media/brand/poster-chachi-recovery-bar-tones.png` | פלט חלופי — עם חמרה וירוק |
 | `favicon.png` | אייקון האתר |
 
 ## פלטת צבעים
