@@ -256,48 +256,50 @@
       <input type="hidden" name="_captcha" value="false">
       <p class="hp-field"><label>אל תמלאו: <input name="_honey"></label></p>
 
-      <div class="field">
-        <span class="field-label">סוג הפנייה</span>
-        <div class="radio-row">
-          <label class="radio"><input type="radio" name="type" value="שיתוף פעולה" checked> שיתוף פעולה</label>
-          <label class="radio"><input type="radio" name="type" value="השכרת חלל"> השכרת חלל</label>
-        </div>
-      </div>
-
-      <div class="modal-grid">
-        <div class="field">
-          <label class="field-label" for="f-name">שם</label>
-          <input id="f-name" type="text" name="name" required>
-        </div>
+      <div class="form-section">
+        <h3 class="form-section-title">הפנייה שלכם <span class="form-section-note">כדי שנדע במה מדובר ולמי לחזור</span></h3>
 
         <div class="field">
-          <label class="field-label" for="f-email">מייל</label>
-          <input id="f-email" type="email" name="email" dir="ltr" required>
+          <span class="field-label">סוג הפנייה</span>
+          <div class="radio-row">
+            <label class="radio"><input type="radio" name="type" value="שיתוף פעולה" checked> שיתוף פעולה</label>
+            <label class="radio"><input type="radio" name="type" value="השכרת חלל"> השכרת חלל</label>
+          </div>
         </div>
-      </div>
 
-      <div class="field">
-        <label class="field-label" for="f-message">בקשה</label>
-        <textarea id="f-message" name="message" rows="3" required></textarea>
+        <div class="modal-grid">
+          <div class="field">
+            <label class="field-label" for="f-name">שם<span class="req" aria-hidden="true">*</span></label>
+            <input id="f-name" type="text" name="name" autocomplete="name" required>
+          </div>
+
+          <div class="field">
+            <label class="field-label" for="f-email">מייל<span class="req" aria-hidden="true">*</span></label>
+            <input id="f-email" type="email" name="email" dir="ltr" autocomplete="email" required>
+          </div>
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="f-phone">טלפון</label>
+          <input id="f-phone" type="tel" name="phone" inputmode="tel" autocomplete="tel" dir="ltr">
+        </div>
+
+        <div class="field">
+          <label class="field-label" for="f-message">מה תרצו לעשות אצלנו?<span class="req" aria-hidden="true">*</span></label>
+          <textarea id="f-message" name="message" rows="3" required></textarea>
+          <p class="field-hint">כמה מילים על האירוע או על שיתוף הפעולה — ככל שנדע יותר, נוכל לחזור אליכם עם תשובה מדויקת.</p>
+        </div>
       </div>
 
       <!-- rental-only fields -->
       <div class="rental-fields" id="rentalFields" hidden>
 
-        <div class="modal-grid">
-          <div class="field">
-            <label class="field-label" for="f-idnum">ת.ז / ח.פ (לחוזה)</label>
-            <input id="f-idnum" type="text" name="id-number" inputmode="numeric" dir="ltr">
-          </div>
-
-          <div class="field">
-            <label class="field-label" for="f-phone">טלפון</label>
-            <input id="f-phone" type="tel" name="phone" inputmode="tel" dir="ltr">
-          </div>
-        </div>
+       <div class="form-section">
+        <h3 class="form-section-title">מועד ההשכרה</h3>
 
         <div class="field">
           <span class="field-label">בחירת תאריך מהיומן</span>
+          <p class="field-hint">לחצו על יום ירוק כדי לראות את חלונות השעות הפנויים בו.</p>
           <div class="fcal" id="fcal">
             <div class="fcal-head">
               <button type="button" class="fcal-nav" id="fcalPrev">‹</button>
@@ -307,6 +309,7 @@
             <div class="fcal-grid" id="fcalGrid"></div>
             <div class="fcal-legend">
               <span><i class="lg lg-open"></i>פנוי</span>
+              <span><i class="lg lg-pending"></i>ממתין</span>
               <span><i class="lg lg-booked"></i>תפוס</span>
               <span><i class="lg lg-locked"></i>נעול</span>
             </div>
@@ -327,6 +330,10 @@
             <select id="f-end" name="event-end"></select>
           </div>
         </div>
+       </div>
+
+       <div class="form-section">
+        <h3 class="form-section-title">פרטי האירוע</h3>
 
         <div class="modal-grid">
           <div class="field">
@@ -357,27 +364,19 @@
         </div>
 
         <input type="hidden" name="estimated-cost" id="f-cost">
-        <p class="cost-line" id="costLine" hidden>עלות ההשכרה: <b id="costVal"></b></p>
+        <p class="cost-line" id="costLine" hidden>עלות ההשכרה <b id="costVal"></b></p>
 
-        <div class="contract-row">
-          <a href="/contract" target="_blank" rel="noopener" class="contract-link" id="contractLink">צפייה בחוזה עם הפרטים שלכם ←</a>
-          <label class="agree">
-            <input type="checkbox" id="f-agree" name="contract-approved" value="קראתי ואישרתי את תנאי החוזה">
-            קראתי את החוזה ואני מאשר/ת את תנאיו
-          </label>
-        </div>
-
-        <div class="field">
-          <span class="field-label">חתימה (ציירו באצבע או בעכבר)</span>
-          <div class="sig-wrap">
-            <canvas id="sigPad" width="400" height="140"></canvas>
-            <button type="button" class="sig-clear" id="sigClear">ניקוי</button>
-          </div>
-          <p class="avail-status" id="sigStatus"></p>
-        </div>
+        <ol class="next-steps">
+          <li><b>הבקשה נשלחת אלינו</b> והתאריך שבחרתם נשמר עבורכם.</li>
+          <li><b>אנחנו חוזרים אליכם</b> ושולחים חוזה לחתימה במייל.</li>
+          <li><b>אתם חותמים</b> בקישור — שם תתבקשו גם את ת.ז / ח.פ.</li>
+          <li><b>אנחנו חותמים בחזרה</b> והתאריך שלכם סגור.</li>
+        </ol>
+        <p class="field-hint">זו בקשה עקרונית בלבד — בשלב הזה אתם לא מתחייבים לכלום ולא נדרשת חתימה.</p>
+       </div>
       </div>
 
-      <button type="submit" class="modal-submit">שליחה</button>
+      <button type="submit" class="modal-submit" id="inquirySubmit">שליחה</button>
       <p class="form-status" id="formStatus" role="status" aria-live="polite"></p>
     </form>
   </div>
@@ -397,19 +396,19 @@
 
       <div class="modal-grid">
         <div class="field">
-          <label class="field-label" for="ev-name">שם מלא</label>
-          <input id="ev-name" name="name" type="text" required>
+          <label class="field-label" for="ev-name">שם מלא<span class="req" aria-hidden="true">*</span></label>
+          <input id="ev-name" name="name" type="text" autocomplete="name" required>
         </div>
         <div class="field">
-          <label class="field-label" for="ev-email">מייל</label>
-          <input id="ev-email" name="email" type="email" dir="ltr" required>
+          <label class="field-label" for="ev-email">מייל<span class="req" aria-hidden="true">*</span></label>
+          <input id="ev-email" name="email" type="email" dir="ltr" autocomplete="email" required>
         </div>
       </div>
 
       <div class="modal-grid">
         <div class="field">
           <label class="field-label" for="ev-phone">טלפון</label>
-          <input id="ev-phone" name="phone" type="tel" inputmode="tel" dir="ltr">
+          <input id="ev-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" dir="ltr">
         </div>
         <div class="field">
           <label class="field-label" for="ev-qty" id="ev-qty-label">כמות</label>
@@ -421,7 +420,7 @@
         </div>
       </div>
 
-      <p class="cost-line" id="evCostLine" hidden>סה"כ לתשלום: <b id="evCostVal"></b></p>
+      <p class="cost-line" id="evCostLine" hidden>סה"כ לתשלום <b id="evCostVal"></b></p>
 
       <button type="submit" class="modal-submit" id="evSubmit">אישור הרשמה</button>
       <p class="form-status" id="evStatus" role="status" aria-live="polite"></p>

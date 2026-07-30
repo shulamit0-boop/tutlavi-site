@@ -2,7 +2,8 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     { "source": "/admin", "destination": "/admin.html" },
-    { "source": "/contract", "destination": "/contract.html" }
+    { "source": "/contract", "destination": "/contract.html" },
+    { "source": "/calendar.ics", "destination": "/api/calendar" }
   ],
   "redirects": [
     {

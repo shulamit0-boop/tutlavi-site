@@ -308,11 +308,22 @@ const rentalInputs = rentalFields.querySelectorAll('input');
 const formStatus = document.getElementById('formStatus');
 const typeRadios = inquiryForm.querySelectorAll('input[name="type"]');
 
+/* Selected-state styling for the enquiry-type cards and the contract checkbox
+   is driven from here with a class rather than from CSS :has(input:checked).
+   :has() needs Safari 15.4+, and the radios are also set programmatically
+   (openInquiry checks one, which unchecks its sibling implicitly) — a plain
+   class is the one thing guaranteed to track the state everywhere. */
+function syncTypeCards() {
+  typeRadios.forEach(r => r.closest('.radio')?.classList.toggle('is-on', r.checked));
+}
+
 function setRentalVisible(show) {
+  syncTypeCards();
   rentalFields.hidden = !show;
+  // nothing in the rental block is required any more — a principle request can
+  // legitimately arrive with only a date in mind, and the contract stage is
+  // where the binding details get collected
   rentalInputs.forEach(inp => { inp.required = false; });
-  const agree = document.getElementById('f-agree');
-  if (agree) agree.required = show;
   if (show) loadAvailability();
 }
 
@@ -387,10 +398,12 @@ function renderFcal() {
     if (d.getMonth() !== fcalView.getMonth()) btn.classList.add('out');
     if (dIso < todayIso) btn.classList.add('past');
     const wins = dayWindows(dIso);
-    const openWins = wins.filter(w => !w.booked);
+    // a window held for an open request is not offered to anyone else
+    const openWins = wins.filter(w => !w.booked && !w.pending);
     const isLocked = (availability.locked || []).includes(dIso);
     if (isLocked) btn.classList.add('locked');
     else if (openWins.length) btn.classList.add('open');
+    else if (wins.some(w => w.pending)) btn.classList.add('pending');
     else if (wins.length) btn.classList.add('booked');
     if (dIso === selectedDate) btn.classList.add('sel');
     const disabled = isLocked || dIso < todayIso;
@@ -406,7 +419,7 @@ function selectDay(dIso) {
   windowIdInput.value = '';
   renderFcal();
   const wins = dayWindows(dIso);
-  const open = wins.filter(w => !w.booked).sort((a, b) => a.start.localeCompare(b.start));
+  const open = wins.filter(w => !w.booked && !w.pending).sort((a, b) => a.start.localeCompare(b.start));
   availChips.innerHTML = '';
   if (open.length) {
     open.forEach(w => {
@@ -440,6 +453,9 @@ function selectDay(dIso) {
     });
     availStatus.textContent = 'בחרו חלון שעות פנוי:';
     availStatus.className = 'avail-status';
+  } else if (wins.some(w => w.pending)) {
+    availStatus.textContent = 'התאריך הזה מוחזק כרגע עבור בקשה אחרת. אפשר לשלוח בקשה לתאריך אחר, או לכתוב לנו ונעדכן אם יתפנה.';
+    availStatus.className = 'avail-status err';
   } else if (wins.length) {
     availStatus.textContent = 'כל החלונות בתאריך זה תפוסים — בחרו יום אחר.';
     availStatus.className = 'avail-status err';
@@ -456,114 +472,37 @@ function fmtHe(isoDate) {
 document.getElementById('fcalPrev')?.addEventListener('click', () => { fcalView.setMonth(fcalView.getMonth() - 1); renderFcal(); });
 document.getElementById('fcalNext')?.addEventListener('click', () => { fcalView.setMonth(fcalView.getMonth() + 1); renderFcal(); });
 
-async function reserveWindow() {
-  if (!windowIdInput.value || !dateInput.value) return true;
-  try {
-    const res = await fetch('/api/availability', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'reserve', id: windowIdInput.value, date: dateInput.value }),
-    });
-    if (res.status === 409) return 'taken';
-    return res.ok;
-  } catch {
-    return true;
-  }
-}
+/* The renter's ID number, the contract preview handoff and the signature pad
+   all used to live here, because the old form collected and signed everything
+   in one pass. The enquiry is now a principle request only: no ID number, no
+   signature, nothing that binds anyone. Those steps moved to /contract, which
+   the studio releases once it has approved the request. */
 
-/* ---------- contract preview handoff ----------
-   These fields include the renter's ID number. They used to ride in the query
-   string of /contract, which put them in the browser history, in the server
-   access logs and in the Referer header of anything that page loads. They now
-   go through a short-lived localStorage handoff written on click, which
-   /contract deletes the moment it reads it. */
-const CONTRACT_PREVIEW_KEY = 'tut-contract-preview';
-
-function stashContractPreview() {
-  const val = (id) => (document.getElementById(id)?.value || '').trim();
-  try {
-    localStorage.setItem(CONTRACT_PREVIEW_KEY, JSON.stringify({
-      at: Date.now(),
-      name: val('f-name'),
-      idnum: val('f-idnum'),
-      date: dateInput.value,
-      start: startSel.value,
-      end: endSel.value,
-      purpose: val('f-purpose'),
-      participants: val('f-participants'),
-      price: val('f-cost'),
-    }));
-  } catch { /* private mode — the contract just opens blank */ }
-}
-
-document.getElementById('contractLink')?.addEventListener('click', stashContractPreview);
-
-/* ---------- signature pad ---------- */
-const sigPad = document.getElementById('sigPad');
-const sigCtx = sigPad.getContext('2d');
-let sigDrawn = false;
-let drawing = false;
-
-function sigInit() {
-  sigCtx.fillStyle = '#ffffff';
-  sigCtx.fillRect(0, 0, sigPad.width, sigPad.height);
-  sigCtx.strokeStyle = '#000000';
-  sigCtx.lineWidth = 2;
-  sigCtx.lineCap = 'round';
-  sigCtx.lineJoin = 'round';
-  sigDrawn = false;
-}
-sigInit();
-
-function sigPos(e) {
-  const r = sigPad.getBoundingClientRect();
-  const t = e.touches ? e.touches[0] : e;
-  return [
-    (t.clientX - r.left) * (sigPad.width / r.width),
-    (t.clientY - r.top) * (sigPad.height / r.height),
-  ];
-}
-
-function sigStart(e) { e.preventDefault(); drawing = true; const [x, y] = sigPos(e); sigCtx.beginPath(); sigCtx.moveTo(x, y); }
-function sigMove(e) { if (!drawing) return; e.preventDefault(); const [x, y] = sigPos(e); sigCtx.lineTo(x, y); sigCtx.stroke(); sigDrawn = true; }
-function sigEnd() { drawing = false; }
-
-sigPad.addEventListener('mousedown', sigStart);
-sigPad.addEventListener('mousemove', sigMove);
-window.addEventListener('mouseup', sigEnd);
-sigPad.addEventListener('touchstart', sigStart, { passive: false });
-sigPad.addEventListener('touchmove', sigMove, { passive: false });
-sigPad.addEventListener('touchend', sigEnd);
-document.getElementById('sigClear').addEventListener('click', sigInit);
-
-async function createBooking(payload) {
-  try {
-    const res = await fetch('/api/booking', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'create',
-        signature: sigPad.toDataURL('image/png'),
-        data: {
-          name: payload.name,
-          idnum: payload['id-number'],
-          email: payload.email,
-          phone: payload.phone,
-          date: payload['event-date'],
-          start: payload['event-start'],
-          end: payload['event-end'],
-          purpose: payload['event-purpose'],
-          participants: payload.participants,
-          price: payload['estimated-cost'],
-          message: payload.message,
-        },
-      }),
-    });
-    const data = await res.json();
-    return data.ok ? data.id : null;
-  } catch {
-    return null;
-  }
+/* Registers the request and places the tentative hold on the chosen window. */
+async function createRequest(payload) {
+  const res = await fetch('/api/booking', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'request',
+      data: {
+        name: payload.name,
+        email: payload.email,
+        phone: payload.phone,
+        date: payload['event-date'],
+        start: payload['event-start'],
+        end: payload['event-end'],
+        purpose: payload['event-purpose'],
+        participants: payload.participants,
+        price: payload['estimated-cost'],
+        message: payload.message,
+        windowId: payload['window-id'],
+      },
+    }),
+  });
+  let data = {};
+  try { data = await res.json(); } catch { /* keep the status below */ }
+  return { ok: res.ok && data.ok, status: res.status, id: data.id, error: data.error };
 }
 
 /* ---------- modal open/close ---------- */
@@ -616,45 +555,39 @@ inquiryForm.addEventListener('submit', (e) => {
   const payload = Object.fromEntries(new FormData(inquiryForm).entries());
   const isRental = !rentalFields.hidden;
 
-  if (isRental && !sigDrawn) {
-    document.getElementById('sigStatus').textContent = 'נדרשת חתימה — ציירו את חתימתכם במסגרת.';
-    document.getElementById('sigStatus').className = 'avail-status err';
-    formStatus.textContent = '';
-    submitBtn.disabled = false;
-    sigPad.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    return;
-  }
-
   (async () => {
-    let contractUrl = 'https://tutlavi.com/contract';
     if (isRental) {
-      const bid = await createBooking(payload);
-      if (bid) {
-        contractUrl = 'https://tutlavi.com/contract?bid=' + bid;
-        payload['signed-contract'] = contractUrl;
+      /* Register the request first. It is what places the hold on the window,
+         so if the slot has gone in the meantime the visitor is told now —
+         before an email goes out promising them a date they cannot have. */
+      const reg = await createRequest(payload);
+      if (!reg.ok) {
+        const taken = reg.status === 409;
+        formStatus.className = 'form-status err';
+        formStatus.textContent = taken
+          ? 'החלון שבחרתם הרגע נתפס. בחרו חלון אחר ביומן ונסו שוב.'
+          : 'לא הצלחנו לרשום את הבקשה. נסו שוב, או כתבו ל-vivian.office.info@gmail.com';
+        submitBtn.disabled = false;
+        if (taken) loadAvailability(true);
+        return;
       }
+      payload['booking-id'] = reg.id;
       payload['event-hours'] = (payload['event-start'] || '') +
         (payload['event-end'] ? '-' + payload['event-end'] : '');
+      payload['admin-link'] = 'https://tutlavi.com/admin';
       payload._autoresponse =
         'תודה על פנייתך לסטודיו תות!\n\n' +
-        'סיכום הבקשה:\n' +
+        'קיבלנו את הבקשה שלכם והתאריך שמור עבורכם בינתיים:\n' +
         'תאריך: ' + (payload['event-date'] || '') + '\n' +
         (payload['event-hours'] ? 'שעות: ' + payload['event-hours'] + '\n' : '') +
         (payload['event-purpose'] ? 'מטרה: ' + payload['event-purpose'] + '\n' : '') +
         (payload.participants ? 'משתתפים: ' + payload.participants + '\n' : '') +
         (payload['estimated-cost'] ? 'עלות: ' + payload['estimated-cost'] + '\n' : '') +
-        '\nהחוזה החתום שלכם: ' + contractUrl + '\n' +
-        'החוזה הועבר לחתימת סטודיו תות; עותק נגיש בקישור בכל עת.\n\n' +
-        'התשלום מתבצע בהעברה בנקאית — פרטי החשבון יישלחו עם אישור ההזמנה.\n' +
-        (payload['window-id'] ? 'החלון שבחרתם נשמר עבורכם וממתין לאישורנו.\n' : '') +
-        '\nסטודיו תות · מגן אברהם 6, תל אביב · 054-312-9933';
+        '\nזו בקשה עקרונית — עדיין לא נדרשתם לחתום על כלום.\n' +
+        'נחזור אליכם בהקדם, ואם הכול מסתדר נשלח לכם חוזה לחתימה במייל נפרד.\n\n' +
+        'התשלום מתבצע בהעברה בנקאית — פרטי החשבון יישלחו עם אישור ההזמנה.\n\n' +
+        'סטודיו תות · מגן אברהם 6, תל אביב · 054-312-9933';
     }
-
-    /* The ID number never goes through FormSubmit. It is already stored with
-       the signed contract, which the studio opens from the link below and
-       reveals with the admin key — mailing it through a third party as well
-       adds nothing and puts it in someone else's pipeline. */
-    delete payload['id-number'];
 
     const res = await fetch(FORM_ENDPOINT, {
       method: 'POST',
@@ -664,17 +597,14 @@ inquiryForm.addEventListener('submit', (e) => {
     const data = await res.json();
     if (String(data.success) !== 'true') throw new Error(data.message || 'failed');
 
-    const reserved = await reserveWindow();
     formStatus.className = 'form-status ok';
-    formStatus.textContent = reserved === 'taken'
-      ? 'הפנייה נשלחה! שימו לב: החלון בדיוק נתפס על ידי מישהו אחר — נחזור אליכם לתיאום.'
-      : (isRental
-          ? 'תודה! החוזה נחתם והועבר לחתימת סטודיו תות. עותק נשלח למייל שלכם.'
-          : 'תודה! הפנייה נשלחה, נחזור אליכם בהקדם.');
+    formStatus.textContent = isRental
+      ? 'תודה! הבקשה נקלטה והתאריך שמור עבורכם. נחזור אליכם, ואם הכול מסתדר נשלח חוזה לחתימה במייל.'
+      : 'תודה! הפנייה נשלחה, נחזור אליכם בהקדם.';
     inquiryForm.reset();
-    sigInit();
     selectedDate = null;
     availChips.innerHTML = '';
+    availStatus.textContent = '';
     document.getElementById('costLine').hidden = true;
     setRentalVisible(false);
     loadAvailability(true);

@@ -462,119 +462,242 @@ html.js .reveal.in-view{ opacity:1; transform:none; }
 }
 @media (min-width:640px){ .play-btn{ width:128px; height:128px; bottom:32px; font-size:13px; } }
 
-/* ============ MODAL (rental / collaboration) ============ */
+/* ============================================================
+   MODAL + FORMS (rental / collaboration / event registration)
+   Readability rules for this block:
+   · Hebrew has no case, so the decorative uppercase micro-caps used for
+     the Latin eyebrows are *never* applied to functional Hebrew UI text —
+     wide tracking at 10-11px pulls Hebrew letterforms apart and is the main
+     reason the forms read as hard work. Labels, buttons, statuses and hints
+     are set at real reading sizes, normal tracking, high contrast.
+   · Fields are white-on-white with a defined border rather than grey fill:
+     more contrast against the text, and it reads calmer.
+   ============================================================ */
 .modal{
   position:fixed; inset:0; z-index:2000;
   display:flex; align-items:center; justify-content:center; padding:1.2rem;
   opacity:0; visibility:hidden; transition:opacity .3s ease, visibility .3s ease;
 }
 .modal.open{ opacity:1; visibility:visible; }
-.modal-backdrop{ position:absolute; inset:0; background:rgba(0,0,0,.6); backdrop-filter:blur(4px); }
+.modal-backdrop{
+  position:absolute; inset:0; background:rgba(0,0,0,.62);
+  backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+}
 .modal-panel{
-  position:relative; z-index:1; width:min(760px,100%); max-height:92vh; overflow-y:auto;
-  background:#fff; color:var(--ink); border:1px solid var(--ink);
-  padding:clamp(2rem,4.5vw,3.2rem);
+  position:relative; z-index:1; width:min(720px,100%); max-height:92vh; overflow-y:auto;
+  background:#fff; color:var(--ink);
+  border:1px solid rgba(0,0,0,.14); border-top:3px solid var(--accent);
+  padding:clamp(1.9rem,4vw,3rem) clamp(1.5rem,4vw,3rem) clamp(2rem,4vw,3rem);
   transform:translateY(14px); transition:transform .35s ease;
-  box-shadow:0 30px 70px rgba(0,0,0,.2);
+  box-shadow:0 40px 90px -20px rgba(0,0,0,.38);
+  scrollbar-width:thin;
 }
 .modal.open .modal-panel{ transform:none; }
 .modal-close{
-  position:absolute; top:.7rem; inset-inline-start:1rem;
-  font-size:1.5rem; line-height:1; color:var(--muted);
+  position:absolute; top:.55rem; inset-inline-start:.6rem;
+  width:42px; height:42px; border-radius:50%;
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.6rem; line-height:1; color:var(--muted);
+  transition:background .2s ease, color .2s ease;
 }
-.modal-close:hover{ color:var(--accent); }
+.modal-close:hover{ background:rgba(0,0,0,.06); color:var(--accent); }
 .modal-eyebrow{ font-size:10px; letter-spacing:.3em; text-transform:uppercase; color:var(--accent); margin-bottom:.6rem; }
-.modal-title{ font-size:clamp(1.7rem,3.4vw,2.3rem); font-weight:300; letter-spacing:-.02em; margin-bottom:2rem; text-wrap:balance; }
+.modal-title{ font-size:clamp(1.7rem,3.4vw,2.3rem); font-weight:300; letter-spacing:-.02em; margin-bottom:1.8rem; text-wrap:balance; }
 .modal-title::after{ content:'.'; color:var(--accent); }
 
-.field{ margin-bottom:1.25rem; }
+/* ---- grouping: the rental form is long, so it is read in named steps ---- */
+/* spacing hangs off the *following* section so the last one never leaves a
+   trailing gap, whichever section happens to be last (rental vs. collab) */
+.form-section + .form-section,
+.rental-fields > .form-section:first-child{
+  margin-top:1.9rem; padding-top:1.7rem; border-top:1px solid var(--line);
+}
+.form-section > *:last-child{ margin-bottom:0; }
+.form-section-title{
+  display:flex; align-items:center; flex-wrap:wrap; gap:.3rem .6rem;
+  font-size:1.05rem; font-weight:600; letter-spacing:-.01em; line-height:1.3;
+  color:var(--ink); margin-bottom:1.15rem;
+}
+.form-section-title::before{
+  content:''; width:7px; height:7px; flex:none; background:var(--accent);
+}
+.form-section-note{ font-size:.85rem; font-weight:400; color:var(--muted); }
+
+.field{ margin-bottom:1.35rem; }
 .modal-grid{ display:grid; grid-template-columns:1fr 1fr; gap:0 1.4rem; }
-.modal-grid .field{ margin-bottom:1.25rem; }
+.modal-grid .field{ margin-bottom:1.35rem; }
 .field-label{
-  display:block; font-size:11px; letter-spacing:.14em; text-transform:uppercase;
-  color:var(--muted); margin-bottom:.55rem;
+  display:block;
+  font-size:.875rem; font-weight:600; line-height:1.4;
+  letter-spacing:0; text-transform:none;
+  color:#1c1c1c; margin-bottom:.45rem;
 }
-.field input, .field textarea, .field select{
-  width:100%; background:#fafafa; border:1px solid var(--line-2);
-  padding:.8rem .9rem; font-family:inherit; font-size:1.02rem; color:var(--ink);
-  outline:none; transition:border-color .25s ease, background .25s ease;
+.field-label .req{ color:var(--accent); margin-inline-start:.15rem; font-weight:700; }
+.field-hint{ font-size:.83rem; line-height:1.55; color:var(--muted); margin:.4rem 0 .65rem; }
+
+.field input:not([type=checkbox]):not([type=radio]),
+.field textarea,
+.field select{
+  width:100%; min-height:52px;
+  background:#fff; border:1px solid rgba(0,0,0,.26);
+  padding:.85rem 1rem;
+  font-family:inherit; font-size:1rem; line-height:1.4; color:var(--ink);
+  outline:none;
+  transition:border-color .2s ease, box-shadow .2s ease;
 }
-.field select{ cursor:pointer; appearance:auto; }
-.field input:focus, .field textarea:focus, .field select:focus{ border-color:var(--accent); background:#fff; }
-.field input::placeholder, .field textarea::placeholder{ color:rgba(0,0,0,.3); }
-.field textarea{ resize:vertical; min-height:5rem; }
-.field-split{ display:grid; grid-template-columns:1fr 1fr; gap:.8rem; }
+.field input:not([type=checkbox]):not([type=radio]):hover,
+.field textarea:hover,
+.field select:hover{ border-color:rgba(0,0,0,.5); }
+.field input:focus, .field textarea:focus, .field select:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(239,68,68,.16);
+}
+.field input:focus-visible, .field textarea:focus-visible, .field select:focus-visible{ outline:none; }
+.field input::placeholder, .field textarea::placeholder{ color:rgba(0,0,0,.42); }
+.field textarea{ resize:vertical; min-height:7rem; }
+/* native select chrome is inconsistent and sits on the wrong side in RTL */
+.field select{
+  cursor:pointer; appearance:none; -webkit-appearance:none;
+  padding-inline-end:2.6rem;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%23545454' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:left 1.05rem center;
+}
+.field-split{ display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
 @media (max-width:560px){ .modal-grid{ grid-template-columns:1fr; } }
 
-.sig-wrap{ position:relative; }
-#sigPad{ width:100%; height:140px; display:block; background:#fafafa; border:1px dashed var(--ink); cursor:crosshair; touch-action:none; }
-.sig-clear{
-  position:absolute; top:.4rem; inset-inline-start:.5rem;
-  font-size:10px; letter-spacing:.1em; text-transform:uppercase;
-  background:#fff; border:1px solid var(--line); color:var(--muted); padding:.25rem .6rem;
-}
-.sig-clear:hover{ color:var(--accent); border-color:var(--accent); }
+/* The signature pad and the contract-consent row used to live in this form.
+   They moved to /contract, which has its own styles — the enquiry no longer
+   signs anything. */
 
-.radio-row{ display:flex; gap:1.4rem; }
-.radio{ display:flex; align-items:center; gap:.45rem; font-size:.95rem; cursor:pointer; }
-.radio input{ accent-color:var(--accent); }
+/* ---- enquiry type: selectable cards, not bare radio dots ---- */
+.radio-row{ display:flex; flex-wrap:wrap; gap:.7rem; }
+.radio{
+  display:inline-flex; align-items:center; gap:.55rem;
+  padding:.75rem 1.15rem; border:1px solid rgba(0,0,0,.26);
+  font-size:.98rem; font-weight:500; cursor:pointer;
+  transition:border-color .2s ease, background .2s ease;
+}
+.radio:hover{ border-color:var(--ink); }
+.radio input{ width:auto; min-height:0; margin:0; accent-color:var(--accent); }
+/* .is-on is kept in sync by syncTypeCards() in script.js — see the note there
+   on why this is not :has(input:checked) */
+.radio.is-on{ border-color:var(--accent); background:rgba(239,68,68,.07); }
+
 .rental-fields[hidden]{ display:none; }
-.rental-fields{ border-top:1px solid var(--line); padding-top:1.15rem; margin-top:.3rem; }
+.rental-fields{ border-top:none; padding-top:0; margin-top:0; }
 .hp-field{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0; white-space:nowrap; }
 
-.fcal{ border:1px solid var(--line); padding:.7rem .8rem; margin-bottom:.6rem; }
-.fcal-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:.5rem; }
-.fcal-head b{ font-weight:600; font-size:1rem; }
-.fcal-nav{ border:1px solid var(--line); width:28px; height:28px; font-size:1rem; line-height:1; color:var(--ink); }
-.fcal-nav:hover{ border-color:var(--accent); color:var(--accent); }
-.fcal-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
-.fcal-dow{ text-align:center; font-size:9px; letter-spacing:.06em; color:var(--muted); padding-bottom:.15rem; }
+/* ---- availability calendar ---- */
+.fcal{
+  border:1px solid rgba(0,0,0,.16); background:#fff;
+  padding:.9rem; max-width:440px; margin-bottom:.9rem;
+}
+.fcal-head{ display:flex; align-items:center; justify-content:space-between; gap:.5rem; margin-bottom:.75rem; }
+.fcal-head b{ font-weight:600; font-size:1.05rem; letter-spacing:-.01em; }
+.fcal-nav{
+  border:1px solid rgba(0,0,0,.2); width:36px; height:36px; flex:none;
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.2rem; line-height:1; color:var(--ink);
+  transition:background .2s ease, border-color .2s ease, color .2s ease;
+}
+.fcal-nav:hover{ background:var(--ink); border-color:var(--ink); color:#fff; }
+.fcal-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+.fcal-dow{
+  text-align:center; font-size:.72rem; font-weight:600; letter-spacing:0;
+  color:var(--muted); padding-bottom:.35rem;
+}
 .fcal-day{
-  aspect-ratio:1; border:1px solid var(--line); background:none;
-  font-size:.85rem; font-weight:500; color:var(--ink); cursor:pointer; padding:0;
-  transition:border-color .2s ease;
+  aspect-ratio:1; min-height:40px;
+  display:flex; align-items:center; justify-content:center;
+  border:1px solid rgba(0,0,0,.12); background:#fff;
+  font-size:.95rem; font-weight:500; color:var(--ink); cursor:pointer; padding:0;
+  transition:border-color .18s ease, background .18s ease, color .18s ease;
 }
-.fcal-day:hover:not(:disabled){ border-color:var(--ink); }
-.fcal-day.out{ opacity:.3; }
-.fcal-day.past{ opacity:.25; cursor:default; }
-.fcal-day.open{ background:#eaf6ee; border-color:#1e7a3c; color:#1e7a3c; }
-.fcal-day.booked{ background:#f2f2f2; color:var(--muted); text-decoration:line-through; }
-.fcal-day.locked{ background:#fdeaea; color:var(--accent); cursor:not-allowed; }
-.fcal-day.sel{ border:2px solid var(--ink); }
-.fcal-legend{ display:flex; gap:1rem; margin-top:.5rem; font-size:9px; letter-spacing:.08em; color:var(--muted); }
-.fcal-legend .lg{ display:inline-block; width:9px; height:9px; margin-inline-end:.3rem; border:1px solid; }
-.lg-open{ background:#eaf6ee; border-color:#1e7a3c; }
-.lg-booked{ background:#f2f2f2; border-color:var(--line); }
-.lg-locked{ background:#fdeaea; border-color:var(--accent); }
+.fcal-day:hover:not(:disabled):not(.past){ border-color:var(--ink); }
+.fcal-day.out{ opacity:.28; }
+.fcal-day.past{ opacity:.3; cursor:default; }
+.fcal-day.open{ background:#e9f6ee; border-color:#8fc7a3; color:#146530; font-weight:700; }
+.fcal-day.booked{ background:#f4f4f4; border-color:rgba(0,0,0,.1); color:#9a9a9a; text-decoration:line-through; }
+/* held for someone who has an open request — not bookable, but not gone either */
+.fcal-day.pending{ background:#fff8e6; border-color:#e3c877; color:#8a6416; }
+.fcal-day.locked{ background:#fdecec; border-color:#f2b4b4; color:#c0221c; cursor:not-allowed; }
+/* selected must win over every state above — keep it last */
+.fcal-day.sel{ background:var(--ink); border-color:var(--ink); color:#fff; font-weight:700; text-decoration:none; }
+.fcal-legend{
+  display:flex; flex-wrap:wrap; gap:.35rem 1.1rem; margin-top:.75rem;
+  font-size:.78rem; letter-spacing:0; color:var(--muted);
+}
+.fcal-legend span{ display:inline-flex; align-items:center; }
+.fcal-legend .lg{ display:inline-block; width:12px; height:12px; flex:none; margin-inline-end:.4rem; border:1px solid; }
+.lg-open{ background:#e9f6ee; border-color:#8fc7a3; }
+.lg-booked{ background:#f4f4f4; border-color:rgba(0,0,0,.2); }
+.lg-locked{ background:#fdecec; border-color:#f2b4b4; }
+.lg-pending{ background:#fff8e6; border-color:#e3c877; }
 
-.avail-chips{ display:flex; flex-wrap:wrap; gap:.5rem; margin-bottom:.5rem; }
+/* ---- open time windows ---- */
+.avail-chips{ display:flex; flex-wrap:wrap; gap:.55rem; }
+.avail-chips:not(:empty){ margin-bottom:.3rem; }
 .avail-chip{
-  font-size:.88rem; font-weight:500; background:none; border:1px solid var(--ink); color:var(--ink);
-  padding:.4rem .85rem; cursor:pointer; transition:.25s;
+  font-size:.95rem; font-weight:500; line-height:1.3;
+  background:#fff; border:1px solid rgba(0,0,0,.26); color:var(--ink);
+  padding:.6rem 1.05rem; cursor:pointer;
+  transition:border-color .2s ease, background .2s ease, color .2s ease, box-shadow .2s ease;
 }
-.avail-chip:hover, .avail-chip.picked{ background:var(--accent); border-color:var(--accent); color:#fff; }
-.avail-status{ font-size:.84rem; color:var(--muted); margin-top:.45rem; min-height:1em; }
-.avail-status.ok{ color:#1e7a3c; }
-.avail-status.err{ color:var(--accent); }
+/* hover and "picked" used to be the same red, so you could not tell which
+   window you had actually chosen while the pointer was over another one */
+.avail-chip:hover{ border-color:var(--ink); background:#f5f5f5; }
+.avail-chip.picked, .avail-chip.picked:hover{
+  background:var(--accent); border-color:var(--accent); color:#fff;
+  box-shadow:0 8px 20px -10px rgba(239,68,68,.9);
+}
+.avail-status{ font-size:.9rem; line-height:1.55; color:var(--muted); margin-top:.5rem; min-height:1em; }
+.avail-status.ok{ color:#146530; font-weight:500; }
+.avail-status.err{ color:#b3261e; font-weight:500; }
 
-.cost-line{ font-size:1.05rem; margin-bottom:1.1rem; }
-.cost-line b{ font-weight:600; color:var(--accent); font-variant-numeric:tabular-nums; }
-.contract-row{ border-top:1px solid var(--line); padding-top:1rem; margin-top:.2rem; }
-.contract-link{
-  display:inline-block; font-size:10px; font-weight:600; letter-spacing:.14em; text-transform:uppercase;
-  border-bottom:1px solid var(--ink); padding-bottom:3px; margin-bottom:.9rem;
+/* ---- price: the single most important number in the form ---- */
+.cost-line{
+  display:flex; align-items:baseline; justify-content:space-between; gap:1rem;
+  background:#f7f7f8; border:1px solid rgba(0,0,0,.1);
+  border-inline-start:3px solid var(--accent);
+  padding:.9rem 1.1rem; margin-bottom:.2rem;
+  font-size:1rem; font-weight:500;
 }
-.contract-link:hover{ color:var(--accent); border-color:var(--accent); }
-.agree{ display:flex; align-items:flex-start; gap:.5rem; font-size:.92rem; cursor:pointer; }
-.agree input{ width:auto; margin-top:.2rem; accent-color:var(--accent); }
+.cost-line[hidden]{ display:none; }
+.cost-line b{ font-size:1.3rem; font-weight:700; color:var(--accent); font-variant-numeric:tabular-nums; }
+
+/* what happens after you press send — the form asks for a lot less than it
+   used to, so it has to say what the rest of the process looks like */
+.next-steps{
+  counter-reset:step; list-style:none;
+  margin:1.4rem 0 .2rem; padding:1.2rem 1.3rem;
+  background:#f7f7f8; border:1px solid rgba(0,0,0,.1);
+}
+.next-steps li{
+  position:relative; padding-inline-start:2.1rem; margin-bottom:.7rem;
+  font-size:.94rem; line-height:1.55; color:var(--muted);
+}
+.next-steps li:last-child{ margin-bottom:0; }
+.next-steps li b{ color:var(--ink); font-weight:600; }
+.next-steps li::before{
+  counter-increment:step; content:counter(step);
+  position:absolute; inset-inline-start:0; top:.1rem;
+  width:1.45rem; height:1.45rem; border-radius:50%;
+  background:var(--ink); color:#fff;
+  font-size:.75rem; font-weight:700; line-height:1.45rem; text-align:center;
+}
 
 .modal-submit{
-  width:100%; margin-top:.4rem; background:var(--ink); color:#fff; border:1px solid var(--ink);
-  padding:1rem; font-size:11px; font-weight:600; letter-spacing:.2em; text-transform:uppercase;
-  transition:background .35s ease, border-color .35s ease;
+  width:100%; margin-top:1.6rem;
+  background:var(--ink); color:#fff; border:1px solid var(--ink);
+  padding:1.15rem 1.5rem;
+  font-size:1rem; font-weight:600; letter-spacing:.01em; text-transform:none;
+  transition:background .3s ease, border-color .3s ease, transform .2s ease, box-shadow .3s ease;
 }
-.modal-submit:hover{ background:var(--accent); border-color:var(--accent); }
-.modal-submit:disabled{ opacity:.5; cursor:default; }
+.modal-submit:hover:not(:disabled){
+  background:var(--accent); border-color:var(--accent);
+  transform:translateY(-1px); box-shadow:0 14px 30px -14px rgba(239,68,68,.95);
+}
+.modal-submit:disabled{ opacity:.45; cursor:default; }
 
 /* ---- event registration: schedule button ---- */
 .sched-reg{
@@ -589,8 +712,8 @@ html.js .reveal.in-view{ opacity:1; transform:none; }
 .sched-reg.paid:hover{ background:var(--ink); border-color:var(--ink); }
 
 /* ---- event modal (smaller than the rental modal) ---- */
-.modal-panel-sm{ width:min(520px,100%); }
-.event-modal-sub{ font-size:1rem; color:var(--muted); margin:-1rem 0 1.6rem; }
+.modal-panel-sm{ width:min(540px,100%); }
+.event-modal-sub{ font-size:1rem; line-height:1.55; color:var(--muted); margin:-1.1rem 0 1.7rem; }
 
 /* ---- payment-return toast ---- */
 .toast{
@@ -603,9 +726,15 @@ html.js .reveal.in-view{ opacity:1; transform:none; }
 .toast.ok{ background:#1e7a3c; }
 .toast.err{ background:var(--accent); }
 .toast.show{ transform:translate(-50%,0); }
-.form-status{ margin-top:.9rem; font-size:11px; letter-spacing:.06em; min-height:1em; text-align:center; }
-.form-status.ok{ color:#2e7d32; }
-.form-status.err{ color:var(--accent); }
+/* the line that tells you whether your booking went through — it used to be
+   set at 11px with tracking, i.e. smaller than everything it was reporting on */
+.form-status{
+  margin-top:1rem; font-size:.92rem; line-height:1.55; letter-spacing:0;
+  min-height:1em; text-align:center;
+}
+.form-status:empty{ margin-top:0; min-height:0; }
+.form-status.ok{ color:#146530; font-weight:600; background:#eaf6ee; border:1px solid #bfe0cb; padding:.85rem 1rem; }
+.form-status.err{ color:#b3261e; font-weight:600; background:#fdecec; border:1px solid #f3c0c0; padding:.85rem 1rem; }
 
 /* ============ RESPONSIVE ============ */
 @media (max-width:860px){
@@ -630,6 +759,23 @@ html.js .reveal.in-view{ opacity:1; transform:none; }
 }
 @media (max-width:520px){
   .menu-item-sub{ display:none; }
+}
+/* forms on a phone: full-width sheet, nothing under 16px (iOS zooms on focus
+   for anything smaller), calendar allowed to use the full width */
+@media (max-width:600px){
+  .modal{ padding:0; align-items:flex-end; }
+  .modal-panel{
+    width:100%; max-height:94vh; max-height:94dvh;
+    border-inline:none; border-bottom:none;
+    padding:1.7rem 1.2rem 2rem;
+  }
+  .modal-panel-sm{ width:100%; }
+  .modal-close{ top:.35rem; inset-inline-start:.35rem; }
+  .modal-title{ margin-bottom:1.4rem; }
+  .fcal{ max-width:none; padding:.75rem .6rem; }
+  .fcal-day{ font-size:.9rem; }
+  .field-split{ gap:.7rem; }
+  .radio{ flex:1 1 auto; justify-content:center; }
 }
 
 /* ============ reduced motion ============ */

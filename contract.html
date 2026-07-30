@@ -61,7 +61,61 @@ ol{ padding-inline-start:1.2rem; }
   color:var(--soft); text-decoration:underline; cursor:pointer;
 }
 .back{ display:inline-block; margin-top:1.6rem; font-weight:600; color:var(--accent); }
-@media print{ .back, .studio-sign-row, .reveal-row{ display:none; } }
+@media print{ .back, .studio-sign-row, .reveal-row, #signBox{ display:none; } }
+
+/* ---- renter signing panel (shown only while the contract awaits signature) ---- */
+#signBox{
+  margin-top:2.5rem; border:1px solid var(--line); border-top:3px solid var(--accent);
+  padding:1.6rem clamp(1rem,3vw,1.8rem); background:#fff;
+}
+#signBox h2{ margin:0 0 .4rem; font-size:1.25rem; }
+.sign-lead{ color:var(--soft); font-size:.95rem; margin-bottom:1.4rem; }
+.sign-field{ margin-bottom:1.3rem; }
+.sign-field label{
+  display:block; font-size:.9rem; font-weight:600; color:var(--ink); margin-bottom:.45rem;
+}
+.sign-field .req{ color:var(--accent); }
+.sign-field input[type=text]{
+  width:100%; max-width:320px; min-height:52px;
+  border:1px solid rgba(25,22,17,.3); background:#fff;
+  padding:.8rem 1rem; font:inherit; font-size:1rem;
+  transition:border-color .18s ease, box-shadow .18s ease;
+}
+.sign-field input[type=text]:hover{ border-color:rgba(25,22,17,.55); }
+.sign-field input[type=text]:focus{
+  outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(169,30,28,.14);
+}
+.sign-hint{ font-size:.85rem; color:var(--soft); margin:.4rem 0 .7rem; line-height:1.5; }
+.sig-wrap{ position:relative; max-width:520px; }
+#sigPad{
+  width:100%; height:170px; display:block; background:#fff;
+  border:1px dashed rgba(25,22,17,.42); cursor:crosshair; touch-action:none;
+}
+#sigPad:hover{ border-color:var(--ink); }
+.sig-clear{
+  position:absolute; top:.55rem; inset-inline-start:.6rem;
+  font-size:.78rem; font-weight:600; background:#fff;
+  border:1px solid rgba(25,22,17,.22); color:var(--soft); padding:.35rem .8rem;
+}
+.sig-clear:hover{ background:#fff; color:var(--accent); border-color:var(--accent); }
+.agree-row{
+  display:flex; align-items:flex-start; gap:.7rem; cursor:pointer;
+  border:1px solid rgba(25,22,17,.16); background:#faf9f7;
+  padding:.85rem 1rem; margin:1.4rem 0; font-size:.95rem; line-height:1.5;
+}
+.agree-row.is-on{ border-color:var(--ink); background:#fff; }
+.agree-row input{ margin-top:.2rem; flex:none; accent-color:var(--accent); transform:scale(1.15); }
+#signBtn{ width:100%; max-width:340px; padding:1.05rem 1.5rem; font-size:1rem; }
+#signBtn:disabled{ opacity:.45; cursor:default; background:var(--ink); border-color:var(--ink); }
+#signMsg{ margin-top:.9rem; font-size:.95rem; line-height:1.5; min-height:1em; font-weight:600; }
+#signMsg.err{ color:#b3261e; }
+#signMsg.ok{ color:var(--ok); }
+.notice{
+  margin-top:2rem; padding:1rem 1.2rem; font-size:.95rem; line-height:1.6;
+  background:#faf9f7; border:1px solid var(--line); border-inline-start:3px solid var(--soft);
+}
+.notice.wait{ border-inline-start-color:var(--accent); }
+.notice.done{ border-inline-start-color:var(--ok); }
 </style>
 </head>
 <body>
@@ -129,6 +183,43 @@ ol{ padding-inline-start:1.2rem; }
   </div>
 </div>
 
+<!-- shown only when the studio has released this contract for signing -->
+<div id="signBox" hidden>
+  <h2>חתימה על ההסכם</h2>
+  <p class="sign-lead">קראו את ההסכם למעלה. להשלמת ההזמנה נדרשים שני פרטים בלבד:</p>
+
+  <div class="sign-field">
+    <label for="idnumInput">ת.ז / ח.פ של השוכר<span class="req">*</span></label>
+    <input id="idnumInput" type="text" inputmode="numeric" dir="ltr" autocomplete="off">
+    <p class="sign-hint">המספר נשמר עם ההסכם החתום ומוצג במלואו לסטודיו בלבד.</p>
+  </div>
+
+  <div class="sign-field">
+    <label for="sigPad">חתימה<span class="req">*</span></label>
+    <p class="sign-hint">ציירו את חתימתכם במסגרת — באצבע בנייד, בעכבר במחשב.</p>
+    <div class="sig-wrap">
+      <canvas id="sigPad" width="400" height="140"></canvas>
+      <button type="button" class="sig-clear" id="sigClear">ניקוי</button>
+    </div>
+  </div>
+
+  <label class="agree-row" id="agreeRow">
+    <input type="checkbox" id="agreeChk">
+    קראתי את ההסכם במלואו ואני מאשר/ת את תנאיו.
+  </label>
+
+  <button id="signBtn" disabled>חתימה ושליחה</button>
+  <p id="signMsg"></p>
+</div>
+
+<div class="notice wait" id="waitNotice" hidden>
+  ההסכם נחתם על ידכם והועבר לחתימת סטודיו תות. נעדכן אתכם במייל ברגע שייחתם — הקישור הזה יישאר תקף ויציג תמיד את הגרסה העדכנית.
+</div>
+
+<div class="notice" id="pendingNotice" hidden>
+  הבקשה שלכם התקבלה ונמצאת אצלנו לבדיקה. ההסכם ייפתח לחתימה ברגע שנאשר את הבקשה, ותקבלו על כך מייל.
+</div>
+
 <div class="studio-sign-row" id="studioSignRow" hidden>
   <button id="studioSignBtn">חתימת סטודיו תות על ההסכם</button>
   <p id="ssMsg"></p>
@@ -164,54 +255,188 @@ function applyData(d) {
   fill('c-participants', d.participants);
 }
 
+/* ---------- signature pad (only mounted on the signing screen) ---------- */
+const sigPad = $('sigPad');
+const sigCtx = sigPad.getContext('2d');
+let sigDrawn = false;
+let drawing = false;
+
+function sigInit() {
+  // the backing store is matched to the rendered size, so the pen width has to
+  // be scaled by the same factor to stay a 2px stroke
+  const r = sigPad.getBoundingClientRect();
+  const scale = r.width ? sigPad.width / r.width : 1;
+  sigCtx.fillStyle = '#ffffff';
+  sigCtx.fillRect(0, 0, sigPad.width, sigPad.height);
+  sigCtx.strokeStyle = '#000000';
+  sigCtx.lineWidth = Math.max(1.6, 2 * scale);
+  sigCtx.lineCap = 'round';
+  sigCtx.lineJoin = 'round';
+  sigDrawn = false;
+  syncSignBtn();
+}
+
+function sigSize() {
+  const r = sigPad.getBoundingClientRect();
+  if (!r.width) return;                    // still hidden — nothing to measure
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = Math.round(r.width * dpr);
+  const h = Math.round(r.height * dpr);
+  if (w === sigPad.width && h === sigPad.height) return;
+  sigPad.width = w;
+  sigPad.height = h;
+  sigInit();                               // resizing a canvas clears it anyway
+}
+
+function sigPos(e) {
+  const r = sigPad.getBoundingClientRect();
+  const t = e.touches ? e.touches[0] : e;
+  return [
+    (t.clientX - r.left) * (sigPad.width / r.width),
+    (t.clientY - r.top) * (sigPad.height / r.height),
+  ];
+}
+function sigStart(e) { e.preventDefault(); drawing = true; const [x, y] = sigPos(e); sigCtx.beginPath(); sigCtx.moveTo(x, y); }
+function sigMove(e) {
+  if (!drawing) return;
+  e.preventDefault();
+  const [x, y] = sigPos(e);
+  sigCtx.lineTo(x, y); sigCtx.stroke();
+  if (!sigDrawn) { sigDrawn = true; syncSignBtn(); }
+}
+function sigEnd() { drawing = false; }
+
+sigPad.addEventListener('mousedown', sigStart);
+sigPad.addEventListener('mousemove', sigMove);
+window.addEventListener('mouseup', sigEnd);
+sigPad.addEventListener('touchstart', sigStart, { passive: false });
+sigPad.addEventListener('touchmove', sigMove, { passive: false });
+sigPad.addEventListener('touchend', sigEnd);
+$('sigClear').addEventListener('click', sigInit);
+window.addEventListener('resize', () => { if (!sigDrawn) sigSize(); });
+
+/* the submit stays disabled until all three requirements are actually met, so
+   the button itself tells you whether you are done */
+function syncSignBtn() {
+  const ok = sigDrawn && $('agreeChk').checked && $('idnumInput').value.trim().length >= 5;
+  $('signBtn').disabled = !ok;
+}
+$('agreeChk').addEventListener('change', () => {
+  $('agreeRow').classList.toggle('is-on', $('agreeChk').checked);
+  syncSignBtn();
+});
+$('idnumInput').addEventListener('input', syncSignBtn);
+
+$('signBtn').addEventListener('click', async () => {
+  const btn = $('signBtn');
+  btn.disabled = true;
+  $('signMsg').className = '';
+  $('signMsg').textContent = 'שולח…';
+  try {
+    const res = await fetch('/api/booking', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'sign',
+        id: bid,
+        idnum: $('idnumInput').value.trim(),
+        signature: sigPad.toDataURL('image/png'),
+      }),
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.ok) {
+      $('signMsg').className = 'err';
+      $('signMsg').textContent = res.status === 409
+        ? 'ההסכם כבר נחתם, או שאינו פתוח לחתימה. רעננו את העמוד.'
+        : 'החתימה לא נשמרה. נסו שוב, או כתבו לנו ל-vivian.office.info@gmail.com';
+      btn.disabled = false;
+      return;
+    }
+    $('signMsg').className = 'ok';
+    $('signMsg').textContent = 'נחתם! מרעננים…';
+    setTimeout(() => location.reload(), 900);
+  } catch {
+    $('signMsg').className = 'err';
+    $('signMsg').textContent = 'שגיאת רשת — נסו שוב.';
+    btn.disabled = false;
+  }
+});
+
+/* ---------- routing by booking state ---------- */
+function render(b) {
+  applyData(b);
+
+  if (b.signature) {
+    const img = new Image();
+    img.src = b.signature;
+    img.alt = 'חתימת השוכר';
+    $('renterBox').insertBefore(img, $('renterBox').firstChild);
+  }
+  if (b.signedAt) {
+    $('renterWhen').textContent = ' · נחתם ' + new Date(b.signedAt).toLocaleDateString('he-IL');
+  }
+
+  const status = b.status || (b.studioSigned ? 'confirmed' : b.signature ? 'signed' : 'requested');
+
+  if (status === 'confirmed') {
+    $('docStatus').textContent = 'נחתם על ידי שני הצדדים';
+    $('docStatus').className = 'status done';
+    const st = document.createElement('div');
+    st.className = 'stamp';
+    st.textContent = 'סטודיו תות · אושר ונחתם ' +
+      new Date(b.studioSignedAt).toLocaleDateString('he-IL');
+    $('studioBox').insertBefore(st, $('studioBox').firstChild);
+    $('revealRow').hidden = false;
+    return;
+  }
+
+  if (status === 'signed') {
+    $('docStatus').textContent = 'נחתם על ידי השוכר · ממתין לחתימת הסטודיו';
+    $('docStatus').className = 'status signed';
+    $('waitNotice').hidden = false;
+    $('studioSignRow').hidden = false;   // the studio countersigns from here
+    $('revealRow').hidden = false;
+    return;
+  }
+
+  if (status === 'sent') {
+    // released for signing: this is the only state that shows the sign panel
+    $('docStatus').textContent = 'ממתין לחתימתכם';
+    $('docStatus').className = 'status signed';
+    $('signBox').hidden = false;
+    sigSize();
+    return;
+  }
+
+  if (status === 'declined') {
+    $('docStatus').textContent = 'הבקשה נסגרה';
+    $('pendingNotice').textContent =
+      'הבקשה הזו כבר אינה פעילה. אם נפלה טעות, כתבו לנו ונשמח לבדוק.';
+    $('pendingNotice').hidden = false;
+    return;
+  }
+
+  // requested — the studio has not released it for signing yet
+  $('docStatus').textContent = 'בקשה שהתקבלה · טרם נפתחה לחתימה';
+  $('pendingNotice').hidden = false;
+}
+
 if (bid) {
-  // a stored, client-signed contract
   fetch('/api/booking?id=' + encodeURIComponent(bid))
     .then((r) => r.json())
     .then((b) => {
       if (b.error) { $('docStatus').textContent = 'לא נמצא'; return; }
-      applyData(b);
-      if (b.signature) {
-        const img = new Image();
-        img.src = b.signature;
-        img.alt = 'חתימת השוכר';
-        $('renterBox').insertBefore(img, $('renterBox').firstChild);
-      }
-      if (b.signedAt) {
-        $('renterWhen').textContent = ' · נחתם ' + new Date(b.signedAt).toLocaleDateString('he-IL');
-      }
-      // the API masks the ID number for anyone holding the link; the studio
-      // can reveal it with the admin key
-      $('revealRow').hidden = false;
-      if (b.studioSigned) {
-        $('docStatus').textContent = 'נחתם על ידי שני הצדדים';
-        $('docStatus').className = 'status done';
-        const st = document.createElement('div');
-        st.className = 'stamp';
-        st.textContent = 'סטודיו תות · אושר ונחתם ' + new Date(b.studioSignedAt).toLocaleDateString('he-IL');
-        $('studioBox').insertBefore(st, $('studioBox').firstChild);
-      } else {
-        $('docStatus').textContent = 'נחתם על ידי השוכר · ממתין לחתימת הסטודיו';
-        $('docStatus').className = 'status signed';
-        $('studioSignRow').hidden = false;
-      }
+      render(b);
     })
     .catch(() => { $('docStatus').textContent = 'שגיאה בטעינה'; });
 } else {
-  // live preview handed over by the booking form through localStorage rather
-  // than the query string, so the ID number never lands in a URL. Read once,
-  // then delete — and ignore a stale handoff left by an old tab.
-  let preview = null;
-  try {
-    const raw = localStorage.getItem('tut-contract-preview');
-    localStorage.removeItem('tut-contract-preview');
-    const p = raw ? JSON.parse(raw) : null;
-    if (p && Date.now() - (p.at || 0) < 15 * 60 * 1000) preview = p;
-  } catch { /* ignore */ }
-  if (preview) {
-    applyData(preview);
-    $('docStatus').textContent = 'תצוגה מקדימה — טרם נחתם';
-  }
+  /* No ?bid= — this is the blank template. The old localStorage preview
+     handoff is gone with the one-pass form: the contract is now only ever
+     reached through the personal link the studio sends. */
+  $('docStatus').textContent = 'נוסח לעיון';
+  $('pendingNotice').textContent =
+    'זהו נוסח ההסכם לעיון בלבד, ללא פרטים. הסכם אישי לחתימה נשלח אליכם בקישור ייעודי לאחר שנאשר את בקשתכם.';
+  $('pendingNotice').hidden = false;
 }
 
 $('revealBtn')?.addEventListener('click', async () => {

@@ -149,6 +149,62 @@ button.danger{ background:var(--accent); border-color:var(--accent); }
 .rg-date{ color:var(--soft); font-size:.78rem; }
 @media (max-width:640px){ .regs-row{ grid-template-columns:1fr 1fr; } }
 #app{ display:none; }
+
+/* ---- rental booking cards ---- */
+.bk-card{
+  border:1px solid var(--line); border-inline-start:3px solid var(--line);
+  padding:1.1rem 1.3rem; margin-bottom:.9rem; background:#fff;
+}
+/* the two states that are waiting on the studio are the ones that stand out */
+.bk-requested{ border-inline-start-color:var(--accent); background:#fffaf9; }
+.bk-signed{ border-inline-start-color:var(--open); background:#f8fdf9; }
+.bk-confirmed{ border-inline-start-color:var(--open); }
+.bk-declined{ opacity:.6; }
+.bk-head{ display:flex; align-items:center; gap:.7rem; flex-wrap:wrap; margin-bottom:.4rem; }
+.bk-head b{ font-size:1.1rem; font-weight:600; }
+.bk-badge{
+  font-size:.74rem; font-weight:700; padding:.2rem .6rem; border-radius:3px;
+  white-space:nowrap; background:#ececec; color:#555;
+}
+.bk-badge-requested{ background:var(--lockbg); color:var(--accent); }
+.bk-badge-sent{ background:#fff4e0; color:#8a5a10; }
+.bk-badge-signed{ background:var(--openbg); color:var(--open); }
+.bk-badge-confirmed{ background:var(--open); color:#fff; }
+.bk-meta{ font-size:.92rem; color:var(--soft); margin-bottom:.25rem; }
+.bk-contact{ font-size:.85rem; }
+.bk-msg{
+  font-size:.9rem; line-height:1.55; margin:.6rem 0 .2rem;
+  padding:.6rem .8rem; background:#faf9f7; border:1px solid var(--line);
+}
+.bk-actions{ display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; margin-top:.9rem; }
+.bk-actions button{ font-size:.9rem; padding:.5rem 1rem; }
+.bk-link{ color:var(--soft); font-size:.88rem; text-decoration:none; margin-inline-start:auto; }
+.bk-link:hover{ color:var(--accent); }
+
+/* ---- form fields: the 14%-alpha border all but disappeared against white,
+   and nothing at all marked the field you were typing in ---- */
+#login input,
+.cfield input, .cfield textarea,
+.ev-grid input, .ev-reg input, .ev-reg select,
+.row input[type=time], .row input[type=text]{
+  border-color:rgba(25,22,17,.3);
+  transition:border-color .18s ease, box-shadow .18s ease;
+}
+#login input:hover,
+.cfield input:hover, .cfield textarea:hover,
+.ev-grid input:hover, .ev-reg input:hover, .ev-reg select:hover,
+.row input[type=time]:hover, .row input[type=text]:hover{ border-color:rgba(25,22,17,.55); }
+#login input:focus,
+.cfield input:focus, .cfield textarea:focus,
+.ev-grid input:focus, .ev-reg input:focus, .ev-reg select:focus,
+.row input[type=time]:focus, .row input[type=text]:focus{
+  outline:none; border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(169,30,28,.14);
+}
+.cfield > label, .ev-grid label, .ev-actions > label, .ev-reg label{ color:var(--ink); }
+.ev-grid label, .ev-actions > label, .ev-reg label{ font-size:.85rem; }
+.ev-reg-note{ font-size:.8rem; }
+.cfield .note, .ev-reg-note, .hint{ line-height:1.55; }
 </style>
 </head>
 <body>
@@ -169,6 +225,7 @@ button.danger{ background:var(--accent); border-color:var(--accent); }
     <div class="tabs">
       <button id="tabCalBtn" class="active">יומן השכרות</button>
       <button id="tabContentBtn">תוכן האתר</button>
+      <button id="tabBookBtn">בקשות השכרה</button>
       <button id="tabEventsBtn">אירועים</button>
       <button id="tabRegsBtn">הרשמות לאירועים</button>
     </div>
@@ -264,6 +321,37 @@ button.danger{ background:var(--accent); border-color:var(--accent); }
     <div id="regsList"></div>
     <p class="hint">רשימת הנרשמים לכל אירוע. "שולם" מתעדכן אוטומטית לאחר תשלום דרך חשבונית ירוקה; "ממתין לתשלום" = נרשם אך טרם שילם.</p>
   </div>
+
+  <!-- ============ TAB: RENTAL BOOKINGS ============ -->
+  <div id="tabBook" hidden>
+    <div class="regs-head">
+      <button class="ghost" id="bookRefresh">רענון</button>
+      <span class="hint" id="bookCount"></span>
+    </div>
+
+    <div id="bookList"></div>
+
+    <div class="cgroup" style="margin-top:2rem">
+      <h2>יומן גוגל</h2>
+      <p class="hint" style="margin-top:0">
+        העתיקי את הכתובת הזו והוסיפי אותה ביומן גוגל תחת
+        <b>יומנים אחרים ← הרשמה ליומן ← מכתובת URL</b>.
+        כל ההשכרות יופיעו כיומן נפרד שאפשר לכבות ולהדליק.
+      </p>
+      <div class="row">
+        <input type="text" id="icsUrl" readonly style="flex:1; min-width:260px" dir="ltr" placeholder="לחצי על ״יצירת כתובת״">
+        <button class="ghost" id="icsMake">יצירת כתובת</button>
+        <button class="ghost" id="icsCopy" hidden>העתקה</button>
+      </div>
+      <p class="hint" id="icsMsg"></p>
+      <p class="hint">
+        הכתובת סודית — מי שמחזיק בה רואה את פרטי ההשכרות. אם היא דלפה, לחצי
+        <button class="ghost" id="icsRotate" style="padding:.2rem .6rem; font-size:.85rem">החלפת כתובת</button>
+        והכתובת הישנה תפסיק לעבוד (אז יש להוסיף את החדשה ביומן מחדש).
+        <br>שימו לב: גוגל מרענן יומנים חיצוניים בקצב שלו, לפעמים רק כל כמה שעות. הפאנל הזה תמיד מעודכן.
+      </p>
+    </div>
+  </div>
 </div>
 
 <script>
@@ -290,16 +378,20 @@ function showTab(which) {
   $('tabContent').hidden = which !== 'content';
   $('tabEvents').hidden = which !== 'events';
   $('tabRegs').hidden = which !== 'regs';
+  $('tabBook').hidden = which !== 'book';
   $('tabCalBtn').classList.toggle('active', which === 'cal');
   $('tabContentBtn').classList.toggle('active', which === 'content');
   $('tabEventsBtn').classList.toggle('active', which === 'events');
   $('tabRegsBtn').classList.toggle('active', which === 'regs');
+  $('tabBookBtn').classList.toggle('active', which === 'book');
   if (which === 'regs') loadRegs();
+  if (which === 'book') loadBookings();
 }
 $('tabCalBtn').addEventListener('click', () => showTab('cal'));
 $('tabContentBtn').addEventListener('click', () => showTab('content'));
 $('tabEventsBtn').addEventListener('click', () => showTab('events'));
 $('tabRegsBtn').addEventListener('click', () => showTab('regs'));
+$('tabBookBtn').addEventListener('click', () => showTab('book'));
 
 /* ================= CALENDAR (availability) ================= */
 async function load() {
@@ -781,6 +873,229 @@ async function loadRegs() {
   });
 }
 $('regsRefresh').addEventListener('click', loadRegs);
+
+/* ================= RENTAL BOOKINGS =================
+   The lifecycle mirrors api/booking.mjs:
+     requested → (approve) sent → (renter signs) signed → (countersign) confirmed
+   Only the last step marks the day as taken in the availability calendar. */
+
+const BOOK_LABEL = {
+  requested: 'בקשה חדשה',
+  sent:      'נשלח לחתימה',
+  signed:    'נחתם — ממתין לך',
+  confirmed: 'סגור ומאושר',
+  declined:  'נדחה',
+};
+
+const heDate = (d) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d || '')) return d || '';
+  return new Date(d + 'T00:00').toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' });
+};
+
+async function bookAction(action, id, btn) {
+  const prev = btn.textContent;
+  btn.disabled = true; btn.textContent = '…';
+  try {
+    const res = await fetch('/api/booking', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': key() },
+      body: JSON.stringify({ action, id }),
+    });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok || !j.ok) { alert(j.error === 'not signed by renter yet' ? 'השוכר עדיין לא חתם.' : 'הפעולה נכשלה.'); btn.disabled = false; btn.textContent = prev; return false; }
+    await loadBookings();
+    return true;
+  } catch {
+    alert('שגיאת רשת.'); btn.disabled = false; btn.textContent = prev;
+    return false;
+  }
+}
+
+async function loadBookings() {
+  const wrap = $('bookList');
+  wrap.innerHTML = '<p class="hint">טוען…</p>';
+  let list = [];
+  try {
+    const res = await fetch('/api/booking?list=1', { headers: { 'x-admin-key': key() } });
+    if (!res.ok) throw new Error();
+    const j = await res.json();
+    list = Array.isArray(j.bookings) ? j.bookings : [];
+  } catch {
+    wrap.innerHTML = '<p class="hint">שגיאה בטעינת הבקשות.</p>';
+    $('bookCount').textContent = '';
+    return;
+  }
+
+  wrap.innerHTML = '';
+  if (!list.length) {
+    wrap.innerHTML = '<p class="hint">אין עדיין בקשות השכרה.</p>';
+    $('bookCount').textContent = '';
+    return;
+  }
+
+  const needsMe = list.filter(b => b.status === 'requested' || b.status === 'signed').length;
+  $('bookCount').textContent = list.length + ' בקשות' + (needsMe ? ' · ' + needsMe + ' ממתינות לך' : '');
+
+  list.forEach(b => {
+    const card = document.createElement('div');
+    card.className = 'bk-card bk-' + b.status;
+
+    const head = document.createElement('div');
+    head.className = 'bk-head';
+    const title = document.createElement('b');
+    title.textContent = b.name || 'ללא שם';
+    const badge = document.createElement('span');
+    badge.className = 'bk-badge bk-badge-' + b.status;
+    badge.textContent = BOOK_LABEL[b.status] || b.status;
+    head.append(title, badge);
+    card.appendChild(head);
+
+    const meta = document.createElement('p');
+    meta.className = 'bk-meta';
+    meta.textContent = [
+      heDate(b.date),
+      (b.start && b.end) ? b.start + '–' + b.end : '',
+      b.purpose, b.participants ? b.participants + ' משתתפים' : '', b.price,
+    ].filter(Boolean).join(' · ');
+    card.appendChild(meta);
+
+    const contact = document.createElement('p');
+    contact.className = 'bk-meta bk-contact';
+    contact.dir = 'ltr';
+    contact.textContent = [b.email, b.phone, b.idnum].filter(Boolean).join(' · ');
+    card.appendChild(contact);
+
+    if (b.message) {
+      const msg = document.createElement('p');
+      msg.className = 'bk-msg';
+      msg.textContent = b.message;
+      card.appendChild(msg);
+    }
+
+    const link = location.origin + '/contract?bid=' + b.id;
+    const actions = document.createElement('div');
+    actions.className = 'bk-actions';
+
+    const mkBtn = (label, cls, fn) => {
+      const el = document.createElement('button');
+      el.textContent = label;
+      if (cls) el.className = cls;
+      el.addEventListener('click', () => fn(el));
+      actions.appendChild(el);
+      return el;
+    };
+
+    if (b.status === 'requested') {
+      mkBtn('אישור ושליחת חוזה', '', async (el) => {
+        if (!confirm('לאשר את הבקשה ולפתוח את החוזה לחתימה?\n\nאחרי האישור צריך לשלוח ללקוח את הקישור — ייפתח לך מייל מוכן.')) return;
+        if (await bookAction('approve', b.id, el)) openSendMail(b, link);
+      });
+      mkBtn('דחייה', 'danger', async (el) => {
+        if (!confirm('לדחות את הבקשה? התאריך ישוחרר ויחזור להיות פנוי.')) return;
+        bookAction('decline', b.id, el);
+      });
+    }
+
+    if (b.status === 'sent') {
+      mkBtn('שליחת הקישור שוב', 'ghost', () => openSendMail(b, link));
+      mkBtn('ביטול', 'danger', async (el) => {
+        if (!confirm('לבטל את הבקשה? התאריך ישוחרר ויחזור להיות פנוי.')) return;
+        bookAction('decline', b.id, el);
+      });
+    }
+
+    if (b.status === 'signed') {
+      mkBtn('חתימת סטודיו — סגירת התאריך', '', async (el) => {
+        if (!confirm('לחתום ולסגור את התאריך?\n\nהיום ייתפס ביומן ויופיע ביומן גוגל.')) return;
+        bookAction('studio-sign', b.id, el);
+      });
+      mkBtn('ביטול', 'danger', async (el) => {
+        if (!confirm('לבטל את ההזמנה? התאריך ישוחרר.')) return;
+        bookAction('decline', b.id, el);
+      });
+    }
+
+    if (b.status === 'confirmed') {
+      mkBtn('ביטול ההזמנה', 'danger', async (el) => {
+        if (!confirm('לבטל הזמנה שכבר אושרה?\n\nההסכם יסומן כמבוטל. שימו לב: התאריך יישאר תפוס ביומן — לשחרור צריך לפתוח אותו ידנית בטאב "יומן השכרות".')) return;
+        bookAction('decline', b.id, el);
+      });
+    }
+
+    const open = document.createElement('a');
+    open.href = link; open.target = '_blank'; open.rel = 'noopener';
+    open.className = 'bk-link'; open.textContent = 'פתיחת ההסכם ↗';
+    actions.appendChild(open);
+
+    card.appendChild(actions);
+
+    if (b.status === 'sent' && b.holdUntil) {
+      const hold = document.createElement('p');
+      hold.className = 'hint';
+      hold.textContent = 'התאריך מוחזק עד ' + heDate(b.holdUntil.slice(0, 10)) +
+        ' — אם לא ייחתם עד אז, הוא ישתחרר לבד.';
+      card.appendChild(hold);
+    }
+
+    wrap.appendChild(card);
+  });
+}
+
+/* Opens a ready-to-send email to the renter with their personal signing link.
+   There is no mail service wired into the site, so rather than pretend to send
+   it we hand the studio a filled-in draft in whatever mail client they use. */
+function openSendMail(b, link) {
+  const subject = 'הסכם השכרת חלל — סטודיו תות';
+  const body =
+    'שלום ' + (b.name || '') + ',\n\n' +
+    'שמחנו לקבל את בקשתכם, והתאריך שמור עבורכם:\n' +
+    heDate(b.date) + (b.start && b.end ? ', ' + b.start + '–' + b.end : '') + '\n' +
+    (b.price ? 'עלות ההשכרה: ' + b.price + '\n' : '') +
+    '\nלהשלמת ההזמנה נותר רק לחתום על ההסכם בקישור הבא:\n' +
+    link + '\n\n' +
+    'בקישור תתבקשו למלא ת.ז / ח.פ ולחתום. לאחר מכן נחתום גם אנחנו והתאריך ייסגר סופית.\n' +
+    'התשלום מתבצע בהעברה בנקאית — פרטי החשבון יישלחו עם אישור ההזמנה.\n\n' +
+    'סטודיו תות · מגן אברהם 6, תל אביב · 054-312-9933';
+  const url = 'mailto:' + encodeURIComponent(b.email || '') +
+    '?subject=' + encodeURIComponent(subject) +
+    '&body=' + encodeURIComponent(body);
+  window.location.href = url;
+}
+
+$('bookRefresh').addEventListener('click', loadBookings);
+
+/* ---- ICS subscribe URL ---- */
+async function mintIcs(rotate) {
+  $('icsMsg').textContent = 'יוצר…';
+  try {
+    const res = await fetch('/api/calendar' + (rotate ? '?rotate=1' : ''), {
+      method: 'POST',
+      headers: { 'x-admin-key': key() },
+    });
+    const j = await res.json().catch(() => ({}));
+    if (!res.ok || !j.token) { $('icsMsg').textContent = 'שגיאה ביצירת הכתובת.'; return; }
+    $('icsUrl').value = location.origin + '/calendar.ics?k=' + j.token;
+    $('icsCopy').hidden = false;
+    $('icsMsg').textContent = rotate
+      ? 'נוצרה כתובת חדשה. הכתובת הישנה כבר לא עובדת — הוסיפי את החדשה ביומן גוגל.'
+      : 'מוכן. העתיקי את הכתובת והוסיפי אותה ביומן גוגל.';
+  } catch {
+    $('icsMsg').textContent = 'שגיאת רשת.';
+  }
+}
+$('icsMake').addEventListener('click', () => mintIcs(false));
+$('icsRotate').addEventListener('click', () => {
+  if (confirm('להחליף את הכתובת? הכתובת הנוכחית תפסיק לעבוד ותצטרכי להוסיף את החדשה ביומן גוגל.')) mintIcs(true);
+});
+$('icsCopy').addEventListener('click', async () => {
+  try {
+    await navigator.clipboard.writeText($('icsUrl').value);
+    $('icsMsg').textContent = 'הועתק!';
+  } catch {
+    $('icsUrl').select();
+    $('icsMsg').textContent = 'לחצי Ctrl+C כדי להעתיק.';
+  }
+});
 
 /* ================= LOGIN ================= */
 $('logoutBtn').addEventListener('click', () => { sessionStorage.removeItem('tut-admin-key'); location.reload(); });
