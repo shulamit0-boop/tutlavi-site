@@ -4,6 +4,10 @@ import {
   HOLD_DAYS, holdExpiry, placeHold, releaseHold, commitHold,
   withExpiredHoldsCleared,
 } from './_avail.mjs';
+import {
+  mailReady, newRequestToStudio, receiptToClient, contractToClient,
+  signedToStudio, confirmedToClient, enquiryToStudio,
+} from './_mail.mjs';
 
 export const config = { runtime: 'edge' };
 
@@ -94,7 +98,8 @@ export default async function handler(req) {
         // the record and would make this response enormous
         if (b) rows.push({ ...publicView(b, id), idnum: b.idnum || '', signature: null });
       }
-      return Response.json({ ok: true, bookings: rows }, {
+      // the panel phrases its buttons differently when it can send mail itself
+      return Response.json({ ok: true, bookings: rows, mail: mailReady() }, {
         headers: { 'Cache-Control': 'no-store' },
       });
     }
@@ -180,7 +185,34 @@ export default async function handler(req) {
       return Response.json({ error: 'store write failed' }, { status: 500 });
     }
     await pushIndex(id);
-    return Response.json({ ok: true, id, holdUntil: clean.holdUntil, holdDays: HOLD_DAYS });
+
+    /* `mailed` is what tells the browser to skip the FormSubmit fallback, so
+       it reports the studio's copy specifically — the visitor's receipt is a
+       courtesy, but an enquiry the studio never sees is a lost booking. */
+    let mailed = false;
+    if (mailReady()) {
+      mailed = await newRequestToStudio(clean, id);
+      await receiptToClient(clean);
+    }
+    return Response.json({
+      ok: true, id, holdUntil: clean.holdUntil, holdDays: HOLD_DAYS, mailed,
+    });
+  }
+
+  /* ---- 1b. a collaboration enquiry: no date, no record, just the mail ---- */
+  if (body.action === 'enquiry') {
+    const limited = await limitPublic(req, 'enquiry', 8);
+    if (limited) return limited;
+    if (!mailReady()) return Response.json({ ok: true, mailed: false });
+    const d = body.data || {};
+    const mailed = await enquiryToStudio({
+      type: str(d.type, 40),
+      name: str(d.name, 120),
+      email: str(d.email, 160),
+      phone: str(d.phone, 30),
+      message: str(d.message, 1500),
+    });
+    return Response.json({ ok: true, mailed });
   }
 
   /* ---- 2. visitor signs: ID number + signature, on the link they were sent ---- */
@@ -213,6 +245,7 @@ export default async function handler(req) {
     if (!(await kvSet('booking:' + id, b))) {
       return Response.json({ error: 'store write failed' }, { status: 500 });
     }
+    if (mailReady()) await signedToStudio(b, id);
     return Response.json({ ok: true });
   }
 
@@ -242,7 +275,9 @@ export default async function handler(req) {
     if (!(await kvSet('booking:' + id, b))) {
       return Response.json({ error: 'store write failed' }, { status: 500 });
     }
-    return Response.json({ ok: true, status: b.status, holdUntil: b.holdUntil });
+    // when this succeeds the panel skips the mailto: hand-off entirely
+    const mailed = mailReady() ? await contractToClient(b, id) : false;
+    return Response.json({ ok: true, status: b.status, holdUntil: b.holdUntil, mailed });
   }
 
   /* ---- 4. studio countersigns: the day is now taken ---- */
@@ -262,7 +297,8 @@ export default async function handler(req) {
     if (!(await kvSet('booking:' + id, b))) {
       return Response.json({ error: 'store write failed' }, { status: 500 });
     }
-    return Response.json({ ok: true, status: b.status });
+    const mailed = mailReady() ? await confirmedToClient(b, id) : false;
+    return Response.json({ ok: true, status: b.status, mailed });
   }
 
   /* ---- 5. studio declines / cancels: the slot goes back on the market ---- */

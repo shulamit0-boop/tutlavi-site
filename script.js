@@ -502,7 +502,33 @@ async function createRequest(payload) {
   });
   let data = {};
   try { data = await res.json(); } catch { /* keep the status below */ }
-  return { ok: res.ok && data.ok, status: res.status, id: data.id, error: data.error };
+  return {
+    ok: res.ok && data.ok, status: res.status, id: data.id,
+    mailed: Boolean(data.mailed), error: data.error,
+  };
+}
+
+/* A collaboration enquiry books nothing, so it has no record to create — it
+   only needs to reach the studio. Returns false if the server did not send it,
+   which puts the FormSubmit fallback back in charge. */
+async function sendEnquiry(p) {
+  try {
+    const res = await fetch('/api/booking', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'enquiry',
+        data: {
+          type: p.type, name: p.name, email: p.email,
+          phone: p.phone, message: p.message,
+        },
+      }),
+    });
+    const data = await res.json();
+    return Boolean(data.mailed);
+  } catch {
+    return false;
+  }
 }
 
 /* ---------- modal open/close ---------- */
@@ -617,6 +643,7 @@ inquiryForm.addEventListener('submit', (e) => {
 
   (async () => {
     let bookingId = '';
+    let mailed = false;
     if (isRental) {
       /* Register the request first. It is what places the hold on the window,
          so if the slot has gone in the meantime the visitor is told now —
@@ -633,15 +660,24 @@ inquiryForm.addEventListener('submit', (e) => {
         return;
       }
       bookingId = reg.id;
+      mailed = reg.mailed;
+    } else {
+      mailed = await sendEnquiry(payload);
     }
 
-    const res = await fetch(FORM_ENDPOINT, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify(buildMail(payload, isRental, bookingId)),
-    });
-    const data = await res.json();
-    if (String(data.success) !== 'true') throw new Error(data.message || 'failed');
+    /* Once the studio's own mail sender is configured the server sends the
+       mail itself, from tutlavi.com and in the studio's design. FormSubmit
+       stays as the fallback for as long as it is the only thing there — and
+       for the case where the send failed, so nothing arrives twice. */
+    if (!mailed) {
+      const res = await fetch(FORM_ENDPOINT, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+        body: JSON.stringify(buildMail(payload, isRental, bookingId)),
+      });
+      const data = await res.json();
+      if (String(data.success) !== 'true') throw new Error(data.message || 'failed');
+    }
 
     formStatus.className = 'form-status ok';
     formStatus.textContent = isRental

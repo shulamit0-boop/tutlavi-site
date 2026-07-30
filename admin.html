@@ -879,6 +879,10 @@ $('regsRefresh').addEventListener('click', loadRegs);
      requested → (approve) sent → (renter signs) signed → (countersign) confirmed
    Only the last step marks the day as taken in the availability calendar. */
 
+/* true once the site can send mail on its own (RESEND_API_KEY on the server);
+   until then the panel hands over a ready-made mailto: draft instead */
+let mailOn = false;
+
 const BOOK_LABEL = {
   requested: 'בקשה חדשה',
   sent:      'נשלח לחתימה',
@@ -902,12 +906,14 @@ async function bookAction(action, id, btn) {
       body: JSON.stringify({ action, id }),
     });
     const j = await res.json().catch(() => ({}));
-    if (!res.ok || !j.ok) { alert(j.error === 'not signed by renter yet' ? 'השוכר עדיין לא חתם.' : 'הפעולה נכשלה.'); btn.disabled = false; btn.textContent = prev; return false; }
+    if (!res.ok || !j.ok) { alert(j.error === 'not signed by renter yet' ? 'השוכר עדיין לא חתם.' : 'הפעולה נכשלה.'); btn.disabled = false; btn.textContent = prev; return null; }
     await loadBookings();
-    return true;
+    // the object carries `mailed`, so the caller knows whether the mail with
+    // the signing link already went out or still has to be handed over
+    return j;
   } catch {
     alert('שגיאת רשת.'); btn.disabled = false; btn.textContent = prev;
-    return false;
+    return null;
   }
 }
 
@@ -920,6 +926,7 @@ async function loadBookings() {
     if (!res.ok) throw new Error();
     const j = await res.json();
     list = Array.isArray(j.bookings) ? j.bookings : [];
+    mailOn = Boolean(j.mail);
   } catch {
     wrap.innerHTML = '<p class="hint">שגיאה בטעינת הבקשות.</p>';
     $('bookCount').textContent = '';
@@ -987,8 +994,13 @@ async function loadBookings() {
 
     if (b.status === 'requested') {
       mkBtn('אישור ושליחת חוזה', '', async (el) => {
-        if (!confirm('לאשר את הבקשה ולפתוח את החוזה לחתימה?\n\nאחרי האישור צריך לשלוח ללקוח את הקישור — ייפתח לך מייל מוכן.')) return;
-        if (await bookAction('approve', b.id, el)) openSendMail(b, link);
+        if (!confirm(mailOn
+          ? 'לאשר את הבקשה?\n\nהקישור לחתימה יישלח ללקוח במייל אוטומטית.'
+          : 'לאשר את הבקשה ולפתוח את החוזה לחתימה?\n\nאחרי האישור צריך לשלוח ללקוח את הקישור — ייפתח לך מייל מוכן.')) return;
+        const r = await bookAction('approve', b.id, el);
+        if (!r) return;
+        if (r.mailed) alert('הבקשה אושרה והחוזה נשלח ל' + (b.email || 'לקוח') + '.');
+        else openSendMail(b, link);
       });
       mkBtn('דחייה', 'danger', async (el) => {
         if (!confirm('לדחות את הבקשה? התאריך ישוחרר ויחזור להיות פנוי.')) return;
@@ -997,7 +1009,11 @@ async function loadBookings() {
     }
 
     if (b.status === 'sent') {
-      mkBtn('שליחת הקישור שוב', 'ghost', () => openSendMail(b, link));
+      mkBtn('שליחת הקישור שוב', 'ghost', async (el) => {
+        if (!mailOn) return openSendMail(b, link);
+        const r = await bookAction('approve', b.id, el);
+        if (r) alert(r.mailed ? 'החוזה נשלח שוב ל' + (b.email || 'לקוח') + '.' : 'המייל לא נשלח — נסי שוב.');
+      });
       mkBtn('ביטול', 'danger', async (el) => {
         if (!confirm('לבטל את הבקשה? התאריך ישוחרר ויחזור להיות פנוי.')) return;
         bookAction('decline', b.id, el);
@@ -1042,8 +1058,9 @@ async function loadBookings() {
 }
 
 /* Opens a ready-to-send email to the renter with their personal signing link.
-   There is no mail service wired into the site, so rather than pretend to send
-   it we hand the studio a filled-in draft in whatever mail client they use. */
+   Only used while the site cannot send mail itself (no RESEND_API_KEY): rather
+   than pretend to send it, hand the studio a filled-in draft in their own mail
+   client. Once mailOn is true the server sends this same letter, designed. */
 function openSendMail(b, link) {
   const subject = 'הסכם השכרת חלל — סטודיו תות';
   const body =
