@@ -251,8 +251,8 @@
     <h2 class="modal-title" id="inquiryTitle">שיתופי פעולה והשכרת החלל</h2>
 
     <form id="inquiryForm">
-      <input type="hidden" name="_subject" value="פנייה חדשה מאתר תות">
-      <input type="hidden" name="_template" value="table">
+      <!-- the mail itself (subject, template, Hebrew labels) is assembled in
+           buildMail() in script.js; only the honeypot has to sit in the form -->
       <input type="hidden" name="_captcha" value="false">
       <p class="hp-field"><label>אל תמלאו: <input name="_honey"></label></p>
 

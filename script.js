@@ -538,6 +538,66 @@ typeRadios.forEach(r => {
 /* ---------- inquiry submit → FormSubmit + booking + reservation ---------- */
 const FORM_ENDPOINT = 'https://formsubmit.co/ajax/vivian.office.info@gmail.com';
 
+const heDateOf = (iso) => (iso
+  ? new Date(iso + 'T00:00').toLocaleDateString('he-IL',
+      { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })
+  : '');
+
+/* FormSubmit prints the keys it is handed, so the keys ARE the email. Handing
+   it the raw form field names produced an inbox full of "event-date" and
+   "window-id"; this hands it Hebrew labels in reading order, and leaves out
+   the plumbing (window id, template flags) that means nothing to a reader. */
+function buildMail(p, isRental, bookingId) {
+  const heDate = heDateOf(p['event-date']);
+  const hours = [p['event-start'], p['event-end']].filter(Boolean).join('–');
+
+  /* an empty value would still print as an empty labelled row in the mail */
+  const drop = (o) => Object.fromEntries(
+    Object.entries(o).filter(([k, v]) => k.startsWith('_') || v !== ''));
+
+  const mail = {
+    _subject: isRental
+      ? 'בקשת השכרה חדשה · ' + (p.name || '') + (heDate ? ' · ' + heDate : '')
+      : 'פנייה חדשה מהאתר · ' + (p.name || ''),
+    _template: 'box',
+    _captcha: 'false',
+    _honey: p._honey || '',
+    // so that Reply in the mail client goes straight back to the enquirer
+    _replyto: p.email || '',
+    'סוג הפנייה': p.type || '',
+    'שם': p.name || '',
+    'טלפון': p.phone || '',
+    'מייל': p.email || '',
+    'מה הם מבקשים': p.message || '',
+  };
+
+  if (!isRental) return drop(mail);
+
+  if (heDate) mail['תאריך מבוקש'] = heDate;
+  if (hours) mail['שעות'] = hours;
+  if (p['event-purpose']) mail['מטרה'] = p['event-purpose'];
+  if (p.participants) mail['משתתפים'] = p.participants;
+  if (p['estimated-cost']) mail['עלות'] = p['estimated-cost'];
+  mail['התאריך מוחזק עד'] = heDateOf(new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10));
+  mail['לאישור הבקשה'] = 'https://tutlavi.com/admin';
+  if (bookingId) mail['החוזה של הבקשה'] = 'https://tutlavi.com/contract?bid=' + bookingId;
+
+  mail._autoresponse =
+    'תודה על פנייתך לסטודיו תות!\n\n' +
+    'קיבלנו את הבקשה שלכם והתאריך שמור עבורכם בינתיים:\n' +
+    (heDate ? 'תאריך: ' + heDate + '\n' : '') +
+    (hours ? 'שעות: ' + hours + '\n' : '') +
+    (p['event-purpose'] ? 'מטרה: ' + p['event-purpose'] + '\n' : '') +
+    (p.participants ? 'משתתפים: ' + p.participants + '\n' : '') +
+    (p['estimated-cost'] ? 'עלות: ' + p['estimated-cost'] + '\n' : '') +
+    '\nזו בקשה עקרונית — עדיין לא נדרשתם לחתום על כלום.\n' +
+    'נחזור אליכם בהקדם, ואם הכול מסתדר נשלח לכם חוזה לחתימה במייל נפרד.\n\n' +
+    'התשלום מתבצע בהעברה בנקאית — פרטי החשבון יישלחו עם אישור ההזמנה.\n\n' +
+    'סטודיו תות · מגן אברהם 6, תל אביב · 054-312-9933';
+
+  return drop(mail);
+}
+
 inquiryForm.addEventListener('submit', (e) => {
   e.preventDefault();
   // a partial /api/availability response used to throw here, which killed the
@@ -556,6 +616,7 @@ inquiryForm.addEventListener('submit', (e) => {
   const isRental = !rentalFields.hidden;
 
   (async () => {
+    let bookingId = '';
     if (isRental) {
       /* Register the request first. It is what places the hold on the window,
          so if the slot has gone in the meantime the visitor is told now —
@@ -571,28 +632,13 @@ inquiryForm.addEventListener('submit', (e) => {
         if (taken) loadAvailability(true);
         return;
       }
-      payload['booking-id'] = reg.id;
-      payload['event-hours'] = (payload['event-start'] || '') +
-        (payload['event-end'] ? '-' + payload['event-end'] : '');
-      payload['admin-link'] = 'https://tutlavi.com/admin';
-      payload._autoresponse =
-        'תודה על פנייתך לסטודיו תות!\n\n' +
-        'קיבלנו את הבקשה שלכם והתאריך שמור עבורכם בינתיים:\n' +
-        'תאריך: ' + (payload['event-date'] || '') + '\n' +
-        (payload['event-hours'] ? 'שעות: ' + payload['event-hours'] + '\n' : '') +
-        (payload['event-purpose'] ? 'מטרה: ' + payload['event-purpose'] + '\n' : '') +
-        (payload.participants ? 'משתתפים: ' + payload.participants + '\n' : '') +
-        (payload['estimated-cost'] ? 'עלות: ' + payload['estimated-cost'] + '\n' : '') +
-        '\nזו בקשה עקרונית — עדיין לא נדרשתם לחתום על כלום.\n' +
-        'נחזור אליכם בהקדם, ואם הכול מסתדר נשלח לכם חוזה לחתימה במייל נפרד.\n\n' +
-        'התשלום מתבצע בהעברה בנקאית — פרטי החשבון יישלחו עם אישור ההזמנה.\n\n' +
-        'סטודיו תות · מגן אברהם 6, תל אביב · 054-312-9933';
+      bookingId = reg.id;
     }
 
     const res = await fetch(FORM_ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
-      body: JSON.stringify(payload),
+      body: JSON.stringify(buildMail(payload, isRental, bookingId)),
     });
     const data = await res.json();
     if (String(data.success) !== 'true') throw new Error(data.message || 'failed');
