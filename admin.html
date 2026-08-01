@@ -1028,6 +1028,10 @@ async function loadBookings() {
         if (!confirm('לחתום ולסגור את התאריך?\n\nהיום ייתפס ביומן ויופיע ביומן גוגל.')) return;
         bookAction('studio-sign', b.id, el);
       });
+      /* Changing the price or the terms now would change what the renter
+         already put their name to, so this does not edit in place: it voids
+         their signature and sends the contract back out to be signed again. */
+      mkBtn('תיקון תנאים ← לחתימה מחדש', 'ghost', (el) => openApprovePanel(card, b, link, el));
       mkBtn('ביטול', 'danger', async (el) => {
         if (!confirm('לבטל את ההזמנה? התאריך ישוחרר.')) return;
         bookAction('decline', b.id, el);
@@ -1095,9 +1099,20 @@ function openApprovePanel(card, b, link, trigger) {
   const actions = document.createElement('div');
   actions.className = 'ap-actions';
 
+  const resigning = Boolean(b.signature) || b.status === 'signed';
+  if (resigning) {
+    const warn = document.createElement('p');
+    warn.className = 'hint';
+    warn.textContent = 'השוכר כבר חתם. שליחה מחדש מבטלת את חתימתו והוא יתבקש לחתום שוב על התנאים המעודכנים.';
+    box.appendChild(warn);
+  }
+
   const send = document.createElement('button');
-  send.textContent = mailOn ? 'אישור ושליחת החוזה ללקוח' : 'אישור ופתיחת מייל';
+  send.textContent = resigning
+    ? 'שליחה לחתימה מחדש'
+    : (mailOn ? 'אישור ושליחת החוזה ללקוח' : 'אישור ופתיחת מייל');
   send.addEventListener('click', async () => {
+    if (resigning && !confirm('לשלוח את ההסכם לחתימה מחדש?\n\nהחתימה הקיימת של השוכר תבוטל.')) return;
     const data = { price: price.value.trim(), note: note.value.trim() };
     const r = await bookAction('approve', b.id, send, data);
     if (!r) return;

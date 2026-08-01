@@ -266,6 +266,13 @@ export default async function handler(req) {
        the contract itself, not only in the covering email. */
     if (typeof body.price === 'string') b.price = str(body.price, 30);
     if (typeof body.note === 'string') b.studioNote = str(body.note, 1500);
+    /* Re-approving something already signed re-issues it for signature: the
+       renter signed the previous terms, and that signature cannot be carried
+       over onto new ones. It is voided here and asked for again. */
+    if (b.signature) {
+      b.signature = null;
+      b.signedAt = null;
+    }
     b.status = 'sent';
     b.sentAt = new Date().toISOString();
     // approving restarts the clock: the visitor gets the full window to sign
