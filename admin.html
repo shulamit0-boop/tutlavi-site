@@ -178,6 +178,20 @@ button.danger{ background:var(--accent); border-color:var(--accent); }
 }
 .bk-actions{ display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; margin-top:.9rem; }
 .bk-actions button{ font-size:.9rem; padding:.5rem 1rem; }
+
+/* the approval form, opened inside the card it belongs to */
+.bk-approve{
+  margin-top:.9rem; padding:.9rem 1rem; background:#faf9f7;
+  border:1px solid var(--line); display:grid; gap:.8rem;
+}
+.bk-approve label{ display:grid; gap:.3rem; font-size:.9rem; font-weight:600; }
+.bk-approve .hint{ font-weight:400; }
+.bk-approve input, .bk-approve textarea{
+  font:inherit; font-weight:400; padding:.5rem .6rem;
+  border:1px solid rgba(25,22,17,.3); background:#fff; width:100%;
+}
+.bk-approve textarea{ resize:vertical; line-height:1.5; }
+.bk-approve .ap-actions{ display:flex; gap:.6rem; flex-wrap:wrap; }
 .bk-link{ color:var(--soft); font-size:.88rem; text-decoration:none; margin-inline-start:auto; }
 .bk-link:hover{ color:var(--accent); }
 
@@ -896,14 +910,14 @@ const heDate = (d) => {
   return new Date(d + 'T00:00').toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' });
 };
 
-async function bookAction(action, id, btn) {
+async function bookAction(action, id, btn, extra) {
   const prev = btn.textContent;
   btn.disabled = true; btn.textContent = '…';
   try {
     const res = await fetch('/api/booking', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', 'x-admin-key': key() },
-      body: JSON.stringify({ action, id }),
+      body: JSON.stringify({ action, id, ...extra }),
     });
     const j = await res.json().catch(() => ({}));
     if (!res.ok || !j.ok) { alert(j.error === 'not signed by renter yet' ? 'השוכר עדיין לא חתם.' : 'הפעולה נכשלה.'); btn.disabled = false; btn.textContent = prev; return null; }
@@ -993,15 +1007,7 @@ async function loadBookings() {
     };
 
     if (b.status === 'requested') {
-      mkBtn('אישור ושליחת חוזה', '', async (el) => {
-        if (!confirm(mailOn
-          ? 'לאשר את הבקשה?\n\nהקישור לחתימה יישלח ללקוח במייל אוטומטית.'
-          : 'לאשר את הבקשה ולפתוח את החוזה לחתימה?\n\nאחרי האישור צריך לשלוח ללקוח את הקישור — ייפתח לך מייל מוכן.')) return;
-        const r = await bookAction('approve', b.id, el);
-        if (!r) return;
-        if (r.mailed) alert('הבקשה אושרה והחוזה נשלח ל' + (b.email || 'לקוח') + '.');
-        else openSendMail(b, link);
-      });
+      mkBtn('אישור ושליחת חוזה', '', (el) => openApprovePanel(card, b, link, el));
       mkBtn('דחייה', 'danger', async (el) => {
         if (!confirm('לדחות את הבקשה? התאריך ישוחרר ויחזור להיות פנוי.')) return;
         bookAction('decline', b.id, el);
@@ -1009,11 +1015,8 @@ async function loadBookings() {
     }
 
     if (b.status === 'sent') {
-      mkBtn('שליחת הקישור שוב', 'ghost', async (el) => {
-        if (!mailOn) return openSendMail(b, link);
-        const r = await bookAction('approve', b.id, el);
-        if (r) alert(r.mailed ? 'החוזה נשלח שוב ל' + (b.email || 'לקוח') + '.' : 'המייל לא נשלח — נסי שוב.');
-      });
+      // same form, so a price or a wording can still be corrected and re-sent
+      mkBtn('שליחה שוב / עריכה', 'ghost', (el) => openApprovePanel(card, b, link, el));
       mkBtn('ביטול', 'danger', async (el) => {
         if (!confirm('לבטל את הבקשה? התאריך ישוחרר ויחזור להיות פנוי.')) return;
         bookAction('decline', b.id, el);
@@ -1057,6 +1060,62 @@ async function loadBookings() {
   });
 }
 
+/* Approving is where the price is actually settled and where whatever was
+   agreed on the phone gets written down, so the button opens a small form in
+   the card instead of firing immediately. Both fields go into the contract
+   itself — not only into the covering email — and can be edited and re-sent
+   while the booking is still waiting for a signature. */
+function openApprovePanel(card, b, link, trigger) {
+  const existing = card.querySelector('.bk-approve');
+  if (existing) { existing.remove(); trigger.disabled = false; return; }
+  trigger.disabled = true;
+
+  const box = document.createElement('div');
+  box.className = 'bk-approve';
+
+  const priceLabel = document.createElement('label');
+  priceLabel.textContent = 'מחיר סופי';
+  const price = document.createElement('input');
+  price.type = 'text';
+  price.placeholder = 'למשל ₪2,500';
+  price.value = b.price || '';
+  priceLabel.appendChild(price);
+
+  const noteLabel = document.createElement('label');
+  noteLabel.textContent = 'סיכומים נוספים ';
+  const noteHint = document.createElement('span');
+  noteHint.className = 'hint';
+  noteHint.textContent = '(נכנס להסכם עצמו ולמייל ללקוח — אפשר להשאיר ריק)';
+  const note = document.createElement('textarea');
+  note.rows = 3;
+  note.placeholder = 'למשל: המחיר כולל שימוש בבר. הגעה לפריקה מ-17:00.';
+  note.value = b.studioNote || '';
+  noteLabel.append(noteHint, note);
+
+  const actions = document.createElement('div');
+  actions.className = 'ap-actions';
+
+  const send = document.createElement('button');
+  send.textContent = mailOn ? 'אישור ושליחת החוזה ללקוח' : 'אישור ופתיחת מייל';
+  send.addEventListener('click', async () => {
+    const data = { price: price.value.trim(), note: note.value.trim() };
+    const r = await bookAction('approve', b.id, send, data);
+    if (!r) return;
+    if (r.mailed) alert('החוזה נשלח ל' + (b.email || 'לקוח') + '.');
+    else openSendMail({ ...b, price: data.price, studioNote: data.note }, link);
+  });
+
+  const cancel = document.createElement('button');
+  cancel.className = 'ghost';
+  cancel.textContent = 'ביטול';
+  cancel.addEventListener('click', () => { box.remove(); trigger.disabled = false; });
+
+  actions.append(send, cancel);
+  box.append(priceLabel, noteLabel, actions);
+  card.appendChild(box);
+  price.focus();
+}
+
 /* Opens a ready-to-send email to the renter with their personal signing link.
    Only used while the site cannot send mail itself (no RESEND_API_KEY): rather
    than pretend to send it, hand the studio a filled-in draft in their own mail
@@ -1068,6 +1127,7 @@ function openSendMail(b, link) {
     'שמחנו לקבל את בקשתכם, והתאריך שמור עבורכם:\n' +
     heDate(b.date) + (b.start && b.end ? ', ' + b.start + '–' + b.end : '') + '\n' +
     (b.price ? 'עלות ההשכרה: ' + b.price + '\n' : '') +
+    (b.studioNote ? '\nסיכומים נוספים:\n' + b.studioNote + '\n' : '') +
     '\nלהשלמת ההזמנה נותר רק לחתום על ההסכם בקישור הבא:\n' +
     link + '\n\n' +
     'בקישור תתבקשו למלא ת.ז / ח.פ ולחתום. לאחר מכן נחתום גם אנחנו והתאריך ייסגר סופית.\n' +

@@ -189,7 +189,9 @@ export function contractToClient(b, id) {
     eyebrow: 'החוזה מוכן',
     title: 'אישרנו את הבקשה — נשאר רק לחתום',
     lead: 'שמחים לארח אתכם. בקישור למטה תמצאו את ההסכם המלא, ממולא בפרטים שלכם; שם תתבקשו למלא ת.ז / ח.פ ולחתום.',
-    body: detailRows(b) + `
+    body: detailRows(b) + (b.studioNote ? `
+    <p style="margin:22px 0 0;color:${MUTED};font-size:12px;font-weight:700;letter-spacing:.1em">סיכומים נוספים</p>
+    <p style="margin:6px 0 0;padding:16px;background:#fafafa;border-right:3px solid ${RED};color:${INK};font-size:15px;line-height:1.7;white-space:pre-wrap">${esc(b.studioNote)}</p>` : '') + `
     <p style="margin:22px 0 0;color:${MUTED};font-size:14px;line-height:1.8">לאחר החתימה שלכם נחתום גם אנחנו, והתאריך ייסגר סופית.<br>התשלום מתבצע בהעברה בנקאית — פרטי החשבון יישלחו עם אישור ההזמנה.</p>`,
     cta: { href: link, label: 'למעבר לחוזה ולחתימה' },
   });

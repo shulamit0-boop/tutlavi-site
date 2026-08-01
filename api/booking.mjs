@@ -60,7 +60,7 @@ const publicView = (b, id) => ({
   name: b.name, email: b.email, phone: b.phone,
   date: b.date, start: b.start, end: b.end,
   purpose: b.purpose, participants: b.participants, price: b.price,
-  message: b.message,
+  message: b.message, studioNote: b.studioNote || '',
   idnum: maskId(b.idnum),
   signature: b.signature || null,
   requestedAt: b.requestedAt || null,
@@ -260,6 +260,12 @@ export default async function handler(req) {
 
   /* ---- 3. studio approves the request and releases the signing link ---- */
   if (body.action === 'approve') {
+    /* The price the visitor saw came from the calendar window; what was
+       actually agreed is settled by then, so approval is where the studio
+       fixes the final price and adds whatever else was agreed. Both land in
+       the contract itself, not only in the covering email. */
+    if (typeof body.price === 'string') b.price = str(body.price, 30);
+    if (typeof body.note === 'string') b.studioNote = str(body.note, 1500);
     b.status = 'sent';
     b.sentAt = new Date().toISOString();
     // approving restarts the clock: the visitor gets the full window to sign

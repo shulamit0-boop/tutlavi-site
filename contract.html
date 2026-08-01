@@ -35,6 +35,8 @@ h2{
 p, li{ margin-bottom:.5rem; }
 ol{ padding-inline-start:1.2rem; }
 .fill{ background:#f6f3ec; padding:0 .35em; font-weight:600; }
+/* free text, so it has to keep the line breaks it was typed with */
+.note-body{ white-space:pre-wrap; padding:.7rem .9rem; background:#f6f3ec; }
 .sig{
   display:grid; grid-template-columns:1fr 1fr; gap:2rem; margin-top:3rem;
   border-top:1px solid var(--line); padding-top:1.6rem;
@@ -170,9 +172,17 @@ ol{ padding-inline-start:1.2rem; }
 <h2>6. שונות</h2>
 <ol>
   <li>השוכר אינו רשאי להעביר את זכויותיו לפי הסכם זה לאחר.</li>
-  <li>הסכם זה ממצה את מלוא המוסכם בין הצדדים.</li>
+  <li>הסכם זה, על נספחיו, ממצה את מלוא המוסכם בין הצדדים.</li>
   <li>סמכות השיפוט הבלעדית: בתי המשפט בתל אביב-יפו.</li>
 </ol>
+
+<!-- Whatever the studio added when it approved the request: what was agreed on
+     the phone, extra equipment, an arrival time. Part of the agreement, so it
+     is rendered inside it and not as a note beside it. -->
+<section id="noteSection" hidden>
+  <h2>7. סיכומים נוספים</h2>
+  <p class="note-body" id="c-note"></p>
+</section>
 
 <div class="sig">
   <div class="sigbox" id="studioBox">
@@ -253,6 +263,11 @@ function applyData(d) {
   fill('c-purpose', d.purpose);
   fill('c-price', d.price);
   fill('c-participants', d.participants);
+  if (d.studioNote) {
+    // textContent, so anything typed in the panel stays text and never markup
+    $('c-note').textContent = d.studioNote;
+    $('noteSection').hidden = false;
+  }
 }
 
 /* ---------- signature pad (only mounted on the signing screen) ---------- */
