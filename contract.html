@@ -12,22 +12,34 @@
   --display: 'Helvetica Neue', Arial, system-ui, sans-serif;
 }
 *{ box-sizing:border-box; margin:0; padding:0; }
-/* The contract is a document, so it is laid out as one: a single A4 sheet on a
-   desk rather than a column of web text. 21cm wide with 2cm margins gives the
-   ~80-character measure a printed agreement has, and the same geometry is what
-   comes out of Print / Save as PDF. */
+/* The contract is a document, so it is laid out as one: A4 sheets on a desk,
+   not a column of web text. paginate() pours the text into 21×29.7cm pages,
+   and 12pt on screen as well as on paper means a page holds exactly what it
+   holds when printed — the breaks you see are the breaks you get. */
 html{ background:#eceae5; }
 body{
-  background:#fff; color:var(--ink);
-  font-family:var(--sans); font-weight:300; font-size:16px; line-height:1.6;
-  width:21cm; max-width:100%; margin:2.5rem auto;
-  padding:2.2cm 2cm 2.6cm;
+  color:var(--ink);
+  font-family:var(--sans); font-weight:300; font-size:12pt; line-height:1.6;
+  padding:2.5rem 12px 4rem;
+}
+.sheet{
+  background:#fff;
+  width:21cm; max-width:100%; min-height:29.7cm; margin:0 auto 1.1rem;
+  padding:1.8cm;
   box-shadow:0 1px 3px rgba(0,0,0,.10), 0 12px 32px rgba(0,0,0,.07);
 }
+/* the interactive parts are not the document: they sit under it, same width */
+.outside{ width:21cm; max-width:100%; margin:0 auto; }
+
 /* below the sheet width there is no point pretending: fill the screen */
 @media (max-width:22cm){
   html{ background:#fff; }
-  body{ margin:0; padding:2rem clamp(18px,5vw,40px) 3rem; box-shadow:none; }
+  body{ padding:0; }
+  .sheet{
+    min-height:0; margin:0; box-shadow:none;
+    padding:2rem clamp(18px,5vw,40px) 1rem;
+  }
+  .outside{ padding:0 clamp(18px,5vw,40px) 2rem; }
 }
 header{ border-bottom:2px solid var(--ink); padding-bottom:1.2rem; margin-bottom:2rem; }
 .brand{ font-family:var(--display); font-weight:600; font-size:1.5rem; }
@@ -75,11 +87,27 @@ ol{ padding-inline-start:1.2rem; }
   color:var(--soft); text-decoration:underline; cursor:pointer;
 }
 .back{ display:inline-block; margin-top:1.6rem; font-weight:600; color:var(--accent); }
+/* Getting the agreement out as a file is half the point of a contract page,
+   so the way to do it is on the page and not buried in a browser menu. */
+.doc-tools{ margin-bottom:1.1rem; }
+.doc-tools button{
+  font:inherit; font-size:.85rem; font-weight:600; cursor:pointer;
+  background:#fff; border:1px solid var(--line); color:var(--soft);
+  padding:.45rem 1rem;
+}
+.doc-tools button:hover{ border-color:var(--ink); color:var(--ink); }
+
 @media print{
-  @page{ size:A4; margin:1.8cm; }
+  /* the sheet carries the margin, so the page must not add a second one */
+  @page{ size:A4; margin:0; }
   html{ background:#fff; }
-  body{ width:auto; margin:0; padding:0; box-shadow:none; font-size:11.5pt; }
-  .back, .studio-sign-row, .reveal-row, #signBox{ display:none; }
+  body{ padding:0; }
+  .sheet{
+    box-shadow:none; margin:0; min-height:0; height:29.7cm;
+    break-after:page; break-inside:avoid;
+  }
+  .sheet:last-of-type{ break-after:auto; }
+  .back, .studio-sign-row, .reveal-row, #signBox, .doc-tools, .notice{ display:none; }
   /* a signature must not be orphaned from the agreement it signs */
   .sig{ break-inside:avoid; }
   h2{ break-after:avoid; }
@@ -141,6 +169,16 @@ ol{ padding-inline-start:1.2rem; }
 </style>
 </head>
 <body>
+
+<div class="outside doc-tools">
+  <button type="button" id="printBtn">הדפסה / שמירה כ-PDF</button>
+</div>
+
+<!-- The agreement is written below as one continuous document; paginate()
+     pours it into these sheets at load. -->
+<div id="pages"></div>
+
+<div id="doc" class="sheet">
 
 <header>
   <div class="brand">תות <small dir="ltr">tutlavi · studio</small></div>
@@ -213,8 +251,10 @@ ol{ padding-inline-start:1.2rem; }
   </div>
 </div>
 
+</div><!-- /#doc -->
+
 <!-- shown only when the studio has released this contract for signing -->
-<div id="signBox" hidden>
+<div id="signBox" class="outside" hidden>
   <h2>חתימה על ההסכם</h2>
   <p class="sign-lead">קראו את ההסכם למעלה. להשלמת ההזמנה נדרשים שני פרטים בלבד:</p>
 
@@ -242,24 +282,24 @@ ol{ padding-inline-start:1.2rem; }
   <p id="signMsg"></p>
 </div>
 
-<div class="notice wait" id="waitNotice" hidden>
+<div class="notice wait outside" id="waitNotice" hidden>
   ההסכם נחתם על ידכם והועבר לחתימת סטודיו תות. נעדכן אתכם במייל ברגע שייחתם — הקישור הזה יישאר תקף ויציג תמיד את הגרסה העדכנית.
 </div>
 
-<div class="notice" id="pendingNotice" hidden>
+<div class="notice outside" id="pendingNotice" hidden>
   הבקשה שלכם התקבלה ונמצאת אצלנו לבדיקה. ההסכם ייפתח לחתימה ברגע שנאשר את הבקשה, ותקבלו על כך מייל.
 </div>
 
-<div class="studio-sign-row" id="studioSignRow" hidden>
+<div class="studio-sign-row outside" id="studioSignRow" hidden>
   <button id="studioSignBtn">חתימת סטודיו תות על ההסכם</button>
   <p id="ssMsg"></p>
 </div>
 
-<div class="reveal-row" id="revealRow" hidden>
+<div class="reveal-row outside" id="revealRow" hidden>
   <button id="revealBtn">הצגת ת.ז מלאה (למשכיר)</button>
 </div>
 
-<a href="/" class="back">← חזרה לאתר</a>
+<div class="outside"><a href="/" class="back">← חזרה לאתר</a></div>
 
 <script>
 const $ = (id) => document.getElementById(id);
@@ -268,6 +308,87 @@ const bid = qs.get('bid');
 
 function fill(id, val) {
   if (val) $(id).textContent = val;
+}
+
+$('printBtn').addEventListener('click', () => window.print());
+
+/* ---------- pagination ----------
+   Pours #doc into A4 sheets. It works at element level, so a clause is never
+   cut in half: a list that does not fit is split between its <li>s and the
+   numbering continues with `start`. Anything that throws leaves the document
+   as the single long sheet it already is — still complete, still readable. */
+const cm = (n) => n * 96 / 2.54;
+
+function paginate() {
+  const doc = $('doc');
+  const pages = $('pages');
+  if (!doc || !pages || doc.hidden) return;
+  // narrow screens get the plain flowing layout; paper geometry means nothing there
+  if (window.innerWidth < cm(22)) return;
+
+  const usable = cm(29.7) - cm(3.6);
+  const source = [...doc.children];
+  let body = null;
+
+  const addPage = () => {
+    const sheet = document.createElement('div');
+    sheet.className = 'sheet';
+    body = document.createElement('div');
+    sheet.appendChild(body);
+    pages.appendChild(sheet);
+    return body;
+  };
+  const overflows = () => body.scrollHeight > usable;
+
+  try {
+    addPage();
+    for (const node of source) {
+      body.appendChild(node);
+      if (!overflows()) continue;
+
+      // a list can be broken between clauses; anything else moves whole
+      if (node.tagName === 'OL' && node.children.length > 1) {
+        body.removeChild(node);
+        const items = [...node.children];
+        let part = node.cloneNode(false);
+        let index = 1;
+        body.appendChild(part);
+        for (const li of items) {
+          part.appendChild(li);
+          if (overflows() && part.children.length > 1) {
+            part.removeChild(li);
+            addPage();
+            part = node.cloneNode(false);
+            part.start = index;
+            body.appendChild(part);
+            part.appendChild(li);
+          }
+          index++;
+        }
+        if (!part.children.length) part.remove();
+      } else if (body.children.length > 1) {
+        body.removeChild(node);
+        addPage();
+        body.appendChild(node);
+      }
+    }
+
+    // a heading alone at the foot of a page belongs with the clauses it opens
+    [...pages.children].forEach((sheet, i, all) => {
+      const inner = sheet.firstElementChild;
+      const last = inner.lastElementChild;
+      if (last && last.tagName === 'H2' && all[i + 1]) {
+        all[i + 1].firstElementChild.prepend(last);
+      }
+    });
+
+    doc.hidden = true;
+  } catch {
+    // put everything back where it came from and leave the single sheet
+    source.forEach((n) => doc.appendChild(n));
+    pages.textContent = '';
+    doc.hidden = false;
+  }
 }
 
 function fmtDate(iso) {
@@ -463,7 +584,10 @@ if (bid) {
       if (b.error) { $('docStatus').textContent = 'לא נמצא'; return; }
       render(b);
     })
-    .catch(() => { $('docStatus').textContent = 'שגיאה בטעינה'; });
+    .catch(() => { $('docStatus').textContent = 'שגיאה בטעינה'; })
+    // only once the real names, dates and clauses are in place — they are what
+    // decides where the pages break
+    .finally(paginate);
 } else {
   /* No ?bid= — this is the blank template. The old localStorage preview
      handoff is gone with the one-pass form: the contract is now only ever
@@ -472,6 +596,7 @@ if (bid) {
   $('pendingNotice').textContent =
     'זהו נוסח ההסכם לעיון בלבד, ללא פרטים. הסכם אישי לחתימה נשלח אליכם בקישור ייעודי לאחר שנאשר את בקשתכם.';
   $('pendingNotice').hidden = false;
+  paginate();
 }
 
 $('revealBtn')?.addEventListener('click', async () => {
