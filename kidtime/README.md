@@ -50,23 +50,18 @@
    חשוב לסמן **Add Python to PATH** ולהשאיר מסומן את **tcl/tk and IDLE**.
 2. מעתיקים את התיקייה `kidtime` למקום קבוע, למשל `C:\Program Files\KidTime`
    (עדיף מקום שהילדים לא ימחקו בטעות).
-3. פותחים PowerShell **בתיקייה הזו** ומריצים:
+3. **לחיצה כפולה על `התקנה.bat`** שבתיקייה. זהו.
 
-   ```powershell
-   powershell -ExecutionPolicy Bypass -File .\install-windows.ps1
-   ```
+   (מי שמעדיף/ה שורת פקודה: `powershell -ExecutionPolicy Bypass -File .\install-windows.ps1`)
 
 4. בהפעלה הראשונה נפתח אשף: קובעים **קוד הורים**, מוסיפים את שמות הילדים וקובעים
    כמה דקות ליום.
 
-הסקריפט רושם משימה מתוזמנת בשם `KidTime` שמריצה את המערכת בכל כניסה למשתמש, ובנוסף
-בודקת כל 5 דקות שהיא עדיין רצה — אם מישהו סגר אותה, היא חוזרת לבד תוך דקות.
+ההתקנה בודקת שיש Python עם tkinter, מריצה בדיקה שהמערכת עולה, ורק אז רושמת משימה
+מתוזמנת בשם `KidTime` שמריצה את המערכת בכל כניסה למשתמש ובודקת כל 5 דקות שהיא עדיין
+רצה — אם מישהו סגר אותה, היא חוזרת לבד תוך דקות.
 
-**הסרה:**
-
-```powershell
-powershell -ExecutionPolicy Bypass -File .\uninstall-windows.ps1
-```
+**הסרה:** לחיצה כפולה על `הסרה.bat` (או `uninstall-windows.ps1` משורת פקודה).
 
 ### חשוב מאוד: חשבון של משתמש רגיל
 
@@ -120,8 +115,10 @@ python -m kidtime --verbose        # לוג מפורט (גם ל-%LOCALAPPDATA%\K
 
 ```
 kidtime/
+├── התקנה.bat              התקנה בלחיצה כפולה
+├── הסרה.bat               הסרה בלחיצה כפולה
 ├── KidTime.pyw            הפעלה בלחיצה כפולה, בלי חלון שורת פקודה
-├── install-windows.ps1    רישום המשימה המתוזמנת
+├── install-windows.ps1    בדיקות מקדימות ורישום המשימה המתוזמנת
 ├── uninstall-windows.ps1  הסרה והחזרת שורת המשימות
 ├── kidtime/
 │   ├── config.py          נתיבים, ברירות מחדל, חישוב "יום"
