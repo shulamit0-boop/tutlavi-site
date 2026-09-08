@@ -15,3 +15,6 @@ experiment.html
 # leftovers from the Netlify host, superseded by api/
 netlify.toml
 netlify/
+
+# תת-פרויקט KidTime — אפליקציית דסקטופ, לא חלק מהאתר
+kidtime/

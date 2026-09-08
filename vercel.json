@@ -10,6 +10,11 @@
       "source": "/(CLAUDE.md|netlify.toml|deploy-marker.txt|availability-backup.json|experiment.html|_menu-anim-preview.html)",
       "destination": "/",
       "permanent": false
+    },
+    {
+      "source": "/kidtime/(.*)",
+      "destination": "/",
+      "permanent": false
     }
   ],
   "headers": [
