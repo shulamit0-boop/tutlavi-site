@@ -56,6 +56,24 @@ def _reset_pin(pin: str) -> int:
     return 0
 
 
+def _stop(pin: str) -> int:
+    """מבקש מהמערכת הרצה להיסגר. הנעילה משתחררת מיד."""
+    from .control import send_stop
+
+    result = send_stop(pin)
+    if result == "ok":
+        print("המערכת נעצרה.")
+        return 0
+    if result == "bad-pin":
+        print("קוד הורים שגוי.", file=sys.stderr)
+        return 2
+    if result == "not-running":
+        print("לא נמצאה מערכת רצה.", file=sys.stderr)
+        return 1
+    print(f"תשובה לא צפויה: {result}", file=sys.stderr)
+    return 1
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="kidtime", description="מגביל זמן מסך לילדים")
@@ -65,6 +83,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--reset-pin", metavar="PIN", help="איפוס קוד ההורים (דורש מנהל)")
     parser.add_argument("--restore-taskbar", action="store_true",
                         help="החזרת שורת המשימות אם המערכת נסגרה באמצע")
+    parser.add_argument("--stop", metavar="PIN", nargs="?", const="",
+                        help="עצירת המערכת הרצה (דורש את קוד ההורים)")
     parser.add_argument("--verbose", action="store_true", help="לוג מפורט גם למסך")
     parser.add_argument("--version", action="version", version=f"KidTime {__version__}")
     args = parser.parse_args(argv)
@@ -79,15 +99,19 @@ def main(argv: list[str] | None = None) -> int:
         return _print_status()
     if args.reset_pin:
         return _reset_pin(args.reset_pin)
+    if args.stop is not None:
+        return _stop(args.stop)
 
-    from .app import KidTimeApp, SingleInstance
+    from .control import SingleInstance
 
     guard = SingleInstance()
     if not guard.acquired:
         logging.getLogger("kidtime").info("מופע נוסף כבר רץ — יוצאים")
         return 0
 
-    app = KidTimeApp(windowed=args.windowed)
+    from .app import KidTimeApp
+
+    app = KidTimeApp(windowed=args.windowed, guard=guard)
     try:
         app.run()
     finally:

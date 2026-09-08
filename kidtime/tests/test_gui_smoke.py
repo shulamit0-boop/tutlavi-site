@@ -6,6 +6,8 @@ from __future__ import annotations
 
 import os
 import sys
+import threading
+import time
 
 import pytest
 
@@ -16,6 +18,7 @@ if sys.platform.startswith("linux") and not os.environ.get("DISPLAY"):
     pytest.skip("אין תצוגה גרפית", allow_module_level=True)
 
 from kidtime.app import KidTimeApp  # noqa: E402
+from kidtime.control import SingleInstance, send_stop  # noqa: E402
 from kidtime.lockscreen import RequestDialog  # noqa: E402
 from kidtime.parent import ChangePin, Confirm, ParentPanel, PinDialog  # noqa: E402
 from kidtime.setup_wizard import SetupWizard  # noqa: E402
@@ -211,3 +214,78 @@ def test_toast_appears_and_can_be_replaced(app):
     app.toast("שוב")
     pump(app)
     assert app._toast is not None and app._toast.winfo_exists()
+
+
+def test_unconfigured_computer_is_not_locked_before_setup(tmp_path, clean_root):
+    """הבאג של 8.9.2026: מערכת בלי ילדים נעלה את המחשב מאחורי אשף ההגדרה."""
+    store = Store(tmp_path / "state.json")          # בלי קוד הורים ובלי ילדים
+    app = KidTimeApp(windowed=True, store=store, root=clean_root)
+    app.start()
+    pump(app)
+    app._tick_once()
+    pump(app)
+    assert app.setup_mode is True
+    assert app.lock.visible is False
+    assert app.mode is None
+
+
+def test_locking_starts_only_after_setup_completes(tmp_path, clean_root):
+    store = Store(tmp_path / "state.json")
+    app = KidTimeApp(windowed=True, store=store, root=clean_root)
+    app.start()
+    pump(app)
+    store.set_pin("1234")
+    store.add_child("נועם")
+    app._setup_finished()
+    pump(app)
+    assert app.setup_mode is False
+    assert app.lock.visible is True
+
+
+def test_configured_computer_locks_immediately(app):
+    app.start()
+    pump(app)
+    assert app.setup_mode is False
+    assert app.lock.visible is True
+
+
+def _stop_while_ticking(app, pin: str, port: int) -> str:
+    """שולח --stop מתהליך אחר תוך כדי שהמערכת ממשיכה לתקתק.
+
+    ב-``--stop`` האמיתי אלה שני תהליכים נפרדים; בבדיקה צריך חוט כדי שהשולח
+    לא יחסום את הלולאה שאמורה לענות לו.
+    """
+    answer: dict[str, str] = {}
+    caller = threading.Thread(target=lambda: answer.update(value=send_stop(pin, port=port)))
+    caller.start()
+    for _ in range(50):
+        if not caller.is_alive():
+            break
+        app._tick_once()
+        pump(app, 1)
+        time.sleep(0.02)
+    caller.join(timeout=5)
+    return answer.get("value", "no-answer")
+
+
+def test_stop_command_needs_the_right_pin(app):
+    app.guard = SingleInstance(0)
+    try:
+        app.enter_locked()
+        pump(app)
+        assert _stop_while_ticking(app, "0000", app.guard.port) == "bad-pin"
+        assert app._stopping is False
+        assert app.lock.visible is True
+    finally:
+        app.guard.release()
+
+
+def test_stop_command_shuts_down_with_the_right_pin(app):
+    app.guard = SingleInstance(0)
+    try:
+        app.enter_locked()
+        pump(app)
+        assert _stop_while_ticking(app, "1234", app.guard.port) == "ok"
+        assert app._stopping is True
+    finally:
+        app.guard.release()

@@ -2,13 +2,13 @@
 from __future__ import annotations
 
 import logging
-import socket
 import time
 import tkinter as tk
 from datetime import datetime
 
 from . import theme, winsys
 from .config import fmt_clock
+from .control import SingleInstance  # noqa: F401  — מיוצא מכאן לתאימות לאחור
 from .hud import Hud
 from .lockscreen import LockScreen
 from .parent import ParentPanel, PinDialog
@@ -23,35 +23,15 @@ TICK_MS = 1000
 MAX_TICK_DELTA = 10.0   # לא מחייבים יותר מזה בטיק אחד (עומס/השהיה)
 SLEEP_GAP = 60.0        # פער גדול מזה = המחשב היה ישן — מסיימים סשן
 SAVE_EVERY = 5          # שמירה לדיסק כל 5 טיקים, כדי שכיבוי פתאומי לא ימחק זמן
-SINGLE_INSTANCE_PORT = 47611
-
-
-class SingleInstance:
-    """מונע שתי הפעלות במקביל (מתזמן המשימות מנסה להריץ שוב כל כמה דקות)."""
-
-    def __init__(self, port: int = SINGLE_INSTANCE_PORT):
-        self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            self.sock.bind(("127.0.0.1", port))
-            self.sock.listen(1)
-            self.acquired = True
-        except OSError:
-            self.sock.close()
-            self.acquired = False
-
-    def release(self) -> None:
-        if self.acquired:
-            try:
-                self.sock.close()
-            except OSError:
-                pass
-            self.acquired = False
 
 
 class KidTimeApp:
     def __init__(self, windowed: bool = False, store: Store | None = None,
-                 root: tk.Tk | None = None):
+                 root: tk.Tk | None = None, guard: "SingleInstance | None" = None):
         self.windowed = windowed
+        self.guard = guard
+        self.setup_mode = False
+        self._stopping = False
         self.store = store or Store()
         self.modal_open = False
         self.mode: str | None = None
@@ -73,16 +53,27 @@ class KidTimeApp:
 
     # ------------------------------------------------------------------ הפעלה
     def run(self) -> None:
-        if not self.store.has_pin or not self.store.children:
-            self.enter_locked()
-            SetupWizard(self, self.on_state_changed)
-        else:
-            self.on_state_changed()
+        self.start()
         self.root.after(TICK_MS, self._tick)
         self.root.mainloop()
 
+    def start(self) -> None:
+        """המסך הראשון: אשף אם המערכת לא הוגדרה, אחרת נעילה רגילה."""
+        if not self.store.has_pin or not self.store.children:
+            # מחשב שעדיין לא הוגדר לא נועל את עצמו: קודם האשף, והנעילה
+            # מתחילה רק אחרי שיש קוד הורים ולפחות ילד/ה אחד/ת.
+            self.setup_mode = True
+            SetupWizard(self, self._setup_finished)
+        else:
+            self.on_state_changed()
+
+    def _setup_finished(self) -> None:
+        self.setup_mode = False
+        self.on_state_changed()
+
     def shutdown(self) -> None:
-        """יציאה מסודרת — רק מפאנל ההורים."""
+        """יציאה מסודרת — מפאנל ההורים או מפקודת ``--stop``."""
+        self._stopping = True
         self.end_session("shutdown")
         self.set_kiosk(False)
         self.store.save_if_dirty()
@@ -198,9 +189,44 @@ class KidTimeApp:
         except Exception:  # לא נותנים לשגיאה אחת להרוג את המערכת
             log.exception("שגיאה בטיק")
         finally:
-            self.root.after(TICK_MS, self._tick)
+            if not self._stopping:
+                try:
+                    self.root.after(TICK_MS, self._tick)
+                except tk.TclError:
+                    pass
+
+    def _handle_control(self) -> None:
+        """פקודת ``stop`` משורת הפקודה — נסגר רק מול קוד הורים תקין."""
+        if not self.guard:
+            return
+        received = self.guard.poll_command()
+        if not received:
+            return
+        conn, message = received
+        try:
+            if not message.startswith("stop"):
+                conn.sendall(b"unknown\n")
+                return
+            pin = message[4:].strip()
+            if not self.store.has_pin or self.store.check_pin(pin):
+                conn.sendall(b"ok\n")
+                log.info("עצירה לפי בקשה משורת הפקודה")
+                self.shutdown()
+                return
+            self.store.save()
+            conn.sendall(b"bad-pin\n")
+        except OSError:
+            pass
+        finally:
+            try:
+                conn.close()
+            except OSError:
+                pass
 
     def _tick_once(self) -> None:
+        self._handle_control()
+        if self._stopping or self.setup_mode:
+            return
         self._ticks += 1
         now = datetime.now()
 
