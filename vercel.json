@@ -3,6 +3,7 @@
   "rewrites": [
     { "source": "/admin", "destination": "/admin.html" },
     { "source": "/contract", "destination": "/contract.html" },
+    { "source": "/challah", "destination": "/challah.html" },
     { "source": "/calendar.ics", "destination": "/api/calendar" }
   ],
   "redirects": [

@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>כרטיסיות להפרשת חלה — סטודיו תות</title>
+<meta name="description" content="ערכת כרטיסיות למעמד הפרשת חלה: כל מרכיב שנכנס לעיסה, מה המשמעות שלו, ומה מבקשים עליו. להדפסה וחיתוך.">
+<!-- הדף לא מקושר מהאתר ולא נכנס לגוגל. כדי לפרסם אותו: למחוק את שורת ה-robots שמתחת. -->
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" href="favicon.png">
+<style>
+/* ============================================================
+   כרטיסיות הפרשת חלה — ערכה להדפסה.
+   המסך הוא תצוגה נוחה לקריאה; הנייר הוא המוצר. לכן כל המידות
+   שקובעות חיתוך מוגדרות במ"מ בתוך @media print בלבד, ובמסך
+   הכרטיסייה נושמת לפי התוכן.
+   ============================================================ */
+@font-face{ font-family:'Anomalia'; src:url('fonts/anomalia-light-aaa.woff2') format('woff2'); font-weight:300; font-display:swap; }
+@font-face{ font-family:'Anomalia'; src:url('fonts/anomalia-medium-aaa.woff2') format('woff2'); font-weight:500; font-display:swap; }
+@font-face{ font-family:'Anomalia'; src:url('fonts/anomalia-demibold-aaa.woff2') format('woff2'); font-weight:600; font-display:swap; }
+@font-face{ font-family:'Frank'; src:url('fonts/frank-re-regular-aaa.otf') format('opentype'); font-weight:400; font-display:swap; }
+@font-face{ font-family:'Frank'; src:url('fonts/frank-re-medium-aaa.otf') format('opentype'); font-weight:500; font-display:swap; }
+@font-face{ font-family:'IndexMono'; src:url('fonts/index-mono-regular-aaa.otf') format('opentype'); font-weight:400; font-display:swap; }
+
+:root{
+  --paper:#f2efe9;
+  --card:#ffffff;
+  --ink:#14120e;
+  --soft:#5f594f;
+  --line:rgba(20,18,14,.14);
+  --accent:#b3231d;
+  --display:'Anomalia', 'Frank', system-ui, sans-serif;
+  --serif:'Frank', Georgia, 'Times New Roman', serif;
+  --mono:'IndexMono', ui-monospace, 'Courier New', monospace;
+}
+*{ box-sizing:border-box; margin:0; padding:0; }
+html{ background:var(--paper); }
+body{
+  color:var(--ink); background:var(--paper);
+  font-family:var(--serif); font-size:17px; line-height:1.6;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap{ max-width:1180px; margin:0 auto; padding:0 clamp(18px,4vw,36px); }
+a{ color:inherit; }
+
+/* ============ פתיח (מסך בלבד) ============ */
+.intro{ padding:clamp(40px,7vw,80px) 0 8px; }
+.intro .kicker{
+  font-family:var(--mono); font-size:11px; letter-spacing:.26em;
+  color:var(--soft); text-transform:uppercase; margin-bottom:18px;
+}
+.intro h1{
+  font-family:var(--display); font-weight:300;
+  font-size:clamp(2.4rem,7vw,4.4rem); line-height:1.05; letter-spacing:-.01em;
+}
+.intro h1 .dot{ color:var(--accent); }
+.intro p{ max-width:52ch; margin-top:20px; color:var(--soft); font-size:1.02rem; }
+
+/* ============ שורת הכלים (מסך בלבד) ============ */
+.tools{
+  position:sticky; top:0; z-index:50;
+  margin-top:34px; padding:14px 0;
+  background:rgba(242,239,233,.92);
+  backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  border-bottom:1px solid var(--line);
+}
+.tools-in{ display:flex; flex-wrap:wrap; align-items:center; gap:10px 18px; }
+.tools .grp{ display:flex; align-items:center; gap:8px; }
+.tools .lbl{ font-family:var(--mono); font-size:10.5px; letter-spacing:.18em; color:var(--soft); text-transform:uppercase; }
+.seg{ display:flex; border:1px solid var(--line); }
+.seg button{
+  font-family:var(--serif); font-size:.85rem; color:var(--soft);
+  background:none; border:none; cursor:pointer; padding:7px 13px;
+}
+.seg button+button{ border-inline-start:1px solid var(--line); }
+.seg button[aria-pressed="true"]{ background:var(--ink); color:#fff; }
+.chk{ display:inline-flex; align-items:center; gap:7px; font-size:.88rem; color:var(--soft); cursor:pointer; }
+.chk input{ accent-color:var(--accent); width:15px; height:15px; }
+.btn{
+  font-family:var(--serif); font-size:.9rem;
+  background:var(--accent); color:#fff; border:none; cursor:pointer;
+  padding:9px 20px; transition:opacity .2s;
+}
+.btn:hover{ opacity:.86; }
+.btn.ghost{ background:none; color:var(--soft); border:1px solid var(--line); }
+.count{ font-family:var(--mono); font-size:11px; color:var(--soft); margin-inline-start:auto; }
+
+/* ============ הקלף ============ */
+.deck{
+  display:grid; gap:18px;
+  grid-template-columns:repeat(auto-fill, minmax(268px,1fr));
+  padding:34px 0 50px;
+}
+.card{
+  position:relative;
+  background:var(--card); border:1px solid var(--line);
+  padding:26px 24px 24px;
+  display:flex; flex-direction:column;
+  break-inside:avoid;
+}
+.card-top{
+  display:flex; align-items:baseline; justify-content:space-between;
+  font-family:var(--mono); font-size:10px; letter-spacing:.2em;
+  color:var(--soft); text-transform:uppercase;
+}
+.card-top .num{ color:var(--accent); }
+.card h2{
+  font-family:var(--display); font-weight:500;
+  font-size:2.1rem; line-height:1.15; margin:16px 0 0;
+}
+.card h2 .en{
+  display:block; font-family:var(--mono); font-weight:400;
+  font-size:10px; letter-spacing:.24em; color:var(--soft);
+  text-transform:uppercase; margin-top:7px;
+}
+.lead{
+  font-family:var(--display); font-weight:300;
+  font-size:1.06rem; line-height:1.45; margin-top:14px;
+}
+/* הקו האדום שייך לכותרת, לא לתחתית הכרטיסייה — בתחתית הוא נראה
+   כמו קו תחתון מתחת לשורת הכוונה */
+.card-head::after{
+  content:""; display:block; width:34px; height:2px;
+  background:var(--accent); margin-top:16px;
+}
+.body{ font-size:.95rem; line-height:1.62; margin-top:16px; color:#332f28; }
+.src{
+  font-size:.82rem; color:var(--soft); margin-top:12px;
+  padding-inline-start:10px; border-inline-start:2px solid var(--line);
+}
+.kav{
+  margin-top:auto; padding-top:14px; font-size:.9rem; line-height:1.5;
+  border-top:1px solid var(--line);
+}
+.kav .k{
+  display:block; font-family:var(--mono); font-size:9.5px;
+  letter-spacing:.24em; color:var(--accent); text-transform:uppercase;
+  margin-bottom:5px;
+}
+
+/* כפתור "לא להדפיס" — מסך בלבד */
+.skip{
+  position:absolute; inset-block-start:8px; inset-inline-start:8px;
+  font-family:var(--mono); font-size:9px; letter-spacing:.14em;
+  color:var(--soft); background:none; border:1px solid var(--line);
+  padding:4px 8px; cursor:pointer; opacity:0; transition:opacity .2s;
+}
+.card:hover .skip, .skip:focus-visible{ opacity:1; }
+.card.off{ opacity:.34; }
+.card.off .skip{ opacity:1; color:var(--accent); border-color:var(--accent); }
+
+/* ============ דף מנחה ============ */
+.guide{
+  background:var(--card); border:1px solid var(--line);
+  padding:clamp(28px,4vw,48px); margin-bottom:60px;
+}
+.guide h2{
+  font-family:var(--display); font-weight:300; font-size:clamp(1.7rem,4vw,2.6rem);
+  line-height:1.1; margin-bottom:6px;
+}
+.guide h2 .dot{ color:var(--accent); }
+.guide .sub{ font-family:var(--mono); font-size:10px; letter-spacing:.24em; color:var(--soft); text-transform:uppercase; }
+.guide-grid{ display:grid; gap:30px 44px; grid-template-columns:repeat(auto-fit,minmax(250px,1fr)); margin-top:30px; }
+.guide h3{
+  font-family:var(--mono); font-weight:400; font-size:10.5px; letter-spacing:.22em;
+  color:var(--accent); text-transform:uppercase; margin-bottom:11px;
+}
+.guide ol, .guide ul{ padding-inline-start:1.15rem; }
+.guide li{ font-size:.94rem; margin-bottom:6px; }
+.guide p{ font-size:.94rem; margin-bottom:9px; }
+.guide .nusach{
+  font-family:var(--display); font-weight:500; font-size:1.12rem; line-height:1.7;
+  border-inline-start:2px solid var(--accent); padding-inline-start:12px; margin:12px 0;
+}
+.guide .fine{ font-size:.82rem; color:var(--soft); }
+.guide table{ border-collapse:collapse; width:100%; font-size:.9rem; }
+.guide td{ padding:6px 0; border-bottom:1px solid var(--line); vertical-align:top; }
+.rng{ unicode-bidi:isolate; direction:ltr; }
+.guide td:last-child{ text-align:end; color:var(--soft); white-space:nowrap; padding-inline-start:10px; }
+
+footer.page-foot{
+  border-top:1px solid var(--line); padding:26px 0 60px;
+  font-family:var(--mono); font-size:10.5px; letter-spacing:.16em;
+  color:var(--soft); text-transform:uppercase;
+  display:flex; flex-wrap:wrap; gap:10px 22px; justify-content:space-between;
+}
+
+/* ============ הדפסה ============
+   A6: ארבע כרטיסיות בעמוד (105×148.5 מ"מ)
+   A5: שתיים בעמוד (210×148.5 מ"מ)
+   הכרטיסייה מקובעת בגובה כדי שהחיתוך יהיה במקום קבוע בכל עמוד. */
+@media print{
+  @page{ size:A4; margin:0; }
+  html, body{ background:#fff; }
+  body{ font-size:10pt; }
+  .intro, .tools, .page-foot, .skip, .noprint{ display:none !important; }
+  .wrap{ max-width:none; padding:0; }
+
+  .deck{
+    display:grid; gap:0; padding:0;
+    grid-template-columns:repeat(2, 105mm);
+    justify-content:center;
+  }
+  .card{
+    width:105mm; height:148.5mm;
+    padding:11mm 10mm 9mm;
+    border:none; background:#fff;
+    break-inside:avoid; overflow:hidden;
+  }
+  .card.off{ display:none; }
+  .card-top{ font-size:7pt; }
+  .card h2{ font-size:25pt; margin-top:7mm; }
+  .card h2 .en{ font-size:6.5pt; margin-top:2.5mm; }
+  .lead{ font-size:13pt; margin-top:5mm; }
+  .card-head::after{ width:14mm; height:.7mm; margin-top:6mm; }
+  .body{ font-size:10.4pt; line-height:1.62; margin-top:6mm; }
+  .src{ font-size:8.6pt; margin-top:5mm; padding-inline-start:2.5mm; }
+  .kav{ font-size:10pt; padding-top:4mm; }
+  .kav .k{ font-size:6.5pt; margin-bottom:1.5mm; }
+
+  /* A5 — שתיים בעמוד, בפריסת שני טורים: הכותרת מימין, הטקסט משמאל */
+  body.size-a5 .deck{ grid-template-columns:210mm; }
+  body.size-a5 .card{
+    width:210mm; padding:14mm 20mm 13mm;
+    display:grid; column-gap:16mm;
+    grid-template-columns:72mm 1fr;
+    grid-template-rows:auto 1fr auto;
+    align-items:center;
+  }
+  body.size-a5 .card-top{ align-self:start; }
+  body.size-a5 .card-top{ grid-column:1/-1; grid-row:1; }
+  body.size-a5 .card-head{ grid-column:1; grid-row:2; }
+  body.size-a5 .card-text{ grid-column:2; grid-row:2; }
+  body.size-a5 .kav{ grid-column:1/-1; grid-row:3; margin-top:0; }
+  body.size-a5 .card h2{ font-size:30pt; }
+  body.size-a5 .lead{ font-size:15pt; }
+  body.size-a5 .body{ font-size:11.5pt; margin-top:0; }
+  body.size-a5 .src{ font-size:9.5pt; }
+  body.size-a5 .kav{ font-size:11.5pt; padding-top:5mm; }
+
+  /* קווי חיתוך */
+  body.cut .card{ outline:.2mm dashed #b9b3a8; outline-offset:-.1mm; }
+
+  /* דף מנחה — עמוד נפרד משלו */
+  .guide{
+    border:none; padding:18mm 16mm; margin:0;
+    break-before:page; break-inside:avoid;
+  }
+  .guide h2{ font-size:24pt; }
+  .guide-grid{ gap:8mm 12mm; }
+  .guide li, .guide p{ font-size:9.5pt; }
+  .guide.off{ display:none; }
+}
+</style>
+</head>
+<body class="size-a6">
+
+<div class="wrap">
+
+  <!-- ============ פתיח ============ -->
+  <section class="intro">
+    <div class="kicker">סטודיו תות · Tutlavi</div>
+    <h1>כרטיסיות<br>להפרשת חלה<span class="dot">.</span></h1>
+    <p>
+      שש־עשרה כרטיסיות שמלוות את המעמד: לכל דבר שנכנס לקערה — ולכל דבר שקורה סביבה —
+      יש כרטיסייה שאומרת מה הוא, מה הוא עושה בעיסה, ומה מבקשים עליו.
+      אפשר לחלק אחת לכל אישה, לפזר על השולחן, או להקריא לפי הסדר בזמן ההכנה.
+      בסוף יש דף מנחה עם סדר הערב, שיעורי ההפרשה, נוסח הברכה ומתכון בסיס.
+    </p>
+  </section>
+
+  <!-- ============ כלים (מסך בלבד) ============ -->
+  <div class="tools noprint">
+    <div class="tools-in">
+      <div class="grp">
+        <span class="lbl">גודל</span>
+        <div class="seg" id="sizeSeg">
+          <button type="button" data-size="a6" aria-pressed="true">A6 · 4 בעמוד</button>
+          <button type="button" data-size="a5" aria-pressed="false">A5 · 2 בעמוד</button>
+        </div>
+      </div>
+      <label class="chk"><input type="checkbox" id="cutChk"> קווי חיתוך</label>
+      <label class="chk"><input type="checkbox" id="guideChk" checked> לצרף דף מנחה</label>
+      <button type="button" class="btn ghost" id="allBtn">בחירת הכל</button>
+      <button type="button" class="btn" id="printBtn">הדפסה</button>
+      <span class="count" id="count"></span>
+    </div>
+  </div>
+
+  <!-- ============ הכרטיסיות ============ -->
+  <div class="deck" id="deck">
+
+    <article class="card" data-id="1">
+      <div class="card-top"><span class="num">01</span><span>העיסה</span></div>
+      <div class="card-head">
+        <h2>קֶמַח<span class="en" dir="ltr">Flour</span></h2>
+        <p class="lead">הכול מתחיל מגרגר אחד.</p>
+      </div>
+      <div class="card-text">
+        <p class="body">החיטה נטחנת עד שלא נשארת בה צורה, ומהאבק הזה נבנה לחם. הקמח הוא הדבר הפשוט ביותר על השולחן וגם המרובה ביותר — אין עיסה בלעדיו, ואי אפשר לדעת מראש מה ייצא ממנו.</p>
+        <p class="src">אִם אֵין קֶמַח, אֵין תּוֹרָה · אבות ג׳, יז</p>
+      </div>
+      <p class="kav"><span class="k">כוונה</span>על פרנסה מספקת ורגועה, בלי חשבונות.</p>
+      <button type="button" class="skip">להסיר</button>
+    </article>
+
+    <article class="card" data-id="2">
+      <div class="card-top"><span class="num">02</span><span>העיסה</span></div>
+      <div class="card-head">
+        <h2>מַיִם<span class="en" dir="ltr">Water</span></h2>
+        <p class="lead">מה שמחבר את הפירורים לגוף אחד.</p>
+      </div>
+      <div class="card-text">
+        <p class="body">לבד, הקמח נשאר אבק. המים לא מוסיפים טעם ולא צבע — הם רק גורמים לחלקים להיאחז זה בזה עד שאי אפשר להפריד ביניהם. זה כל תפקידם, וזה הכול.</p>
+        <p class="src">אֵין מַיִם אֶלָּא תּוֹרָה · בבא קמא י״ז</p>
+      </div>
+      <p class="kav"><span class="k">כוונה</span>על חיבורים — במשפחה, בזוגיות, בין שניים שקשה להם להיפגש.</p>
+      <button type="button" class="skip">להסיר</button>
+    </article>
+
+    <article class="card" data-id="3">
+      <div class="card-top"><span class="num">03</span><span>העיסה</span></div>
+      <div class="card-head">
+        <h2>שְׁמָרִים<span class="en" dir="ltr">Yeast</span></h2>
+        <p class="lead">הצמיחה קורית כשלא מסתכלים.</p>
+      </div>
+      <div class="card-text">
+        <p class="body">השמרים הם הדבר החי היחיד בקערה. הם עובדים לאט, בחושך, בלי שרואים — וכל הנפח של הלחם נוצר מהם. אי אפשר לזרז אותם; אפשר רק לתת להם חום ושקט.</p>
+        <p class="src">בַּלַּיְלָה שֶׁאִישׁ אֵינוֹ רוֹאֶה, הָעִסָּה עוֹלָה</p>
+      </div>
+      <p class="kav"><span class="k">כוונה</span>על תהליך שעדיין לא רואים בו תוצאה.</p>
+      <button type="button" class="skip">להסיר</button>
+    </article>
+
+    <article class="card" data-id="4">
+      <div class="card-top"><span class="num">04</span><span>העיסה</span></div>
+      <div class="card-head">
+        <h2>מֶלַח<span class="en" dir="ltr">Salt</span></h2>
+        <p class="lead">מה ששומר, ומה שמאזן.</p>
+      </div>
+      <div class="card-text">
+        <p class="body">בלי מלח הלחם תפל; עם יותר מדי הוא נפסל. המלח גם מרסן את השמרים שלא יתפחו מעבר למידה. במקדש לא הקריבו קרבן בלי מלח — הוא הסימן של ברית שלא נגמרת.</p>
+        <p class="src">עַל כָּל קָרְבָּנְךָ תַּקְרִיב מֶלַח · ויקרא ב׳, יג</p>
+      </div>
+      <p class="kav"><span class="k">כוונה</span>על גבולות בריאים, ועל בריתות שמחזיקות שנים.</p>
+      <button type="button" class="skip">להסיר</button>
+    </article>
+
+    <article class="card" data-id="5">
+      <div class="card-top"><span class="num">05</span><span>העיסה</span></div>
+      <div class="card-head">
+        <h2>דְּבַשׁ<span class="en" dir="ltr">Honey · Sugar</span></h2>
+        <p class="lead">המתיקות שמוסיפים בכוונה.</p>
+      </div>
+      <div class="card-text">
+        <p class="body">הלחם היה נאפה גם בלי הכף הזאת. המתיקות אינה הכרחית — היא בחירה. מוסיפים אותה כי רוצים שמה שיוצא מהבית הזה יהיה טעים לאנשים, ולא רק מזין.</p>
+        <p class="src">דְּבַשׁ וְחָלָב תַּחַת לְשׁוֹנֵךְ · שיר השירים ד׳, יא</p>
+      </div>
+      <p class="kav"><span class="k">כוונה</span>על מילים מתוקות בבית, במיוחד ביום עמוס.</p>
+      <button type="button" class="skip">להסיר</button>
+    </article>
+
+    <article class="card" data-id="6">
+      <div class="card-top"><span class="num">06</span><span>העיסה</span></div>
+      <div class="card-head">
+        <h2>שֶׁמֶן<span class="en" dir="ltr">Oil</span></h2>
+        <p class="lead">מה שמונע חיכוך.</p>
+      </div>
+      <div class="card-text">
+        <p class="body">השמן עוטף כל גרגר ומרכך את הבצק, כדי שייתן להימתח בלי להיקרע. בכתובים מושחים בשמן מלכים וכלים: מה שנמשח — מיועד למשהו.</p>
+        <p class="src">כַּשֶּׁמֶן הַטּוֹב עַל הָרֹאשׁ · תהלים קל״ג, ב</p>
+      </div>
+      <p class="kav"><span class="k">כוונה</span>על ריכוך — בדיוק במקום שבו נמתחתי יותר מדי.</p>
+      <button type="button" class="skip">להסיר</button>
+    </article>
+
+    <article class="card" data-id="7">
+      <div class="card-top"><span class="num">07</span><span>העיסה</span></div>
+      <div class="card-head">
+        <h2>בֵּיצָה<span class="en" dir="ltr">Egg</span></h2>
+        <p class="lead">התחלה שלמה בתוך קליפה.</p>
+      </div>
+      <div class="card-text">
+        <p class="body">הביצה מחזיקה בתוכה הכול בלי להראות דבר. בבצק היא נותנת צבע, עושר וקשר, ועל החלה האפויה היא הברק. היא גם מזכירה שיש דברים שדווקא בחום מתחזקים ולא נשברים.</p>
+        <p class="src">מַה שֶּׁסָּגוּר עַכְשָׁו, כְּבָר שָׁלֵם</p>
+      </div>
+      <p class="kav"><span class="k">כוונה</span>על התחלות: הריון, בית חדש, משהו שרק נולד.</p>
+      <button type="button" class="skip">להסיר</button>
+    </article>
+
+    <article class="card" data-id="8">
+      <div class="card-top"><span class="num">08</span><span>הידיים</span></div>
+      <div class="card-head">
+        <h2>לִישָׁה<span class="en" dir="ltr">Kneading</span></h2>
+        <p class="lead">הידיים שלך, לא של אף אחת אחרת.</p>
+      </div>
+      <div class="card-text">
+        <p class="body">אין מתכון שחוסך את השלב הזה. הבצק נעשה חלק רק בזכות לחץ חוזר, שוב ושוב, על אותו מקום עצמו. זו העבודה — ומרגישים בכפות הידיים מתי היא נגמרה.</p>
+        <p class="src">יְגִיעַ כַּפֶּיךָ כִּי תֹאכֵל, אַשְׁרֶיךָ · תהלים קכ״ח, ב</p>
+      </div>
+      <p class="kav"><span class="k">כוונה</span>על עמל שיישא פרי, ועל הכוח להמשיך כשעוד לא רואים שינוי.</p>
+      <button type="button" class="skip">להסיר</button>
+    </article>
+
+    <article class="card" data-id="9">
+      <div class="card-top"><span class="num">09</span><span>הידיים</span></div>
+      <div class="card-head">
+        <h2>הַתְפָּחָה<span class="en" dir="ltr">Rising</span></h2>
+        <p class="lead">מכסים — ומחכים.</p>
+      </div>
+      <div class="card-text">
+        <p class="body">בשלב הזה אין מה לעשות. מכסים במגבת, מזיזים לפינה חמה, ומניחים לזמן לעשות את שלו. כל נגיעה מיותרת רק מפריעה, והבצק מכפיל את עצמו בלי עזרה.</p>
+        <p class="src">אֵין הַבְּרָכָה שׁוֹרָה אֶלָּא בְּדָבָר הַסָּמוּי מִן הָעַיִן · תענית ח׳</p>
+      </div>
+      <p class="kav"><span class="k">כוונה</span>על סבלנות: מה שאני מחכה לו ועדיין לא הגיע.</p>
+      <button type="button" class="skip">להסיר</button>
+    </article>
+
+    <article class="card" data-id="10">
+      <div class="card-top"><span class="num">10</span><span>הידיים</span></div>
+      <div class="card-head">
+        <h2>קְלִיעָה<span class="en" dir="ltr">Braiding</span></h2>
+        <p class="lead">שלושה חוטים, גוף אחד.</p>
+      </div>
+      <div class="card-text">
+        <p class="body">כל גדיל בפני עצמו נקרע בקלות; שזורים יחד — כמעט לא. הקליעה איננה קישוט: היא מה שמחזיק את הלחם בצורתו בדיוק כשהוא תופח באש.</p>
+        <p class="src">וְהַחוּט הַמְשֻׁלָּשׁ לֹא בִמְהֵרָה יִנָּתֵק · קהלת ד׳, יב</p>
+      </div>
+      <p class="kav"><span class="k">כוונה</span>על האנשים ששזורים בי — ועל מה שמחזיק אותנו יחד.</p>
+      <button type="button" class="skip">להסיר</button>
+    </article>
+
+    <article class="card" data-id="11">
+      <div class="card-top"><span class="num">11</span><span>המעמד</span></div>
+      <div class="card-head">
+        <h2>הַפְרָשַׁת חַלָּה<span class="en" dir="ltr">The Separation</span></h2>
+        <p class="lead">לוקחים חתיכה — ומוותרים עליה.</p>
+      </div>
+      <div class="card-text">
+        <p class="body">מכל העיסה מפרישים כזית אחד שלא ייאכל. זה החלק היחיד שאינו שלנו: בזמן שבית המקדש היה קיים הוא ניתן לכהן, והיום עוטפים אותו ושורפים. דווקא מה שנותנים הוא שהופך את כל השאר לשלנו.</p>
+        <p class="src">רֵאשִׁית עֲרִסֹתֵכֶם חַלָּה תָּרִימוּ תְרוּמָה · במדבר ט״ו, כ</p>
+      </div>
+      <p class="kav"><span class="k">כוונה</span>על מה שאני מוכנה לוותר עליו כדי שהשאר יהיה מבורך.</p>
+      <button type="button" class="skip">להסיר</button>
+    </article>
+
+    <article class="card" data-id="12">
+      <div class="card-top"><span class="num">12</span><span>המעמד</span></div>
+      <div class="card-head">
+        <h2>בְּרָכָה<span class="en" dir="ltr">The Blessing</span></h2>
+        <p class="lead">רגע אחד של מילים, בקול.</p>
+      </div>
+      <div class="card-text">
+        <p class="body">מברכים בעמידה, כשהעיסה כולה לפנייך: ״…אֲשֶׁר קִדְּשָׁנוּ בְּמִצְוֹתָיו וְצִוָּנוּ לְהַפְרִישׁ חַלָּה״. מרימים את החתיכה שהופרשה ואומרים: ״הֲרֵי זוֹ חַלָּה״. מכאן ואילך — הזמן לבקש.</p>
+        <p class="src">הנוסח המלא בדף המנחה</p>
+      </div>
+      <p class="kav"><span class="k">כוונה</span>מה שאני מבקשת עכשיו, במילים שלי.</p>
+      <button type="button" class="skip">להסיר</button>
+    </article>
+
+    <article class="card" data-id="13">
+      <div class="card-top"><span class="num">13</span><span>המעמד</span></div>
+      <div class="card-head">
+        <h2>נֵרוֹת<span class="en" dir="ltr">Candles</span></h2>
+        <p class="lead">אור שמדליקים בשביל מישהו.</p>
+      </div>
+      <div class="card-text">
+        <p class="body">נר אינו מאיר את עצמו. מדליקים אותו כדי לראות, וכדי שמישהו אחר ייראה. נהוג להדליק לפני תחילת המעמד, ולומר בקול לשם מי הנר הזה.</p>
+        <p class="src">נֵר ה׳ נִשְׁמַת אָדָם · משלי כ׳, כז</p>
+      </div>
+      <p class="kav"><span class="k">כוונה</span>לזכר, לרפואה, או פשוט בשביל מי שקשה לה הערב.</p>
+      <button type="button" class="skip">להסיר</button>
+    </article>
+
+    <article class="card" data-id="14">
+      <div class="card-top"><span class="num">14</span><span>המעמד</span></div>
+      <div class="card-head">
+        <h2>שֵׁמוֹת<span class="en" dir="ltr">Names</span></h2>
+        <p class="lead">לבקש על מישהי אחרת.</p>
+      </div>
+      <div class="card-text">
+        <p class="body">כותבות על פתק שמות — שלך ושל אחרות — וקוראות אותם בלב או בקול אחרי הברכה. המסורת אומרת שהמבקשת על חברתה, נענית היא תחילה.</p>
+        <p class="src">כָּל הַמְבַקֵּשׁ רַחֲמִים עַל חֲבֵרוֹ, נַעֲנֶה תְּחִלָּה · בבא קמא צ״ב</p>
+      </div>
+      <p class="kav"><span class="k">כוונה</span>שם אחד שאינו שלי.</p>
+      <button type="button" class="skip">להסיר</button>
+    </article>
+
+    <article class="card" data-id="15">
+      <div class="card-top"><span class="num">15</span><span>המעמד</span></div>
+      <div class="card-head">
+        <h2>צְדָקָה<span class="en" dir="ltr">Giving</span></h2>
+        <p class="lead">נותנים לפני שמבקשים.</p>
+      </div>
+      <div class="card-text">
+        <p class="body">מטבע בקופה, לפני הברכה. לא משום שזה תשלום על משהו, אלא כדי להיכנס לרגע הזה כשהידיים כבר פתוחות.</p>
+        <p class="src">וּצְדָקָה תַּצִּיל מִמָּוֶת · משלי י׳, ב</p>
+      </div>
+      <p class="kav"><span class="k">כוונה</span>לתת עכשיו, לא אחר כך.</p>
+      <button type="button" class="skip">להסיר</button>
+    </article>
+
+    <article class="card" data-id="16">
+      <div class="card-top"><span class="num">16</span><span>המעמד</span></div>
+      <div class="card-head">
+        <h2>חֲלוּקָה<span class="en" dir="ltr">Sharing</span></h2>
+        <p class="lead">לחם נגמר אצל מישהו אחר.</p>
+      </div>
+      <div class="card-text">
+        <p class="body">החלה לא נאפית בשביל התנור. בסוף חותכים, עוטפים ושולחים הביתה — לשכנה, למי שלא הצליחה להגיע, למי שלא מבשלת השבוע. זה סוף המעשה, לא תוספת לו.</p>
+        <p class="src">הֲלוֹא פָרֹס לָרָעֵב לַחְמֶךָ · ישעיהו נ״ח, ז</p>
+      </div>
+      <p class="kav"><span class="k">כוונה</span>למי אשלח פרוסה מהערב הזה.</p>
+      <button type="button" class="skip">להסיר</button>
+    </article>
+
+  </div>
+
+  <!-- ============ דף מנחה ============ -->
+  <section class="guide" id="guide">
+    <div class="sub">סטודיו תות · דף מנחה</div>
+    <h2>סדר המעמד<span class="dot">.</span></h2>
+
+    <div class="guide-grid">
+      <div>
+        <h3>סדר הערב</h3>
+        <ol>
+          <li>הדלקת נר, ואומרות לשם מי.</li>
+          <li>מטבע בקופת הצדקה.</li>
+          <li>כותבות שמות על פתקים.</li>
+          <li>מכינות את העיסה — כרטיסייה לכל מרכיב, לפני שמוסיפים אותו.</li>
+          <li>לישה בידיים, גם אם יש מיקסר.</li>
+          <li>מכסות ומתפיחות כשעה.</li>
+          <li>מפרישות חלה, מברכות, ומבקשות — קוראות את השמות.</li>
+          <li>קולעות, מתפיחות שוב, מורחות ואופות.</li>
+          <li>חותכות, עוטפות, ושולחות הביתה.</li>
+        </ol>
+      </div>
+
+      <div>
+        <h3>שיעורי הפרשה — לפי משקל הקמח</h3>
+        <table>
+          <tr><td>פחות מ־1.200 ק״ג</td><td>אין מפרישים</td></tr>
+          <tr><td><span class="rng">1.200 – 2.250</span> ק״ג</td><td>מפרישים בלי ברכה</td></tr>
+          <tr><td>מ־2.250 ק״ג ומעלה</td><td>מפרישים בברכה</td></tr>
+        </table>
+        <p class="fine" style="margin-top:10px">
+          יש הנוהגים לברך כבר מ־1.666 ק״ג. המנהגים חלוקים — בעיסה שגודלה על הגבול,
+          נכון לשאול רב. כדי שהמעמד ייצא בברכה לכל הדעות, פשוט לצאת מ־2.5 ק״ג קמח ומעלה.
+        </p>
+      </div>
+
+      <div>
+        <h3>נוסח הברכה</h3>
+        <p>מברכות בעמידה, כשכל העיסה לפנייך:</p>
+        <p class="nusach">
+          בָּרוּךְ אַתָּה ה׳ אֱלֹהֵינוּ מֶלֶךְ הָעוֹלָם,<br>
+          אֲשֶׁר קִדְּשָׁנוּ בְּמִצְוֹתָיו וְצִוָּנוּ<br>
+          לְהַפְרִישׁ חַלָּה.
+        </p>
+        <p class="fine">יש הנוהגים לומר ״…לְהַפְרִישׁ חַלָּה תְּרוּמָה״.</p>
+        <p>מפרישות כזית מן העיסה (כ־30 גרם), מרימות אותו ואומרות:</p>
+        <p class="nusach">הֲרֵי זוֹ חַלָּה.</p>
+      </div>
+
+      <div>
+        <h3>מה עושים עם החתיכה</h3>
+        <p>
+          החתיכה שהופרשה אינה נאכלת ואינה נאפית עם החלות. עוטפים אותה בנייר כסף
+          ושורפים — בתנור, על להבה או על הגז — עד שנעשית פחם. אחר כך משליכים.
+        </p>
+        <h3 style="margin-top:20px">אחרי הברכה</h3>
+        <p>
+          זה הרגע שבו נהוג לבקש — בקול או בלב, בעברית פשוטה. קוראות את השמות שנכתבו,
+          ומי שרוצה מוסיפה משלה. אין נוסח מחייב.
+        </p>
+      </div>
+
+      <div>
+        <h3>מתכון בסיס · 2.5 ק״ג קמח</h3>
+        <ul>
+          <li>2.5 ק״ג קמח לחם</li>
+          <li><span class="rng">1.4–1.5</span> ליטר מים פושרים</li>
+          <li>100 גרם שמרים טריים (או 35 גרם יבשים)</li>
+          <li>1 כוס סוכר, או ½ כוס סוכר + ½ כוס דבש</li>
+          <li>כף וחצי עד שתי כפות מלח</li>
+          <li>1 כוס שמן</li>
+          <li>2 ביצים · ביצה טרופה למריחה · שומשום או פרג</li>
+        </ul>
+      </div>
+
+      <div>
+        <h3>אופן ההכנה</h3>
+        <p>
+          מערבבות שמרים, סוכר ומעט מהמים הפושרים, וממתינות 10 דקות עד שמקציף.
+          מוסיפות קמח, מים, ביצים ושמן, ורק בסוף את המלח. לשות <span class="rng">8–10</span> דקות עד שהבצק
+          חלק ולא נדבק. מכסות ומתפיחות כשעה, עד הכפלת נפח.
+        </p>
+        <p>
+          מפרישות חלה ומברכות. קולעות, מתפיחות עוד <span class="rng">30–40</span> דקות, מורחות בביצה ומפזרות
+          שומשום. אופות בתנור שחומם מראש ל־180 מעלות, כ־<span class="rng">25–30</span> דקות עד להזהבה.
+        </p>
+      </div>
+    </div>
+
+    <p class="fine" style="margin-top:26px; border-top:1px solid var(--line); padding-top:14px">
+      בדף הזה מודפס שם שמים — אין לזרוק אותו לאשפה. מה שלא שומרים, נכון להעביר לגניזה.
+      <br>סטודיו תות · מגן אברהם 6, תל אביב · <span dir="ltr">tutlavi.com</span>
+    </p>
+  </section>
+
+  <footer class="page-foot noprint">
+    <span>סטודיו תות · מגן אברהם 6, תל אביב</span>
+    <span dir="ltr">tutlavi.com</span>
+  </footer>
+
+</div>
+
+<script>
+(function(){
+  var body    = document.body,
+      deck    = document.getElementById('deck'),
+      guide   = document.getElementById('guide'),
+      cards   = Array.prototype.slice.call(deck.querySelectorAll('.card')),
+      sizeSeg = document.getElementById('sizeSeg'),
+      cutChk  = document.getElementById('cutChk'),
+      gChk    = document.getElementById('guideChk'),
+      allBtn  = document.getElementById('allBtn'),
+      printBtn= document.getElementById('printBtn'),
+      countEl = document.getElementById('count'),
+      KEY     = 'tut-challah-prefs';
+
+  function prefs(){
+    try{ return JSON.parse(localStorage.getItem(KEY)) || {}; }catch(e){ return {}; }
+  }
+  function save(){
+    var off = cards.filter(function(c){ return c.classList.contains('off'); })
+                   .map(function(c){ return c.dataset.id; });
+    try{
+      localStorage.setItem(KEY, JSON.stringify({
+        size: body.classList.contains('size-a5') ? 'a5' : 'a6',
+        cut:  cutChk.checked,
+        guide:gChk.checked,
+        off:  off
+      }));
+    }catch(e){}
+  }
+  function count(){
+    var on = cards.length - cards.filter(function(c){ return c.classList.contains('off'); }).length;
+    var perPage = body.classList.contains('size-a5') ? 2 : 4;
+    var pages = Math.ceil(on / perPage) + (gChk.checked ? 1 : 0);
+    countEl.textContent = on + ' מתוך ' + cards.length + ' כרטיסיות · ' + pages + ' עמודים להדפסה';
+  }
+  function setSize(s){
+    body.classList.toggle('size-a5', s === 'a5');
+    body.classList.toggle('size-a6', s !== 'a5');
+    sizeSeg.querySelectorAll('button').forEach(function(b){
+      b.setAttribute('aria-pressed', String(b.dataset.size === s));
+    });
+  }
+
+  /* שחזור העדפות */
+  var p = prefs();
+  if(p.size) setSize(p.size);
+  if(p.cut){ cutChk.checked = true; body.classList.add('cut'); }
+  if(p.guide === false){ gChk.checked = false; guide.classList.add('off'); }
+  if(Array.isArray(p.off)){
+    cards.forEach(function(c){ if(p.off.indexOf(c.dataset.id) > -1) c.classList.add('off'); });
+  }
+  count();
+
+  sizeSeg.addEventListener('click', function(e){
+    var b = e.target.closest('button'); if(!b) return;
+    setSize(b.dataset.size); save(); count();
+  });
+  cutChk.addEventListener('change', function(){
+    body.classList.toggle('cut', cutChk.checked); save();
+  });
+  gChk.addEventListener('change', function(){
+    guide.classList.toggle('off', !gChk.checked); save(); count();
+  });
+  deck.addEventListener('click', function(e){
+    var b = e.target.closest('.skip'); if(!b) return;
+    var card = b.closest('.card');
+    card.classList.toggle('off');
+    b.textContent = card.classList.contains('off') ? 'להחזיר' : 'להסיר';
+    save(); count();
+  });
+  allBtn.addEventListener('click', function(){
+    cards.forEach(function(c){
+      c.classList.remove('off');
+      var b = c.querySelector('.skip'); if(b) b.textContent = 'להסיר';
+    });
+    save(); count();
+  });
+  printBtn.addEventListener('click', function(){ window.print(); });
+
+  /* כפתורי ההסרה מקבלים את הטקסט הנכון גם אחרי שחזור */
+  cards.forEach(function(c){
+    if(c.classList.contains('off')){
+      var b = c.querySelector('.skip'); if(b) b.textContent = 'להחזיר';
+    }
+  });
+})();
+</script>
+
+</body>
+</html>
