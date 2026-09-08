@@ -1,34 +1,32 @@
 ﻿<#
     הסרת KidTime: מבטל את המשימה המתוזמנת, סוגר את המערכת ומחזיר את שורת המשימות.
-
     הדרך הפשוטה: לחיצה כפולה על "הסרה.bat".
-    ידנית:  powershell -ExecutionPolicy Bypass -File .\uninstall-windows.ps1
 #>
 #Requires -Version 5.1
 [CmdletBinding()]
 param([string]$TaskName = "KidTime")
 
 $ErrorActionPreference = "Continue"
-try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
+Add-Type -AssemblyName System.Windows.Forms
 
 $here = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Path }
 
 Write-Host ""
-Write-Host "==== הסרת KidTime ====" -ForegroundColor Cyan
+Write-Host "==== KidTime uninstall ====" -ForegroundColor Cyan
 Write-Host ""
 
 if (Get-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue) {
     Stop-ScheduledTask -TaskName $TaskName -ErrorAction SilentlyContinue
     Unregister-ScheduledTask -TaskName $TaskName -Confirm:$false
-    Write-Host "המשימה המתוזמנת '$TaskName' הוסרה." -ForegroundColor Green
+    Write-Host "Scheduled task '$TaskName' removed." -ForegroundColor Green
 } else {
-    Write-Host "לא נמצאה משימה מתוזמנת בשם '$TaskName'."
+    Write-Host "No scheduled task named '$TaskName'."
 }
 
 Get-CimInstance Win32_Process -Filter "Name like 'python%'" -ErrorAction SilentlyContinue |
     Where-Object { $_.CommandLine -like "*KidTime.pyw*" -or $_.CommandLine -like "*-m kidtime*" } |
     ForEach-Object {
-        Write-Host "סוגר תהליך $($_.ProcessId)"
+        Write-Host "Stopping process $($_.ProcessId)"
         Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue
     }
 
@@ -36,9 +34,15 @@ Get-CimInstance Win32_Process -Filter "Name like 'python%'" -ErrorAction Silentl
 $python = (Get-Command python.exe -ErrorAction SilentlyContinue).Source
 if ($python) {
     Push-Location $here
-    try { & $python -m kidtime --restore-taskbar } catch {} finally { Pop-Location }
+    try { & $python -m kidtime --restore-taskbar 2>&1 | Out-Null } catch {} finally { Pop-Location }
 }
 
-Write-Host ""
-Write-Host "המערכת הוסרה. נתוני הזמנים נשארו ב-$env:LOCALAPPDATA\KidTime — אפשר למחוק ידנית." -ForegroundColor Yellow
-Write-Host ""
+Write-Host "Done." -ForegroundColor Green
+
+$rtl = [System.Windows.Forms.MessageBoxOptions]::RtlReading -bor `
+       [System.Windows.Forms.MessageBoxOptions]::RightAlign
+[System.Windows.Forms.MessageBox]::Show(
+    "המערכת הוסרה.`n`nנתוני הזמנים נשארו ב:`n$env:LOCALAPPDATA\KidTime`nאפשר למחוק את התיקייה ידנית.",
+    "KidTime", [System.Windows.Forms.MessageBoxButtons]::OK,
+    [System.Windows.Forms.MessageBoxIcon]::Information,
+    [System.Windows.Forms.MessageBoxDefaultButton]::Button1, $rtl) | Out-Null

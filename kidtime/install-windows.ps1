@@ -1,96 +1,179 @@
 ﻿<#
     התקנת KidTime על Windows.
 
-    יוצר משימה מתוזמנת בשם "KidTime" שמריצה את המערכת בכל כניסה למשתמש,
-    ומוודאת כל כמה דקות שהיא עדיין רצה (אם מישהו סגר אותה — היא חוזרת).
+    הודעות המסך כאן באנגלית בכוונה: קונסולת Windows לא מציגה עברית באופן אמין
+    (קידוד + גופן), ולכן כל מה שמיועד למשתמשת מוצג בחלוניות דיאלוג של Windows.
 
     הדרך הפשוטה: לחיצה כפולה על "התקנה.bat".
-    ידנית:  powershell -ExecutionPolicy Bypass -File .\install-windows.ps1
 #>
 #Requires -Version 5.1
 [CmdletBinding()]
 param(
-    [string]$PythonW,                  # נתיב ידני ל-pythonw.exe, אם הזיהוי האוטומטי נכשל
+    [string]$PythonExe,                # נתיב ידני ל-python.exe, אם הזיהוי האוטומטי נכשל
     [string]$TaskName = "KidTime",
     [int]$WatchdogMinutes = 5          # כל כמה דקות לוודא שהמערכת רצה
 )
 
 $ErrorActionPreference = "Stop"
-try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch {}
+Add-Type -AssemblyName System.Windows.Forms
 
 $here = if ($PSScriptRoot) { $PSScriptRoot } else { Split-Path -Parent $MyInvocation.MyCommand.Path }
 $launcher = Join-Path $here "KidTime.pyw"
 
-Write-Host ""
-Write-Host "==== התקנת KidTime — מגביל זמן מסך לילדים ====" -ForegroundColor Cyan
-Write-Host ""
+# ------------------------------------------------------------------ עזרים
+function Say([string]$Text, [string]$Color = "Gray") { Write-Host $Text -ForegroundColor $Color }
 
-if (-not (Test-Path $launcher)) {
-    throw "לא נמצא הקובץ KidTime.pyw בתיקייה $here — צריך להריץ את הסקריפט מתוך תיקיית kidtime."
+function Show-Dialog([string]$Text, [string]$Title = "KidTime", [string]$Icon = "Information") {
+    $rtl = [System.Windows.Forms.MessageBoxOptions]::RtlReading -bor `
+           [System.Windows.Forms.MessageBoxOptions]::RightAlign
+    [System.Windows.Forms.MessageBox]::Show(
+        $Text, $Title,
+        [System.Windows.Forms.MessageBoxButtons]::OK,
+        ([System.Windows.Forms.MessageBoxIcon]$Icon),
+        [System.Windows.Forms.MessageBoxDefaultButton]::Button1, $rtl) | Out-Null
 }
 
-# ---------------------------------------------------------------- איתור Python
-function Find-PythonW {
-    $found = (Get-Command pythonw.exe -ErrorAction SilentlyContinue).Source
-    if ($found) { return $found }
+function Confirm-Dialog([string]$Text, [string]$Title = "KidTime") {
+    $rtl = [System.Windows.Forms.MessageBoxOptions]::RtlReading -bor `
+           [System.Windows.Forms.MessageBoxOptions]::RightAlign
+    $answer = [System.Windows.Forms.MessageBox]::Show(
+        $Text, $Title,
+        [System.Windows.Forms.MessageBoxButtons]::YesNo,
+        [System.Windows.Forms.MessageBoxIcon]::Question,
+        [System.Windows.Forms.MessageBoxDefaultButton]::Button1, $rtl)
+    return $answer -eq [System.Windows.Forms.DialogResult]::Yes
+}
 
+# הרצת תוכנית חיצונית בלי ש-stderr יהפוך לשגיאה קטלנית ב-PowerShell 5.1
+function Invoke-Native([string]$Exe, [string[]]$Arguments) {
+    $previous = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+    try {
+        $output = & $Exe @Arguments 2>&1
+        return [pscustomobject]@{
+            Code   = $LASTEXITCODE
+            Output = ($output | Out-String).Trim()
+        }
+    } catch {
+        return [pscustomobject]@{ Code = -1; Output = $_.Exception.Message }
+    } finally {
+        $ErrorActionPreference = $previous
+    }
+}
+
+# ------------------------------------------------------------- איתור Python
+# לא מספיק למצוא pythonw.exe כלשהו: תוכנות רבות (FormatFactory, GIMP, Anki...)
+# מביאות איתן Python מקוצץ בלי tkinter. כל מועמד נבדק בהרצה בפועל.
+function Test-PythonCandidate([string]$Exe) {
+    if (-not $Exe -or -not (Test-Path $Exe)) { return $false }
+    if ($Exe -like "*\WindowsApps\*") { return $false }   # קיצור הדרך של חנות Microsoft
+    $probe = Invoke-Native $Exe @("-c", "import sys,tkinter;print(sys.version_info[0],sys.version_info[1])")
+    if ($probe.Code -ne 0) { return $false }
+    $parts = ($probe.Output -split '\s+')
+    if ($parts.Count -lt 2) { return $false }
+    try { $major = [int]$parts[0]; $minor = [int]$parts[1] } catch { return $false }
+    return ($major -gt 3) -or ($major -eq 3 -and $minor -ge 10)
+}
+
+function Get-PythonCandidates {
+    $found = New-Object System.Collections.Generic.List[string]
+
+    # 1. משגר Python הרשמי — הדרך האמינה ביותר
     $py = (Get-Command py.exe -ErrorAction SilentlyContinue).Source
     if ($py) {
-        $guess = & $py -c "import os,sys;print(os.path.join(os.path.dirname(sys.executable),'pythonw.exe'))" 2>$null
-        if ($guess -and (Test-Path $guess)) { return $guess }
+        $probe = Invoke-Native $py @("-3", "-c", "import sys;print(sys.executable)")
+        if ($probe.Code -eq 0 -and $probe.Output) { $found.Add($probe.Output.Trim()) }
     }
 
-    $roots = @(
-        "$env:LOCALAPPDATA\Programs\Python",
-        "$env:ProgramFiles\Python*",
-        "${env:ProgramFiles(x86)}\Python*",
-        "C:\Python*"
-    )
-    foreach ($root in $roots) {
-        $hit = Get-ChildItem -Path $root -Filter pythonw.exe -Recurse -ErrorAction SilentlyContinue |
-               Sort-Object FullName -Descending | Select-Object -First 1
-        if ($hit) { return $hit.FullName }
+    # 2. הרישום — התקנות רשמיות של Python
+    foreach ($root in @("HKCU:\SOFTWARE\Python\PythonCore",
+                        "HKLM:\SOFTWARE\Python\PythonCore",
+                        "HKLM:\SOFTWARE\WOW6432Node\Python\PythonCore")) {
+        try {
+            Get-ChildItem $root -ErrorAction SilentlyContinue | ForEach-Object {
+                $install = (Get-ItemProperty "$($_.PSPath)\InstallPath" -ErrorAction SilentlyContinue).'(default)'
+                if ($install) { $found.Add((Join-Path $install "python.exe")) }
+            }
+        } catch {}
     }
-    return $null
+
+    # 3. מיקומי התקנה מקובלים
+    foreach ($pattern in @("$env:LOCALAPPDATA\Programs\Python\Python3*\python.exe",
+                           "$env:ProgramFiles\Python3*\python.exe",
+                           "${env:ProgramFiles(x86)}\Python3*\python.exe",
+                           "C:\Python3*\python.exe")) {
+        Get-ChildItem $pattern -ErrorAction SilentlyContinue |
+            Sort-Object FullName -Descending |
+            ForEach-Object { $found.Add($_.FullName) }
+    }
+
+    # 4. מה שנמצא ב-PATH — אחרון, כי שם יושבים ה-Python המקוצצים של תוכנות אחרות
+    Get-Command python.exe -All -ErrorAction SilentlyContinue |
+        ForEach-Object { $found.Add($_.Source) }
+
+    return $found | Select-Object -Unique
 }
 
-if (-not $PythonW) { $PythonW = Find-PythonW }
-if (-not $PythonW -or -not (Test-Path $PythonW)) {
-    Write-Host "לא נמצאה התקנת Python במחשב." -ForegroundColor Red
-    Write-Host ""
-    Write-Host "מה לעשות:"
-    Write-Host "  1. להוריד Python מ- https://www.python.org/downloads/"
-    Write-Host "  2. בהתקנה לסמן 'Add Python to PATH' ולהשאיר מסומן 'tcl/tk and IDLE'"
-    Write-Host "  3. להריץ את ההתקנה הזו שוב"
-    throw "Python לא נמצא."
+# ------------------------------------------------------------------- התחלה
+Say ""
+Say "==== KidTime setup ====" Cyan
+Say ""
+
+if (-not (Test-Path $launcher)) {
+    Show-Dialog "לא נמצא הקובץ KidTime.pyw בתיקייה:`n$here`n`nצריך להריץ את ההתקנה מתוך תיקיית kidtime." "KidTime" "Error"
+    throw "KidTime.pyw not found in $here"
 }
 
-$python = Join-Path (Split-Path -Parent $PythonW) "python.exe"
-if (-not (Test-Path $python)) { $python = $PythonW }
+Say "Folder: $here"
+Say "Looking for a working Python (3.10+ with tkinter)..."
 
-Write-Host "Python:  $PythonW"
-Write-Host "תיקייה:  $here"
-Write-Host ""
-
-# ------------------------------------------------------------- בדיקות מקדימות
-& $python -c "import tkinter" 2>$null
-if ($LASTEXITCODE -ne 0) {
-    Write-Host "הרכיב tkinter חסר בהתקנת Python." -ForegroundColor Red
-    Write-Host "יש להריץ שוב את מתקין Python, לבחור Modify, ולסמן 'tcl/tk and IDLE'."
-    throw "tkinter חסר."
+$python = $null
+if ($PythonExe) {
+    if (Test-PythonCandidate $PythonExe) { $python = $PythonExe }
+    else { Say "  rejected (given): $PythonExe" Yellow }
+}
+if (-not $python) {
+    foreach ($candidate in Get-PythonCandidates) {
+        if (Test-PythonCandidate $candidate) { $python = $candidate; break }
+        Say "  rejected: $candidate" DarkGray
+    }
 }
 
+if (-not $python) {
+    Say "No usable Python found." Red
+    $wants = Confirm-Dialog (
+        "לא נמצאה במחשב התקנה מתאימה של Python.`n`n" +
+        "(נמצאו גרסאות מקוצצות שמגיעות עם תוכנות אחרות — הן לא מתאימות.)`n`n" +
+        "צריך Python 3.10 ומעלה. בהתקנה חשוב לסמן:`n" +
+        "  • Add Python to PATH`n" +
+        "  • tcl/tk and IDLE`n`n" +
+        "לפתוח עכשיו את דף ההורדה?") "KidTime — חסר Python"
+    if ($wants) { Start-Process "https://www.python.org/downloads/" }
+    Show-Dialog "אחרי התקנת Python — ללחוץ שוב על 'התקנה.bat'." "KidTime"
+    throw "No usable Python found."
+}
+
+Say "Python: $python" Green
+
+$pythonw = Join-Path (Split-Path -Parent $python) "pythonw.exe"
+if (-not (Test-Path $pythonw)) { $pythonw = $python }
+
+# --------------------------------------------------------- בדיקה שהמערכת עולה
 Push-Location $here
 try {
-    & $python -m kidtime --status | Out-Null
-    if ($LASTEXITCODE -ne 0) { throw "המערכת לא עלתה כמו שצריך (python -m kidtime --status נכשל)." }
+    $check = Invoke-Native $python @("-m", "kidtime", "--status")
 } finally {
     Pop-Location
 }
-Write-Host "בדיקה עברה — המערכת רצה על המחשב הזה." -ForegroundColor Green
+if ($check.Code -ne 0) {
+    Say $check.Output Red
+    Show-Dialog "המערכת לא הצליחה לעלות. הפירוט מופיע בחלון השחור.`n`nאפשר להעתיק אותו ולשלוח לי." "KidTime" "Error"
+    throw "Self-test failed."
+}
+Say "Self-test passed." Green
 
 # -------------------------------------------------------- רישום משימה מתוזמנת
-$action = New-ScheduledTaskAction -Execute $PythonW -Argument "`"$launcher`"" -WorkingDirectory $here
+$action = New-ScheduledTaskAction -Execute $pythonw -Argument "`"$launcher`"" -WorkingDirectory $here
 
 $triggers = @()
 try {
@@ -105,24 +188,22 @@ $settings = New-ScheduledTaskSettingsSet -AllowStartIfOnBatteries -DontStopIfGoi
     -StartWhenAvailable -MultipleInstances IgnoreNew -ExecutionTimeLimit ([TimeSpan]::Zero)
 
 Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $triggers -Settings $settings `
-    -Description "מגביל זמן מסך לילדים (KidTime)" -Force | Out-Null
+    -Description "KidTime - screen time limiter for kids" -Force | Out-Null
 
-Write-Host "המשימה '$TaskName' נרשמה — המערכת תעלה בכל כניסה למחשב." -ForegroundColor Green
+Say "Scheduled task '$TaskName' registered." Green
 
 Start-ScheduledTask -TaskName $TaskName
-Start-Sleep -Seconds 3
+Say "Started." Green
+Say ""
+Say "Data folder: $env:LOCALAPPDATA\KidTime"
+Say ""
 
-Write-Host ""
-Write-Host "המערכת הופעלה." -ForegroundColor Green
-Write-Host "עוד רגע ייפתח מסך על כל המסך — שם קובעים קוד הורים ומוסיפים את שמות הילדים."
-Write-Host ""
-Write-Host "הנתונים נשמרים ב: $env:LOCALAPPDATA\KidTime"
-Write-Host ""
-Write-Host "--- שני דברים שכדאי לדעת ---" -ForegroundColor Yellow
-Write-Host "1. חשבון ה-Windows של הילדים צריך להיות 'משתמש רגיל' (Standard) ולא מנהל,"
-Write-Host "   אחרת אפשר לשנות את השעון או לבטל את המשימה המתוזמנת."
-Write-Host "2. אם שוכחים את קוד ההורים — פותחים שורת פקודה כמנהל בתיקייה הזו ומריצים:"
-Write-Host "      python -m kidtime --reset-pin 1234"
-Write-Host ""
-Write-Host "להסרה: לחיצה כפולה על 'הסרה.bat'"
-Write-Host ""
+Show-Dialog (
+    "ההתקנה הסתיימה. עוד רגע ייפתח מסך על כל המסך —`n" +
+    "שם קובעים קוד הורים ומוסיפים את שמות הילדים.`n`n" +
+    "שני דברים שכדאי לדעת:`n`n" +
+    "1. חשבון ה-Windows של הילדים צריך להיות 'משתמש רגיל' ולא מנהל,`n" +
+    "    אחרת אפשר לשנות את השעון או לבטל את המשימה המתוזמנת.`n`n" +
+    "2. אם שוכחים את קוד ההורים — פותחים שורת פקודה כמנהל`n" +
+    "    בתיקייה הזו ומריצים:  python -m kidtime --reset-pin 1234`n`n" +
+    "להסרה: לחיצה כפולה על 'הסרה.bat'.") "KidTime — ההתקנה הושלמה"
