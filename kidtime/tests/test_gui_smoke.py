@@ -392,3 +392,66 @@ def test_renaming_a_child_updates_the_tile(app):
     app.lock.tick()
     pump(app)
     assert app.lock._tiles[kid["id"]]["name"]["text"] == "נועם החדש"
+
+
+def test_settings_tab_is_taller_than_the_window_and_scrolls(app):
+    """הכפתורים בתחתית ההגדרות היו מחוץ לחלון ובלי דרך להגיע אליהם."""
+    panel = ParentPanel(app)
+    panel.open_tab("settings")
+    pump(app)
+    panel.win.geometry("820x600")
+    pump(app)
+    top, bottom = panel.canvas.yview()
+    assert (bottom - top) < 1.0          # התוכן באמת ארוך מהחלון
+    panel.canvas.yview_moveto(1.0)
+    pump(app)
+    assert panel.canvas.yview()[1] == 1.0   # אפשר להגיע עד הסוף
+    panel.close()
+
+
+def test_change_pin_button_exists_in_settings(app):
+    panel = ParentPanel(app)
+    panel.open_tab("settings")
+    pump(app)
+    labels = []
+
+    def walk(widget):
+        for child in widget.winfo_children():
+            text = ""
+            try:
+                text = str(child.cget("text"))
+            except tk.TclError:
+                pass
+            if text:
+                labels.append(text)
+            walk(child)
+
+    walk(panel.body)
+    assert "שינוי קוד הורים" in labels
+    assert "כיבוי המערכת" in labels
+    panel.close()
+
+
+def test_changing_the_pin_rejects_a_wrong_current_code(app):
+    dialog = ChangePin(app)
+    pump(app)
+    dialog.fields["current"].insert(0, "9999")
+    dialog.fields["new"].insert(0, "5678")
+    dialog.fields["again"].insert(0, "5678")
+    dialog.submit()
+    pump(app)
+    assert app.store.check_pin("1234") is True     # הקוד הישן עדיין תקף
+    assert app.store.check_pin("5678") is False
+    dialog.close()
+
+
+def test_changing_the_pin_rejects_a_mismatched_confirmation(app):
+    dialog = ChangePin(app)
+    pump(app)
+    dialog.fields["current"].insert(0, "1234")
+    dialog.fields["new"].insert(0, "5678")
+    dialog.fields["again"].insert(0, "8765")
+    dialog.submit()
+    pump(app)
+    assert app.store.check_pin("1234") is True
+    dialog.close()

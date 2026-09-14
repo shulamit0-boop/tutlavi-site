@@ -115,8 +115,26 @@ class ParentPanel:
 
         self.tabbar = tk.Frame(self.win, bg=theme.PANEL, padx=14, pady=10)
         self.tabbar.pack(fill="x")
-        self.body = tk.Frame(self.win, bg=theme.BG, padx=22, pady=18)
-        self.body.pack(fill="both", expand=True)
+        # גוף גליל: לשונית ההגדרות ארוכה מהחלון, וכפתורי שינוי הקוד וכיבוי
+        # המערכת יושבים בתחתיתה — בלי גלילה הם פשוט לא נגישים.
+        holder = tk.Frame(self.win, bg=theme.BG)
+        holder.pack(fill="both", expand=True)
+        self.canvas = tk.Canvas(holder, bg=theme.BG, highlightthickness=0, bd=0)
+        self.scrollbar = tk.Scrollbar(
+            holder, orient="vertical", command=self.canvas.yview,
+            bg=theme.PANEL2, troughcolor=theme.BG, activebackground=theme.LINE,
+            relief="flat", bd=0, highlightthickness=0, width=12,
+        )
+        self.scrollbar.pack(side="left", fill="y")      # ימין-לשמאל: הפס בצד שמאל
+        self.canvas.pack(side="right", fill="both", expand=True)
+        self.canvas.configure(yscrollcommand=self.scrollbar.set)
+
+        self.body = tk.Frame(self.canvas, bg=theme.BG, padx=22, pady=18)
+        self._body_id = self.canvas.create_window((0, 0), window=self.body, anchor="nw")
+        self.body.bind("<Configure>", self._resize_body)
+        self.canvas.bind("<Configure>", self._resize_body)
+        self.canvas.bind("<Enter>", lambda _e: self._wheel(True))
+        self.canvas.bind("<Leave>", lambda _e: self._wheel(False))
 
         self.tabs: dict[str, tuple[tk.Button, callable]] = {}
         for key, text, builder in (
@@ -141,6 +159,29 @@ class ParentPanel:
         theme.show_modal(self.win)
 
     # ------------------------------------------------------------------ שלד
+    def _resize_body(self, _event=None) -> None:
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+        self.canvas.itemconfigure(self._body_id, width=self.canvas.winfo_width())
+
+    def _wheel(self, enable: bool) -> None:
+        """גלילה בגלגל העכבר רק כשהסמן מעל הפאנל."""
+        if enable:
+            self.canvas.bind_all("<MouseWheel>", self._on_wheel)
+            self.canvas.bind_all("<Button-4>", self._on_wheel)
+            self.canvas.bind_all("<Button-5>", self._on_wheel)
+        else:
+            for sequence in ("<MouseWheel>", "<Button-4>", "<Button-5>"):
+                self.canvas.unbind_all(sequence)
+
+    def _on_wheel(self, event) -> None:
+        if getattr(event, "num", None) == 4:
+            step = -1
+        elif getattr(event, "num", None) == 5:
+            step = 1
+        else:
+            step = -1 if event.delta > 0 else 1
+        self.canvas.yview_scroll(step, "units")
+
     def open_tab(self, key: str) -> None:
         self.current = key
         for name, (button, _builder) in self.tabs.items():
@@ -150,6 +191,9 @@ class ParentPanel:
         for widget in self.body.winfo_children():
             widget.destroy()
         self.tabs[key][1]()
+        self.canvas.yview_moveto(0)     # כל לשונית מתחילה מלמעלה
+        self.body.update_idletasks()
+        self._resize_body()
 
     def refresh(self, message: str = "") -> None:
         self.store.save()
@@ -465,6 +509,7 @@ class ParentPanel:
     # ----------------------------------------------------------------- סגירה
     def close(self) -> None:
         self.store.save_if_dirty()
+        self._wheel(False)
         self.app.modal_open = False
         try:
             self.win.grab_release()
