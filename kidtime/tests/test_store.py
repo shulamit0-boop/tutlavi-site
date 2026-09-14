@@ -196,3 +196,16 @@ def test_removing_a_child_drops_their_requests(store):
     store.remove_child(kid["id"])
     assert store.children == []
     assert store.pending_requests() == []
+
+
+def test_boot_grace_is_given_once_per_boot(store):
+    boot = 1_700_000_000.0
+    assert store.claim_boot_grace(boot) is True      # הדלקה חדשה
+    assert store.claim_boot_grace(boot) is False     # אותה הדלקה — לא שוב
+    assert store.claim_boot_grace(boot + 30) is False  # סחיפה קטנה בשעון
+    assert store.claim_boot_grace(boot + 5000) is True  # הדלקה אחרת
+
+
+def test_boot_grace_is_given_when_boot_time_is_unknown(store):
+    assert store.claim_boot_grace(0) is True
+    assert store.claim_boot_grace(0) is True

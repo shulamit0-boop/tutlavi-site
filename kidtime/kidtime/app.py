@@ -9,6 +9,7 @@ from datetime import datetime
 from . import theme, winsys
 from .config import fmt_clock
 from .control import SingleInstance  # noqa: F401  — מיוצא מכאן לתאימות לאחור
+from .grace import GraceWindow
 from .hud import Hud
 from .lockscreen import LockScreen
 from .parent import ParentPanel, PinDialog
@@ -17,7 +18,7 @@ from .store import Store
 
 log = logging.getLogger("kidtime.app")
 
-LOCKED, SESSION, DISABLED = "locked", "session", "disabled"
+LOCKED, SESSION, DISABLED, GRACE = "locked", "session", "disabled", "grace"
 
 TICK_MS = 1000
 MAX_TICK_DELTA = 10.0   # לא מחייבים יותר מזה בטיק אחד (עומס/השהיה)
@@ -50,6 +51,7 @@ class KidTimeApp:
 
         self.lock = LockScreen(self)
         self.hud = Hud(self)
+        self.grace = GraceWindow(self)
 
     # ------------------------------------------------------------------ הפעלה
     def run(self) -> None:
@@ -58,17 +60,33 @@ class KidTimeApp:
         self.root.mainloop()
 
     def start(self) -> None:
-        """המסך הראשון: אשף אם המערכת לא הוגדרה, אחרת נעילה רגילה."""
+        """המסך הראשון: אשף, חלון בטיחות, או נעילה — לפי המצב."""
         if not self.store.has_pin or not self.store.children:
             # מחשב שעדיין לא הוגדר לא נועל את עצמו: קודם האשף, והנעילה
             # מתחילה רק אחרי שיש קוד הורים ולפחות ילד/ה אחד/ת.
             self.setup_mode = True
             SetupWizard(self, self._setup_finished)
-        else:
-            self.on_state_changed()
+            return
+
+        seconds = int(self.store.cfg("grace_seconds"))
+        if seconds > 0 and self.store.claim_boot_grace(winsys.boot_stamp()):
+            self.store.save_if_dirty()
+            self.enter_grace(seconds)
+            return
+        self.on_state_changed()
 
     def _setup_finished(self) -> None:
+        """אחרי ההגדרה הראשונה — המחשב נשאר פתוח, שיהיה זמן להתארגן."""
         self.setup_mode = False
+        minutes = int(self.store.cfg("setup_grace_minutes"))
+        if minutes > 0:
+            until = self.store.disable_for(minutes)
+            self.store.save()
+            self.on_state_changed()
+            self.toast(
+                f"ההגדרה הושלמה. המחשב פתוח עד {until.strftime('%H:%M')} — "
+                f"הנעילה תתחיל אחר כך.", theme.OK, 10)
+            return
         self.on_state_changed()
 
     def shutdown(self) -> None:
@@ -98,6 +116,7 @@ class KidTimeApp:
     def enter_locked(self) -> None:
         changed = self.mode != LOCKED
         self.mode = LOCKED
+        self.grace.hide()
         self.hud.hide()
         self.lock.show()
         if changed:
@@ -109,12 +128,26 @@ class KidTimeApp:
     def enter_session(self) -> None:
         self.mode = SESSION
         self.set_kiosk(False)
+        self.grace.hide()
         self.lock.hide()
         self.hud.show("session")
+
+    def enter_grace(self, seconds: int) -> None:
+        """חלון בטיחות: המחשב פתוח לגמרי, עם ספירה לאחור לנעילה."""
+        self.mode = GRACE
+        self.set_kiosk(False)
+        self.lock.hide()
+        self.hud.hide()
+        self.grace.show(seconds)
+
+    def end_grace(self) -> None:
+        self.grace.hide()
+        self.enter_locked()
 
     def enter_disabled(self) -> None:
         self.mode = DISABLED
         self.set_kiosk(False)
+        self.grace.hide()
         self.lock.hide()
         self.hud.show("disabled")
 
@@ -243,6 +276,13 @@ class KidTimeApp:
         if self.mode == DISABLED:
             self.enter_locked()
             self.lock.message("ההשבתה הסתיימה — המערכת חזרה לפעול.")
+
+        if self.mode == GRACE:
+            if self.grace.tick() <= 0:
+                self.end_grace()
+                self.lock.message("חלון הבטיחות הסתיים. המערכת פעילה.")
+            self._periodic_save()
+            return
 
         if self.session:
             self._tick_session(now)

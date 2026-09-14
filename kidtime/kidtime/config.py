@@ -18,6 +18,8 @@ DEFAULT_CONFIG = {
     "enforcement": "lock_screen",  # "lock_screen" או "workstation_lock"
     "hide_taskbar": True,         # להסתיר את שורת המשימות של Windows בזמן נעילה
     "block_hotkeys": True,        # לחסום Win / Alt+Tab / Alt+F4 בזמן נעילה
+    "grace_seconds": 60,          # חלון בטיחות אחרי הדלקת המחשב, לפני שהנעילה מתחילה
+    "setup_grace_minutes": 15,    # כמה זמן המחשב נשאר פתוח מיד אחרי ההגדרה הראשונה
     "warn_seconds": [300, 60, 10],  # התראות לפני סוף הזמן
     "max_request_minutes": 60,    # תקרה לבקשת זמן של ילד/ה
     "pin_max_failures": 5,        # כמה טעויות PIN לפני השהיה

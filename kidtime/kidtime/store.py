@@ -60,6 +60,7 @@ class Store:
             "disabled_until": None,
             "last_day_key": None,
             "clock_warning": False,
+            "grace_boot_at": None,
         }
 
     def _load(self) -> dict:
@@ -263,6 +264,22 @@ class Store:
             granted = int(minutes if minutes is not None else item["minutes"])
             item["granted_minutes"] = granted
             self.grant_minutes(item["child_id"], granted, now)
+        self.dirty = True
+        return True
+
+    # -------------------------------------------------- חלון בטיחות להורים
+    def claim_boot_grace(self, boot_stamp: float, tolerance: float = 120.0) -> bool:
+        """האם מגיע חלון בטיחות עכשיו — כלומר זו הדלקה שעוד לא קיבלה אחד.
+
+        ``boot_stamp`` הוא זמן העלייה של המחשב. אפס = לא ידוע, ואז נותנים
+        חלון (עדיף להיות סלחניים מלכלוא את ההורה).
+        """
+        if boot_stamp <= 0:
+            return True
+        previous = self.data.get("grace_boot_at")
+        if previous is not None and abs(float(previous) - boot_stamp) <= tolerance:
+            return False
+        self.data["grace_boot_at"] = boot_stamp
         self.dirty = True
         return True
 

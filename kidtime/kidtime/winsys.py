@@ -8,6 +8,7 @@ from __future__ import annotations
 import ctypes
 import logging
 import sys
+import time
 
 log = logging.getLogger("kidtime.winsys")
 
@@ -44,6 +45,30 @@ def idle_seconds() -> float:
         return max(0.0, (ticks - info.dwTime) / 1000.0)
     except Exception:
         return 0.0
+
+
+def uptime_seconds() -> float:
+    """כמה שניות המחשב דולק. 0 אם לא ידוע."""
+    if IS_WINDOWS:
+        try:  # pragma: no cover
+            return max(0.0, kernel32.GetTickCount64() / 1000.0)
+        except Exception:
+            return 0.0
+    try:
+        with open("/proc/uptime", encoding="ascii") as handle:
+            return max(0.0, float(handle.read().split()[0]))
+    except (OSError, ValueError, IndexError):
+        return 0.0
+
+
+def boot_stamp() -> float:
+    """זמן היוניקס שבו המחשב עלה (0 אם לא ידוע).
+
+    משמש כדי לתת את חלון הבטיחות פעם אחת לכל הדלקה — ולא בכל פעם שהתוכנה
+    עולה מחדש, שאחרת אפשר היה לסגור אותה שוב ושוב ולקבל זמן חופשי.
+    """
+    uptime = uptime_seconds()
+    return time.time() - uptime if uptime > 0 else 0.0
 
 
 # ------------------------------------------------------------------- נעילה

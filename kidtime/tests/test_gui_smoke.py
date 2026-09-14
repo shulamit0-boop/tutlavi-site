@@ -231,9 +231,11 @@ def test_unconfigured_computer_is_not_locked_before_setup(tmp_path, clean_root):
 
 def test_locking_starts_only_after_setup_completes(tmp_path, clean_root):
     store = Store(tmp_path / "state.json")
+    store.set_cfg("setup_grace_minutes", 0)   # בלי חלון בטיחות — נעילה מיד
     app = KidTimeApp(windowed=True, store=store, root=clean_root)
     app.start()
     pump(app)
+    assert app.lock.visible is False          # בזמן האשף אין נעילה
     store.set_pin("1234")
     store.add_child("נועם")
     app._setup_finished()
@@ -243,6 +245,7 @@ def test_locking_starts_only_after_setup_completes(tmp_path, clean_root):
 
 
 def test_configured_computer_locks_immediately(app):
+    app.store.set_cfg("grace_seconds", 0)     # בלי חלון בטיחות
     app.start()
     pump(app)
     assert app.setup_mode is False
@@ -289,3 +292,61 @@ def test_stop_command_shuts_down_with_the_right_pin(app):
         assert app._stopping is True
     finally:
         app.guard.release()
+
+
+def test_grace_window_opens_before_locking(app):
+    app.store.set_cfg("grace_seconds", 5)
+    app.start()
+    pump(app)
+    assert app.mode == "grace"
+    assert app.grace.visible is True
+    assert app.lock.visible is False
+
+
+def test_grace_window_locks_when_the_countdown_ends(app):
+    app.store.set_cfg("grace_seconds", 2)
+    app.start()
+    pump(app)
+    for _ in range(3):
+        app._tick_once()
+        pump(app, 1)
+    assert app.mode == "locked"
+    assert app.grace.visible is False
+    assert app.lock.visible is True
+
+
+def test_grace_is_not_given_twice_for_the_same_boot(app):
+    app.store.set_cfg("grace_seconds", 5)
+    app.start()
+    pump(app)
+    assert app.mode == "grace"
+    second = KidTimeApp(windowed=True, store=app.store, root=app.root)
+    second.start()
+    pump(app)
+    assert second.mode == "locked"
+
+
+def test_pausing_the_grace_window_keeps_the_computer_open(app):
+    app.store.set_cfg("grace_seconds", 5)
+    app.store.set_cfg("setup_grace_minutes", 15)
+    app.start()
+    pump(app)
+    app.grace._apply_pause()          # אחרי אישור קוד ההורים
+    pump(app)
+    assert app.mode == "disabled"
+    assert app.store.is_disabled() is True
+    assert app.lock.visible is False
+
+
+def test_setup_leaves_the_computer_open_instead_of_locking(tmp_path, clean_root):
+    store = Store(tmp_path / "state.json")
+    app = KidTimeApp(windowed=True, store=store, root=clean_root)
+    app.start()
+    pump(app)
+    store.set_pin("1234")
+    store.add_child("נועם")
+    app._setup_finished()
+    pump(app)
+    assert app.mode == "disabled"         # לא ננעל מיד אחרי האשף
+    assert store.is_disabled() is True
+    assert app.lock.visible is False

@@ -378,6 +378,8 @@ class ParentPanel:
         self._number_row(frame, "עצירת השעון אחרי חוסר פעילות (שניות)",
                          "idle_pause_seconds", 15, 3600)
         self._number_row(frame, "תקרה לבקשת זמן של ילד/ה (דקות)", "max_request_minutes", 1, 600)
+        self._number_row(frame, "חלון בטיחות אחרי הדלקת המחשב (שניות)", "grace_seconds", 0, 900)
+        self._number_row(frame, "זמן פתוח אחרי הגדרה/השהיה (דקות)", "setup_grace_minutes", 0, 240)
 
         card = self._card(frame)
         theme.label(card, "רמת אכיפה", size=13, weight="bold", bg=theme.PANEL).pack(anchor="e")
