@@ -17,6 +17,7 @@ tk = pytest.importorskip("tkinter")
 if sys.platform.startswith("linux") and not os.environ.get("DISPLAY"):
     pytest.skip("אין תצוגה גרפית", allow_module_level=True)
 
+from kidtime import theme  # noqa: E402
 from kidtime.app import KidTimeApp  # noqa: E402
 from kidtime.control import SingleInstance, send_stop  # noqa: E402
 from kidtime.lockscreen import RequestDialog  # noqa: E402
@@ -455,3 +456,41 @@ def test_changing_the_pin_rejects_a_mismatched_confirmation(app):
     pump(app)
     assert app.store.check_pin("1234") is True
     dialog.close()
+
+
+def _ring_items(canvas):
+    return [(canvas.type(i), canvas.itemcget(i, "outline"))
+            for i in canvas.find_withtag("ring")]
+
+
+def test_a_full_ring_is_drawn_as_a_circle_not_an_arc(app):
+    """באג: קשת של ~360° מצוירת על Windows כרסיס, ומכסה מלאה נראתה ריקה."""
+    canvas = tk.Canvas(app.root, width=200, height=200)
+    theme.ring(canvas, 85, 85, 62, 1.0, "#ef4444")
+    kinds = _ring_items(canvas)
+    assert [kind for kind, _ in kinds] == ["oval", "oval"]
+    assert kinds[1][1] == "#ef4444"          # העיגול הצבעוני, מעל המסילה
+    canvas.destroy()
+
+
+def test_a_partial_ring_is_still_an_arc(app):
+    canvas = tk.Canvas(app.root, width=200, height=200)
+    theme.ring(canvas, 85, 85, 62, 0.5, "#3b82f6")
+    kinds = _ring_items(canvas)
+    assert [kind for kind, _ in kinds] == ["oval", "arc"]
+    canvas.destroy()
+
+
+def test_a_tiny_remainder_is_still_visible(app):
+    canvas = tk.Canvas(app.root, width=200, height=200)
+    theme.ring(canvas, 85, 85, 62, 0.001, "#22c55e")
+    arc = [i for i in canvas.find_withtag("ring") if canvas.type(i) == "arc"][0]
+    assert abs(float(canvas.itemcget(arc, "extent"))) >= theme.MIN_RING_DEGREES
+    canvas.destroy()
+
+
+def test_an_empty_ring_draws_only_the_track(app):
+    canvas = tk.Canvas(app.root, width=200, height=200)
+    theme.ring(canvas, 85, 85, 62, 0.0, "#a855f7")
+    assert [kind for kind, _ in _ring_items(canvas)] == ["oval"]
+    canvas.destroy()

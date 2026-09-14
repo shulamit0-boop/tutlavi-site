@@ -63,16 +63,28 @@ def entry(parent, *, show=None, width=18, size=14, justify="right"):
     )
 
 
+MIN_RING_DEGREES = 6.0   # פחות מזה לא נראה על המסך
+
+
 def ring(canvas: tk.Canvas, x: int, y: int, radius: int, fraction: float, color: str,
          width: int = 9, track: str = LINE) -> None:
-    """טבעת התקדמות: ``fraction`` הוא החלק שנותר (0..1)."""
+    """טבעת התקדמות: ``fraction`` הוא החלק שנותר (0..1).
+
+    טבעת מלאה מצוירת כעיגול ולא כקשת: על Windows קשת בהיקף ~360° מחשבת שתי
+    נקודות קצה שמתעגלות לאותו פיקסל, והתוצאה על המסך היא רסיס במקום מעגל —
+    כלומר ילד/ה שעוד לא השתמשו בכלום נראו כאילו נגמר להם הזמן. בדיוק הפוך.
+    """
     canvas.delete("ring")
     box = (x - radius, y - radius, x + radius, y + radius)
     canvas.create_oval(*box, outline=track, width=width, tags="ring")
     fraction = max(0.0, min(1.0, fraction))
-    if fraction > 0:
+    if fraction >= 0.999:
+        canvas.create_oval(*box, outline=color, width=width, tags="ring")
+    elif fraction > 0:
+        # שארית זעירה עדיין מקבלת קשת שאפשר לראות
+        degrees = max(MIN_RING_DEGREES, 359.0 * fraction)
         canvas.create_arc(
-            *box, start=90, extent=-359.99 * fraction, style=tk.ARC,
+            *box, start=90, extent=-degrees, style=tk.ARC,
             outline=color, width=width, tags="ring",
         )
 
