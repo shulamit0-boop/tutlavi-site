@@ -136,6 +136,7 @@ class ParentPanel:
         self.status.pack(fill="x")
 
         self.current = None
+        self.new_child_entry: tk.Entry | None = None
         self.open_tab("requests" if self.store.pending_requests() else "time")
         theme.show_modal(self.win)
 
@@ -325,6 +326,9 @@ class ParentPanel:
             theme.button(row, "שמירה",
                          lambda k=kid, n=name, q=quota: self._save_child(k, n, q),
                          bg=theme.PANEL2, size=11, padx=12, pady=5).pack(side="left", padx=4)
+            for field in (name, quota):
+                field.bind("<Return>",
+                           lambda _e, k=kid, n=name, q=quota: self._save_child(k, n, q))
             theme.button(row, "מחיקה", lambda k=kid: self._remove_child(k),
                          bg=theme.PANEL2, size=11, padx=12, pady=5).pack(side="left")
 
@@ -334,9 +338,11 @@ class ParentPanel:
         row.pack(anchor="e", pady=(8, 0))
         new_name = theme.entry(row, width=18, size=13)
         new_name.pack(side="right")
+        self.new_child_entry = new_name
         theme.button(row, "הוספה", lambda: self._add_child(new_name), bg=theme.OK,
                      size=11, padx=14, pady=5).pack(side="left", padx=(10, 0))
-        row.bind("<Return>", lambda _e: self._add_child(new_name))
+        new_name.bind("<Return>", lambda _e: self._add_child(new_name))
+        new_name.focus_set()
 
     def _save_child(self, kid: dict, name_entry: tk.Entry, quota_entry: tk.Entry) -> None:
         raw = quota_entry.get().strip()

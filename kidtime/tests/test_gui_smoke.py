@@ -350,3 +350,45 @@ def test_setup_leaves_the_computer_open_instead_of_locking(tmp_path, clean_root)
     assert app.mode == "disabled"         # לא ננעל מיד אחרי האשף
     assert store.is_disabled() is True
     assert app.lock.visible is False
+
+
+def test_adding_a_child_from_the_parent_panel(app):
+    panel = ParentPanel(app)
+    panel.open_tab("children")
+    pump(app)
+    panel.new_child_entry.insert(0, "אורי")
+    panel.new_child_entry.event_generate("<Return>")   # Enter מוסיף, לא רק הכפתור
+    pump(app)
+    assert "אורי" in [kid["name"] for kid in app.store.children]
+    panel.close()
+
+
+def test_new_child_appears_on_the_lock_screen_without_a_restart(app):
+    """באג: אריח חדש לא הופיע עד שמצב המערכת השתנה."""
+    app.enter_locked()
+    pump(app)
+    before = len(app.lock._tiles)
+    app.store.add_child("אורי")
+    app.lock.tick()
+    pump(app)
+    assert len(app.lock._tiles) == before + 1
+
+
+def test_removing_a_child_clears_the_tile(app):
+    app.enter_locked()
+    pump(app)
+    kid = app.store.children[0]
+    app.store.remove_child(kid["id"])
+    app.lock.tick()
+    pump(app)
+    assert kid["id"] not in app.lock._tiles
+
+
+def test_renaming_a_child_updates_the_tile(app):
+    app.enter_locked()
+    pump(app)
+    kid = app.store.children[0]
+    app.store.rename_child(kid["id"], "נועם החדש")
+    app.lock.tick()
+    pump(app)
+    assert app.lock._tiles[kid["id"]]["name"]["text"] == "נועם החדש"

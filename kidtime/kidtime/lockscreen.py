@@ -24,6 +24,7 @@ class LockScreen:
         self.store = app.store
         self.visible = False
         self._tiles: dict[str, dict] = {}
+        self._signature: tuple = ()
         self._message_until = 0.0
 
         self.win = tk.Toplevel(app.root)
@@ -117,11 +118,15 @@ class LockScreen:
             pass
 
     # ------------------------------------------------------------------ תוכן
+    def _signature_now(self) -> tuple:
+        return tuple((kid["id"], kid["name"], kid["color"]) for kid in self.store.children)
+
     def refresh(self) -> None:
         """בונה מחדש את אריחי הילדים (אחרי שינוי ברשימה)."""
         for widget in self.tiles_frame.winfo_children():
             widget.destroy()
         self._tiles.clear()
+        self._signature = self._signature_now()
 
         children = self.store.children
         if not children:
@@ -169,7 +174,14 @@ class LockScreen:
         self.app.start_session(child_id)
 
     def tick(self) -> None:
-        """עדכון שעון, זמנים שנותרו וטבעות — נקרא כל שנייה."""
+        """עדכון שעון, זמנים שנותרו וטבעות — נקרא כל שנייה.
+
+        אם רשימת הילדים השתנתה (הוספה/מחיקה/שינוי שם בפאנל ההורים) —
+        בונים את האריחים מחדש, בלי לחכות לשינוי מצב.
+        """
+        if self._signature != self._signature_now():
+            self.refresh()
+            return
         now = datetime.now()
         self.clock_label.configure(text=now.strftime("%H:%M"))
         self.date_label.configure(text=hebrew_date(now))
