@@ -1,11 +1,14 @@
 """מסך הנעילה — המסך הראשי שאליו המערכת תמיד חוזרת."""
 from __future__ import annotations
 
+import logging
 import tkinter as tk
 from datetime import datetime
 
 from . import theme, winsys
 from .config import fmt_clock
+
+log = logging.getLogger("kidtime.lockscreen")
 
 WEEKDAYS = ["שני", "שלישי", "רביעי", "חמישי", "שישי", "שבת", "ראשון"]
 MONTHS = ["ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני", "יולי",
@@ -83,6 +86,10 @@ class LockScreen:
             self._apply_geometry()   # לפני deiconify — אחרת Windows ממסגר את החלון
             self.win.deiconify()
             self.refresh()
+            try:
+                self.win.focus_set()
+            except tk.TclError:
+                pass
         self.assert_on_top()
 
     def hide(self) -> None:
@@ -103,17 +110,25 @@ class LockScreen:
         self.win.attributes("-topmost", True)
 
     def assert_on_top(self) -> None:
-        """נקראת כל שנייה — מחזירה את החלון לחזית אם משהו קפץ מעליו."""
-        if not self.visible or self.app.windowed:
+        """מחזירה את החלון לחזית — אבל רק כשהוא באמת איבד אותה.
+
+        קודם זה רץ כל שנייה בלי תנאי: ``lift`` + ``-topmost`` + ``focus_force``,
+        גם כשהחלון כבר היה בחזית. שינוי בערימת החלונות או בפוקוס באמצע לחיצה
+        מבטל את הלחיצה ב-Tk — הכפתור נלחץ ולא קורה כלום. עכשיו, כל עוד אנחנו
+        בחזית, לא נוגעים בחלון בכלל.
+        """
+        if not self.visible or self.app.windowed or self.app.modal_open:
+            return
+        try:
+            hwnd = self.win.winfo_id()
+        except tk.TclError:
+            return
+        if winsys.is_foreground(hwnd):
             return
         try:
             self.win.attributes("-topmost", True)
-            if self.app.modal_open:
-                return  # דיאלוג פתוח מעלינו — לא מכסים אותו
             self.win.lift()
-            winsys.force_foreground(self.win.winfo_id())
-            if self.win.winfo_viewable():
-                self.win.focus_force()
+            winsys.force_foreground(hwnd)
         except tk.TclError:
             pass
 
@@ -168,6 +183,7 @@ class LockScreen:
         return tile
 
     def _pick(self, child_id: str) -> None:
+        log.info("נלחץ אריח של %s", child_id)
         if self.store.remaining_seconds(child_id) < 30:
             self.open_request(child_id)
             return

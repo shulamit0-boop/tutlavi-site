@@ -85,7 +85,12 @@ def lock_workstation() -> bool:
 
 # ------------------------------------------------------------- שורת המשימות
 def set_taskbar_visible(visible: bool) -> None:
-    """מסתיר/מציג את שורת המשימות ואת כפתור התחל."""
+    """מסתיר/מציג את שורת המשימות.
+
+    בעבר הוסתר כאן גם ``FindWindowW("Button", None)`` — טריק מימי XP לכפתור
+    התחל. ב-Windows מודרני אין חלון עליון כזה, והחיפוש היה תופס חלון "Button"
+    אקראי של תוכנה אחרת ומסתיר אותו.
+    """
     if not IS_WINDOWS:
         return
     try:  # pragma: no cover
@@ -95,9 +100,6 @@ def set_taskbar_visible(visible: bool) -> None:
             while hwnd:
                 user32.ShowWindow(hwnd, sw)
                 hwnd = user32.FindWindowExW(None, hwnd, cls, None)
-        start = user32.FindWindowW("Button", None)
-        if start:
-            user32.ShowWindow(start, sw)
     except Exception:
         log.exception("שינוי מצב שורת המשימות נכשל")
 
@@ -118,26 +120,53 @@ def virtual_screen_rect() -> tuple[int, int, int, int]:
         return (0, 0, 0, 0)
 
 
+def root_hwnd(hwnd: int) -> int:
+    """ה-HWND העליון של החלון. Tk מחזיר לפעמים חלון פנימי."""
+    if not IS_WINDOWS or not hwnd:
+        return hwnd
+    try:  # pragma: no cover
+        return user32.GetAncestor(hwnd, 2) or hwnd  # GA_ROOT
+    except Exception:
+        return hwnd
+
+
+def is_foreground(hwnd: int) -> bool:
+    """האם החלון הזה הוא חלון החזית כרגע."""
+    if not IS_WINDOWS or not hwnd:
+        return True          # מחוץ ל-Windows אין מה לאכוף
+    try:  # pragma: no cover
+        return user32.GetForegroundWindow() == root_hwnd(hwnd)
+    except Exception:
+        return True
+
+
 def force_foreground(hwnd: int) -> None:
-    """מושך חלון לחזית גם כשה-shell מסרב (טריק AttachThreadInput)."""
+    """מושך חלון לחזית גם כשה-shell מסרב (טריק AttachThreadInput).
+
+    ⚠️ ``AttachThreadInput`` ממזג את תורי הקלט של שני חוטים. מיזוג שנשאר
+    פתוח משבש קלט עכבר בכל המערכת, ולכן הניתוק חייב לרוץ ב-``finally``
+    גם כשמשהו באמצע נכשל.
+    """
     if not IS_WINDOWS or not hwnd:
         return
+    hwnd = root_hwnd(hwnd)
     try:  # pragma: no cover
-        root = user32.GetAncestor(hwnd, 2)  # GA_ROOT — Tk מחזיר לפעמים חלון פנימי
-        hwnd = root or hwnd
         foreground = user32.GetForegroundWindow()
         if foreground == hwnd:
             return
         target = user32.GetWindowThreadProcessId(foreground, None)
         current = kernel32.GetCurrentThreadId()
         attached = False
-        if target and target != current:
-            attached = bool(user32.AttachThreadInput(current, target, True))
-        user32.ShowWindow(hwnd, 9)  # SW_RESTORE
-        user32.BringWindowToTop(hwnd)
-        user32.SetForegroundWindow(hwnd)
-        if attached:
-            user32.AttachThreadInput(current, target, False)
+        try:
+            if target and target != current:
+                attached = bool(user32.AttachThreadInput(current, target, True))
+            if user32.IsIconic(hwnd):
+                user32.ShowWindow(hwnd, 9)  # SW_RESTORE — רק אם באמת ממוזער
+            user32.BringWindowToTop(hwnd)
+            user32.SetForegroundWindow(hwnd)
+        finally:
+            if attached:
+                user32.AttachThreadInput(current, target, False)
     except Exception:
         log.debug("force_foreground נכשל", exc_info=True)
 

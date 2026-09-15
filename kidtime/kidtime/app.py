@@ -331,7 +331,9 @@ class KidTimeApp:
 
     # ----------------------------------------------------------------- הורים
     def open_parent(self) -> None:
+        log.info("נלחץ כפתור ההורים")
         if self.modal_open:
+            log.info("דיאלוג אחר כבר פתוח — מתעלמים")
             return
         if not self.store.has_pin:
             SetupWizard(self, self.on_state_changed)

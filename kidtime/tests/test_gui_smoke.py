@@ -17,7 +17,7 @@ tk = pytest.importorskip("tkinter")
 if sys.platform.startswith("linux") and not os.environ.get("DISPLAY"):
     pytest.skip("אין תצוגה גרפית", allow_module_level=True)
 
-from kidtime import theme  # noqa: E402
+from kidtime import lockscreen, theme  # noqa: E402
 from kidtime.app import KidTimeApp  # noqa: E402
 from kidtime.control import SingleInstance, send_stop  # noqa: E402
 from kidtime.lockscreen import RequestDialog  # noqa: E402
@@ -494,3 +494,51 @@ def test_an_empty_ring_draws_only_the_track(app):
     theme.ring(canvas, 85, 85, 62, 0.0, "#a855f7")
     assert [kind for kind, _ in _ring_items(canvas)] == ["oval"]
     canvas.destroy()
+
+
+def test_lock_screen_leaves_itself_alone_while_it_is_in_front(app, monkeypatch):
+    """באג: lift + focus_force כל שנייה ביטלו לחיצות על הכפתורים."""
+    forced = []
+    monkeypatch.setattr(lockscreen.winsys, "is_foreground", lambda _h: True)
+    monkeypatch.setattr(lockscreen.winsys, "force_foreground", lambda h: forced.append(h))
+    app.enter_locked()
+    pump(app)
+    app.windowed = False
+    app.lock.assert_on_top()
+    assert forced == []
+
+
+def test_lock_screen_comes_back_when_something_covered_it(app, monkeypatch):
+    forced = []
+    monkeypatch.setattr(lockscreen.winsys, "is_foreground", lambda _h: False)
+    monkeypatch.setattr(lockscreen.winsys, "force_foreground", lambda h: forced.append(h))
+    app.enter_locked()
+    pump(app)
+    app.windowed = False
+    app.lock.assert_on_top()
+    assert len(forced) == 1
+
+
+def _click(widget) -> None:
+    """לחיצת עכבר אמיתית: כניסה, לחיצה, שחרור — לא invoke()."""
+    widget.event_generate("<Enter>", x=5, y=5)
+    widget.event_generate("<Button-1>", x=5, y=5)
+    widget.event_generate("<ButtonRelease-1>", x=5, y=5)
+
+
+def test_clicking_the_parents_button_opens_the_pin_dialog(app):
+    app.enter_locked()
+    pump(app)
+    _click(app.lock.parent_btn)
+    pump(app)
+    assert app.modal_open is True       # דיאלוג הקוד נפתח מלחיצה אמיתית
+
+
+def test_clicking_a_child_tile_starts_a_session(app):
+    app.enter_locked()
+    pump(app)
+    kid = app.store.children[0]
+    tile = app.lock._tiles[kid["id"]]
+    tile["frame"].event_generate("<Button-1>", x=5, y=5)
+    pump(app)
+    assert app.session_child_id() == kid["id"]
