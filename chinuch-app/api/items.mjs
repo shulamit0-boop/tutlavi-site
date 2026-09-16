@@ -29,8 +29,9 @@ const safeLink = (v) => {
   return /^https?:\/\//i.test(s) ? s : '';
 };
 
-/* מה שהדפדפן מקבל לראות. blobUrl ו-thumbUrl נשארים בשרת. */
-const publicItem = (it) => ({
+/* מה שהדפדפן מקבל לראות. blobUrl ו-thumbUrl נשארים בשרת, וגם כתובת המייל
+   של מי שהעלתה לא נחשפת למורות אחרות — רק השם. */
+const publicItem = (it, me) => ({
   id: it.id,
   kind: it.kind,
   title: it.title,
@@ -52,12 +53,19 @@ const publicItem = (it) => ({
   createdAt: it.createdAt,
   views: it.views || 0,
   downloads: it.downloads || 0,
+  canEdit: me ? canEdit(it, me) : false,
 });
 
 const canSee = (it, me) =>
-  me.role === 'admin' || it.visibility === 'all' || it.schoolId === me.schoolId;
+  me.role === 'super' || it.visibility === 'all' || it.schoolId === me.schoolId;
 
-const canEdit = (it, me) => me.role === 'admin' || it.schoolId === me.schoolId;
+/* מורה עורכת ומוחקת את מה שהיא העלתה. מנהלת בית ספר — כל מה שבבית הספר
+   שלה. מנהלת המערכת — הכל. */
+const canEdit = (it, me) => {
+  if (me.role === 'super') return true;
+  if (me.role === 'principal') return Boolean(me.schoolId) && it.schoolId === me.schoolId;
+  return Boolean(it.uploaderEmail) && it.uploaderEmail === me.email;
+};
 
 export async function loadItems() {
   const ids = (await kvGet(INDEX)) || [];
@@ -144,8 +152,11 @@ export default async function handler(req) {
         relevant: buildRelevant(visible, cfg.cats, rel, today),
         cats: cfg.cats.map((c) => ({ ...c, count: counts[c.slug] || 0 })),
         schools: cfg.schools.map((s) => ({ id: s.id, name: s.name })),
-        items: visible.map(publicItem),
-        trash: me.role === 'admin' ? items.filter((it) => it.deletedAt).map(publicItem) : [],
+        items: visible.map((it) => publicItem(it, me)),
+        trash:
+          me.role === 'super'
+            ? items.filter((it) => it.deletedAt).map((it) => publicItem(it, me))
+            : [],
       },
       { headers: { 'Cache-Control': 'no-store' } }
     );
@@ -176,14 +187,14 @@ export default async function handler(req) {
     }
 
     if (body.action === 'pin') {
-      if (me.role !== 'admin') return Response.json({ error: 'forbidden' }, { status: 403 });
+      if (me.role !== 'super') return Response.json({ error: 'forbidden' }, { status: 403 });
       it.pinned = !it.pinned;
       await kvSet(`item:${id}`, it);
       return Response.json({ ok: true, pinned: it.pinned });
     }
 
     if (body.action === 'restore') {
-      if (me.role !== 'admin') return Response.json({ error: 'forbidden' }, { status: 403 });
+      if (me.role !== 'super') return Response.json({ error: 'forbidden' }, { status: 403 });
       delete it.deletedAt;
       await kvSet(`item:${id}`, it);
       return Response.json({ ok: true });
@@ -216,8 +227,9 @@ export default async function handler(req) {
       relFrom: isoDate(body.relFrom),
       relTo: isoDate(body.relTo),
       visibility: body.visibility === 'all' ? 'all' : 'school',
-      schoolId: me.role === 'admin' ? clean(body.schoolId, 40) || null : me.schoolId,
-      uploader: clean(body.uploader, 60),
+      schoolId: me.role === 'super' ? clean(body.schoolId, 40) || null : me.schoolId,
+      uploader: me.name || clean(body.uploader, 60),
+      uploaderEmail: me.email,
       createdAt: new Date().toISOString(),
       views: 0,
       downloads: 0,
@@ -252,14 +264,8 @@ export default async function handler(req) {
     if (!okItem) return Response.json({ error: 'store write failed' }, { status: 500 });
     ids.push(it.id);
     await kvSet(INDEX, ids.slice(-20000));
-    await logAction({
-      what: 'create',
-      id: it.id,
-      title: it.title,
-      school: it.schoolId,
-      by: me.schoolName,
-    });
-    return Response.json({ ok: true, item: publicItem(it) });
+    await logAction({ what: 'create', id: it.id, title: it.title, school: it.schoolId, by: me.email });
+    return Response.json({ ok: true, item: publicItem(it, me) });
   }
 
   /* ---------- עריכה ---------- */
@@ -299,8 +305,8 @@ export default async function handler(req) {
 
     const saved = await kvSet(`item:${id}`, it);
     if (!saved) return Response.json({ error: 'store write failed' }, { status: 500 });
-    await logAction({ what: 'edit', id, title: it.title, by: me.schoolName });
-    return Response.json({ ok: true, item: publicItem(it) });
+    await logAction({ what: 'edit', id, title: it.title, by: me.email });
+    return Response.json({ ok: true, item: publicItem(it, me) });
   }
 
   /* ---------- מחיקה רכה ---------- */
@@ -314,7 +320,7 @@ export default async function handler(req) {
     it.pinned = false;
     const saved = await kvSet(`item:${id}`, it);
     if (!saved) return Response.json({ error: 'store write failed' }, { status: 500 });
-    await logAction({ what: 'delete', id, title: it.title, by: me.schoolName });
+    await logAction({ what: 'delete', id, title: it.title, by: me.email });
     return Response.json({ ok: true });
   }
 

@@ -1,9 +1,12 @@
 /* עיצובי בית חינוך — הלוגיקה של הדף.
    בלי framework ובלי build: הדף הזה נטען גם ברשת של בית ספר בשעת שיא.
 
-   הערה על התצוגות: כל מה שמוצג מגיע מקריאה אחת ל-/api/items. הסינון,
-   החיפוש והמיון קורים בדפדפן, כי בהיקף של מאות עיצובים זה מיידי — ורק
-   הרלוונטיות מחושבת בשרת, כי היא צריכה את הלוח העברי. */
+   הזהות: כניסה עם גוגל. הדפדפן מקבל מגוגל ID token ושולח אותו ל-/api/auth,
+   והשרת מנפיק עוגיית סשן משלו. הטוקן של גוגל לא נשמר כאן ולא ב-localStorage.
+
+   התצוגות: כל מה שמוצג מגיע מקריאה אחת ל-/api/items. הסינון, החיפוש והמיון
+   קורים בדפדפן — בהיקף של מאות עיצובים זה מיידי. רק הרלוונטיות מחושבת
+   בשרת, כי היא צריכה את הלוח העברי. */
 
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
@@ -13,9 +16,12 @@ const esc = (s) =>
     ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])
   );
 
-const NAME_KEY = 'bc-teacher-name';
-let D = null; // כל הנתונים מהשרת
-let editing = null; // הפריט שנמצא בעריכה, אם יש
+let D = null; // הנתונים מ-/api/items
+let INFO = null; // התשובה מ-/api/auth
+let STAFF = null; // הנתונים מ-/api/users
+let editing = null;
+
+const ROLE_LABEL = { super: 'ניהול המערכת', principal: 'מנהלת בית ספר', teacher: 'מורה' };
 
 /* ---------- עזרי רשת ---------- */
 
@@ -31,7 +37,12 @@ async function api(path, opts = {}) {
   } catch {
     body = null;
   }
-  if (!res.ok) throw new Error((body && body.error) || `שגיאה ${res.status}`);
+  if (!res.ok) {
+    const err = new Error((body && body.error) || `שגיאה ${res.status}`);
+    err.status = res.status;
+    err.body = body;
+    throw err;
+  }
   return body;
 }
 
@@ -52,66 +63,205 @@ const sizeLabel = (n) =>
 const dateLabel = (iso) => {
   if (!iso) return '';
   const d = new Date(iso);
-  return `${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}`;
+  return Number.isNaN(+d) ? '' : `${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}`;
 };
 
-const schoolLabel = (id) => (D.schools.find((s) => s.id === id) || {}).name || '';
+const schoolName = (id, list) =>
+  ((list || (D && D.schools) || (INFO && INFO.schools) || []).find((s) => s.id === id) || {}).name || '';
 
-/* ---------- כניסה ---------- */
+/* ---------- כניסה עם גוגל ---------- */
 
-$('#gateForm').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const btn = $('#gateBtn');
-  const err = $('#gateErr');
-  err.hidden = true;
-  btn.disabled = true;
-  btn.textContent = 'בודקת…';
+let gisLoaded = null;
+
+function loadGis() {
+  if (gisLoaded) return gisLoaded;
+  gisLoaded = new Promise((resolve, reject) => {
+    const el = document.createElement('script');
+    el.src = 'https://accounts.google.com/gsi/client';
+    el.async = true;
+    el.onload = resolve;
+    el.onerror = () => reject(new Error('לא הצלחתי לטעון את הכניסה של גוגל'));
+    document.head.appendChild(el);
+  });
+  return gisLoaded;
+}
+
+async function showGate(err) {
+  $('#app').hidden = true;
+  $('#wait').hidden = true;
+  $('#gate').hidden = false;
+  $('#gateErr').hidden = !err;
+  if (err) $('#gateErr').textContent = err;
+
+  // כשחסרה הגדרה בשרת, עדיף להגיד מה חסר מלהציג כפתור שלא יעבוד
+  if (!INFO.clientId || !INFO.ready.session) {
+    const missing = [
+      !INFO.clientId ? 'GOOGLE_CLIENT_ID' : '',
+      !INFO.ready.session ? 'SESSION_SECRET' : '',
+      !INFO.ready.store ? 'אחסון הנתונים' : '',
+    ].filter(Boolean);
+    $('#gateSetup').textContent = 'המערכת עוד לא הוגדרה עד הסוף. חסר: ' + missing.join(', ') + '.';
+    $('#gateSetup').hidden = false;
+    return;
+  }
+
   try {
-    await api('/api/auth', { method: 'POST', body: JSON.stringify({ key: $('#gateKey').value }) });
-    const name = $('#gateName').value.trim();
-    if (name) localStorage.setItem(NAME_KEY, name.slice(0, 60));
-    $('#gateKey').value = '';
-    await start();
-  } catch (e2) {
-    err.textContent = e2.message;
-    err.hidden = false;
-  } finally {
-    btn.disabled = false;
-    btn.textContent = 'כניסה';
+    await loadGis();
+    /* global google */
+    google.accounts.id.initialize({
+      client_id: INFO.clientId,
+      callback: onGoogle,
+      auto_select: false,
+      cancel_on_tap_outside: true,
+    });
+    google.accounts.id.renderButton($('#gBtn'), {
+      theme: 'outline',
+      size: 'large',
+      text: 'signin_with',
+      shape: 'pill',
+      locale: 'he',
+      width: 280,
+    });
+  } catch (e) {
+    // הודעה שמורה יכולה לעשות איתה משהו. הנוסח המקורי ("google is not
+    // defined") נכון אבל חסר תועלת למי שרק רוצה להיכנס.
+    console.error(e);
+    $('#gateSetup').textContent =
+      'לא הצלחתי לטעון את הכניסה של גוגל. כדאי לרענן את הדף — ואם זה חוזר, לבדוק אם תוסף בדפדפן חוסם את accounts.google.com.';
+    $('#gateSetup').hidden = false;
+  }
+}
+
+async function onGoogle(response) {
+  try {
+    const out = await api('/api/auth', {
+      method: 'POST',
+      body: JSON.stringify({ credential: response.credential }),
+    });
+    INFO = { ...INFO, me: out.me, schools: out.schools || INFO.schools };
+    if (out.me.role === 'pending') showWait();
+    else await start();
+  } catch (e) {
+    showGate(e.message);
+  }
+}
+
+/* ---------- ממתינה לאישור ---------- */
+
+function showWait() {
+  $('#app').hidden = true;
+  $('#gate').hidden = true;
+  $('#wait').hidden = false;
+  const me = INFO.me;
+  $('#waitWho').textContent = `${me.name || ''} · ${me.email}`;
+  $('#waitErr').hidden = true;
+
+  if (me.status === 'declined') {
+    $('#waitTitle').textContent = 'הבקשה לא אושרה';
+    $('#waitPick').hidden = true;
+    $('#waitState').textContent =
+      'מנהלת בית הספר לא אישרה את הבקשה. אם זו טעות, כדאי לפנות אליה ישירות.';
+    return;
+  }
+
+  const schools = INFO.schools || [];
+  if (!me.schoolId) {
+    $('#waitTitle').textContent = 'עוד צעד אחד';
+    $('#waitPick').hidden = false;
+    $('#waitSchool').innerHTML =
+      '<option value="">— בחירת בית ספר —</option>' +
+      schools.map((s) => `<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('');
+    $('#waitState').textContent = schools.length
+      ? ''
+      : 'עדיין לא הוגדרו בתי ספר במערכת. כדאי לפנות למי שמנהלת אותה.';
+  } else {
+    $('#waitTitle').textContent = 'הבקשה ממתינה לאישור';
+    $('#waitPick').hidden = true;
+    $('#waitState').textContent = `הבקשה נשלחה למנהלת של ${schoolName(me.schoolId, schools)}. אחרי האישור פשוט להיכנס שוב.`;
+  }
+}
+
+$('#waitSend').addEventListener('click', async () => {
+  const schoolId = $('#waitSchool').value;
+  if (!schoolId) {
+    $('#waitErr').textContent = 'צריך לבחור בית ספר';
+    $('#waitErr').hidden = false;
+    return;
+  }
+  try {
+    const out = await api('/api/auth', {
+      method: 'POST',
+      body: JSON.stringify({ action: 'school', schoolId }),
+    });
+    INFO = { ...INFO, me: out.me };
+    showWait();
+    toast('הבקשה נשלחה');
+  } catch (e) {
+    $('#waitErr').textContent = e.message;
+    $('#waitErr').hidden = false;
   }
 });
 
-$('#outBtn').addEventListener('click', async () => {
+$('#waitRefresh').addEventListener('click', () => boot());
+$('#waitOut').addEventListener('click', () => logout());
+
+async function logout() {
   await api('/api/auth', { method: 'POST', body: JSON.stringify({ action: 'logout' }) }).catch(() => {});
   location.reload();
-});
+}
+$('#outBtn').addEventListener('click', logout);
 
 /* ---------- טעינה ---------- */
 
 async function load() {
   D = await api('/api/items');
-  $('#schoolName').textContent = D.me.schoolName || '';
-  $('#adminBtn').hidden = D.me.role !== 'admin';
+  const me = D.me;
+  $('#schoolName').textContent =
+    me.role === 'super' ? ROLE_LABEL.super : schoolName(me.schoolId) || ROLE_LABEL[me.role];
+  $('#adminBtn').hidden = me.role !== 'super';
+  $('#staffBtn').hidden = !(me.role === 'super' || me.role === 'principal');
   $('#footStat').textContent =
-    `${D.items.length} עיצובים · ${D.cats.filter((c) => !c.hidden).length} קטגוריות` +
-    (D.me.role === 'admin' ? ' · מחוברת כניהול' : '');
+    `${D.items.length} עיצובים · ${D.cats.filter((c) => !c.hidden).length} קטגוריות · ` +
+    `${me.name || me.email} (${ROLE_LABEL[me.role]})`;
+  if (!$('#staffBtn').hidden) refreshPending();
+}
+
+/* מונה הבקשות הממתינות מופיע על הכפתור, כדי שמנהלת תראה אותן בלי להיכנס */
+async function refreshPending() {
+  try {
+    STAFF = await api('/api/users');
+    const b = $('#pendBadge');
+    b.textContent = STAFF.pending || '';
+    b.hidden = !STAFF.pending;
+  } catch {
+    /* לא קריטי */
+  }
 }
 
 async function start() {
   $('#gate').hidden = true;
+  $('#wait').hidden = true;
   $('#app').hidden = false;
   await load();
   route();
 }
 
-(async function boot() {
+async function boot() {
   try {
-    await api('/api/auth');
-    await start();
+    INFO = await api('/api/auth');
   } catch {
-    $('#gate').hidden = false;
+    INFO = { me: null, clientId: '', schools: [], ready: {} };
   }
-})();
+  if (!INFO.me) return showGate();
+  if (INFO.me.role === 'pending') return showWait();
+  try {
+    await start();
+  } catch (e) {
+    if (e.status === 403 && e.body && e.body.pending) showWait();
+    else showGate(e.message);
+  }
+}
+boot();
 
 /* ---------- ניווט ---------- */
 
@@ -120,13 +270,22 @@ window.addEventListener('hashchange', route);
 function route() {
   if (!D) return;
   const h = location.hash || '#/';
-  const views = { home: $('#viewHome'), list: $('#viewList'), admin: $('#viewAdmin') };
+  const views = {
+    home: $('#viewHome'),
+    list: $('#viewList'),
+    staff: $('#viewStaff'),
+    admin: $('#viewAdmin'),
+  };
   for (const v of Object.values(views)) v.hidden = true;
+  const staffOk = D.me.role === 'super' || D.me.role === 'principal';
 
   if (h.startsWith('#/c/')) {
     views.list.hidden = false;
     renderList(decodeURIComponent(h.slice(4)));
-  } else if (h === '#/admin' && D.me.role === 'admin') {
+  } else if (h === '#/staff' && staffOk) {
+    views.staff.hidden = false;
+    renderStaff();
+  } else if (h === '#/admin' && D.me.role === 'super') {
     views.admin.hidden = false;
     renderAdmin();
   } else if (h === '#/q') {
@@ -142,8 +301,14 @@ function route() {
 $('#adminBtn').addEventListener('click', () => {
   location.hash = '#/admin';
 });
+$('#staffBtn').addEventListener('click', () => {
+  location.hash = '#/staff';
+});
 
 /* ---------- דף הבית ---------- */
+
+const catNames = (slugs) =>
+  (slugs || []).map((s) => (D.cats.find((c) => c.slug === s) || {}).name).filter(Boolean);
 
 function cardHtml(it, why) {
   const thumb = it.hasThumb
@@ -163,9 +328,6 @@ function cardHtml(it, why) {
       </span>
     </button>`;
 }
-
-const catNames = (slugs) =>
-  (slugs || []).map((s) => (D.cats.find((c) => c.slug === s) || {}).name).filter(Boolean);
 
 function renderHome() {
   const rel = D.rel;
@@ -255,7 +417,6 @@ document.addEventListener('click', (e) => {
 function openItem(id) {
   const it = D.items.find((x) => x.id === id);
   if (!it) return;
-  const mine = D.me.role === 'admin' || it.schoolId === D.me.schoolId;
   const fileHref = `/api/file?id=${encodeURIComponent(it.id)}`;
 
   $('#itemBody').innerHTML = `
@@ -273,7 +434,7 @@ function openItem(id) {
     <div class="view-meta">
       <span>${it.kind === 'file' ? `קובץ ${esc(it.fileName || '')} ${sizeLabel(it.size)}` : 'קישור Canva'}</span>
       ${it.uploader ? `<span>הועלה על ידי ${esc(it.uploader)}</span>` : ''}
-      ${it.schoolId ? `<span>${esc(schoolLabel(it.schoolId))}</span>` : ''}
+      ${it.schoolId ? `<span>${esc(schoolName(it.schoolId))}</span>` : ''}
       <span>${dateLabel(it.createdAt)}</span>
       <span>${it.visibility === 'all' ? 'משותף לכל בתי הספר' : 'בית הספר שלי בלבד'}</span>
       ${it.downloads ? `<span>${it.downloads} הורדות</span>` : ''}
@@ -285,9 +446,9 @@ function openItem(id) {
              <button class="btn" type="button" data-copy="${esc(it.url)}">העתקת הקישור</button>`
           : `<a class="btn primary" href="${fileHref}" download>הורדת הקובץ</a>`
       }
-      ${mine ? `<button class="btn" type="button" data-edit="${esc(it.id)}">עריכה</button>` : ''}
-      ${D.me.role === 'admin' ? `<button class="btn" type="button" data-pin="${esc(it.id)}">${it.pinned ? 'ביטול ההצמדה' : 'הצמדה ל״רלוונטי עכשיו״'}</button>` : ''}
-      ${mine ? `<button class="btn danger" type="button" data-del="${esc(it.id)}">מחיקה</button>` : ''}
+      ${it.canEdit ? `<button class="btn" type="button" data-edit="${esc(it.id)}">עריכה</button>` : ''}
+      ${D.me.role === 'super' ? `<button class="btn" type="button" data-pin="${esc(it.id)}">${it.pinned ? 'ביטול ההצמדה' : 'הצמדה ל״רלוונטי עכשיו״'}</button>` : ''}
+      ${it.canEdit ? `<button class="btn danger" type="button" data-del="${esc(it.id)}">מחיקה</button>` : ''}
     </div>`;
   $('#itemDlg').showModal();
   api('/api/items', { method: 'POST', body: JSON.stringify({ action: 'view', id: it.id }) }).catch(() => {});
@@ -322,7 +483,7 @@ $('#itemBody').addEventListener('click', async (e) => {
     toast('עודכן');
   }
   if (t.dataset.del) {
-    if (!confirm('למחוק את העיצוב? אפשר לשחזר אותו מפאנל הניהול.')) return;
+    if (!confirm('למחוק את העיצוב? מנהלת המערכת יכולה לשחזר אותו.')) return;
     await api(`/api/items?id=${encodeURIComponent(t.dataset.del)}`, { method: 'DELETE' });
     $('#itemDlg').close();
     await load();
@@ -365,11 +526,11 @@ function openForm(it) {
   $$('#kindSwitch button').forEach((b) => b.classList.toggle('on', b.dataset.kind === formKind));
 
   const groups = [
-    ['חודשים', D.cats.filter((c) => c.group === 'month' && !c.hidden), 'month'],
-    ['אירועים ונושאים', D.cats.filter((c) => c.group !== 'month' && !c.hidden), 'event'],
+    [D.cats.filter((c) => c.group === 'month' && !c.hidden), 'month'],
+    [D.cats.filter((c) => c.group !== 'month' && !c.hidden), 'event'],
   ];
   $('#fCats').innerHTML = groups
-    .map(([, list, cls]) =>
+    .map(([list, cls]) =>
       list
         .map(
           (c) =>
@@ -425,6 +586,13 @@ $('#itemForm').addEventListener('submit', async (e) => {
   const save = $('#formSave');
   err.hidden = true;
 
+  function fail(msg) {
+    err.textContent = msg;
+    err.hidden = false;
+    save.disabled = false;
+    prog.textContent = '';
+  }
+
   const title = $('#fTitle').value.trim();
   if (!title) return fail('צריך שם לעיצוב');
   if (!chosenCats.size) return fail('צריך לבחור לפחות קטגוריה אחת');
@@ -434,13 +602,6 @@ $('#itemForm').addEventListener('submit', async (e) => {
   }
   if (formKind === 'file' && !editing && !file) return fail('צריך לבחור קובץ');
   if (file && file.size > 50 * 1024 * 1024) return fail('הקובץ גדול מ-50MB');
-
-  function fail(msg) {
-    err.textContent = msg;
-    err.hidden = false;
-    save.disabled = false;
-    prog.textContent = '';
-  }
 
   save.disabled = true;
   try {
@@ -452,10 +613,8 @@ $('#itemForm').addEventListener('submit', async (e) => {
       visibility: $('#fVis').value,
       relFrom: $('#fFrom').value,
       relTo: $('#fTo').value,
-      uploader: localStorage.getItem(NAME_KEY) || '',
       kind: formKind,
     };
-
     if (formKind === 'link') body.url = $('#fUrl').value.trim();
 
     if (file) {
@@ -483,7 +642,7 @@ $('#itemForm').addEventListener('submit', async (e) => {
     toast(editing ? 'העיצוב עודכן' : 'העיצוב נוסף');
   } catch (e2) {
     fail(
-      /503/.test(e2.message) || /אחסון/.test(e2.message)
+      /אחסון הקבצים/.test(e2.message)
         ? 'אחסון הקבצים עוד לא הוקם ב-Vercel. בינתיים אפשר להוסיף קישור Canva.'
         : e2.message
     );
@@ -493,26 +652,156 @@ $('#itemForm').addEventListener('submit', async (e) => {
   }
 });
 
-/* ---------- פאנל ניהול ---------- */
+/* ---------- המורות ---------- */
+
+const STATUS_LABEL = { active: 'מאושרת', pending: 'ממתינה', declined: 'נדחתה', removed: 'הוסרה' };
+
+async function renderStaff() {
+  STAFF = await api('/api/users');
+  const isSuper = STAFF.me.role === 'super';
+  const users = STAFF.users;
+  const pend = users.filter((u) => u.status === 'pending');
+
+  $('#pendCount').textContent = pend.length || '';
+  $('#pendCount').hidden = !pend.length;
+  $('#pendRows').innerHTML = pend.length
+    ? pend
+        .map(
+          (u) => `
+      <div class="adm-row">
+        <span class="who"><b>${esc(u.name || u.email)}</b><em>${esc(u.email)}</em></span>
+        <span class="muted">${esc(schoolName(u.schoolId, STAFF.schools) || 'לא בחרה בית ספר')}</span>
+        <span class="muted">${esc(dateLabel(u.requestedAt))}</span>
+        <button class="btn tiny primary" type="button" data-act="approve" data-email="${esc(u.email)}">אישור</button>
+        <button class="btn tiny danger" type="button" data-act="decline" data-email="${esc(u.email)}">דחייה</button>
+      </div>`
+        )
+        .join('')
+    : '<p class="panel-note">אין בקשות ממתינות.</p>';
+
+  const active = users.filter((u) => u.status === 'active');
+  $('#userRows').innerHTML = active.length
+    ? active
+        .map(
+          (u) => `
+      <div class="adm-row">
+        <span class="who"><b>${esc(u.name || u.email)}</b><em>${esc(u.email)}</em></span>
+        <span class="muted">${esc(schoolName(u.schoolId, STAFF.schools))}</span>
+        <span class="muted">${u.lastLoginAt ? 'כניסה אחרונה ' + esc(dateLabel(u.lastLoginAt)) : 'עוד לא נכנסה'}</span>
+        ${
+          isSuper && u.role !== 'super'
+            ? `<select data-role="${esc(u.email)}">
+                 <option value="teacher"${u.role === 'teacher' ? ' selected' : ''}>מורה</option>
+                 <option value="principal"${u.role === 'principal' ? ' selected' : ''}>מנהלת בית ספר</option>
+               </select>
+               <select data-school="${esc(u.email)}">
+                 <option value="">— בית ספר —</option>
+                 ${STAFF.schools.map((s) => `<option value="${esc(s.id)}"${u.schoolId === s.id ? ' selected' : ''}>${esc(s.name)}</option>`).join('')}
+               </select>`
+            : `<span class="role-pill">${esc(ROLE_LABEL[u.role] || '')}</span>`
+        }
+        ${
+          u.role === 'super' || u.email === STAFF.me.email
+            ? ''
+            : `<button class="btn tiny danger" type="button" data-act="remove" data-email="${esc(u.email)}">הסרה</button>`
+        }
+      </div>`
+        )
+        .join('')
+    : '<p class="panel-note">אין עוד מורות מאושרות.</p>';
+
+  const inv = $('#invSchool');
+  inv.hidden = !isSuper;
+  if (isSuper) {
+    inv.innerHTML =
+      '<option value="">— בית ספר —</option>' +
+      STAFF.schools.map((s) => `<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('');
+  }
+}
+
+$('#viewStaff').addEventListener('click', async (e) => {
+  const t = e.target;
+  if (!t.dataset.act) return;
+  if (t.dataset.act === 'remove' && !confirm('להסיר את ההרשאה? היא לא תוכל להיכנס יותר.')) return;
+  try {
+    await api('/api/users', {
+      method: 'POST',
+      body: JSON.stringify({ action: t.dataset.act, email: t.dataset.email }),
+    });
+    await renderStaff();
+    await load();
+    toast('עודכן');
+  } catch (err) {
+    toast(err.message);
+  }
+});
+
+$('#viewStaff').addEventListener('change', async (e) => {
+  const t = e.target;
+  try {
+    if (t.dataset.role) {
+      await api('/api/users', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'setRole', email: t.dataset.role, role: t.value }),
+      });
+      toast('התפקיד עודכן');
+    } else if (t.dataset.school) {
+      await api('/api/users', {
+        method: 'POST',
+        body: JSON.stringify({ action: 'setSchool', email: t.dataset.school, schoolId: t.value }),
+      });
+      toast('בית הספר עודכן');
+    } else return;
+    await renderStaff();
+  } catch (err) {
+    toast(err.message);
+    renderStaff();
+  }
+});
+
+$('#invBtn').addEventListener('click', async () => {
+  const err = $('#invErr');
+  err.hidden = true;
+  try {
+    await api('/api/users', {
+      method: 'POST',
+      body: JSON.stringify({
+        action: 'invite',
+        email: $('#invEmail').value.trim(),
+        name: $('#invName').value.trim(),
+        schoolId: $('#invSchool').value,
+      }),
+    });
+    $('#invEmail').value = '';
+    $('#invName').value = '';
+    await renderStaff();
+    toast('המורה הוזמנה — הכניסה הראשונה שלה עם גוגל תעבוד ישר');
+  } catch (e) {
+    err.textContent = e.message;
+    err.hidden = false;
+  }
+});
+
+/* ---------- ניהול המערכת ---------- */
 
 let cfg = null;
 
 async function renderAdmin() {
   if (!cfg) cfg = await api('/api/config');
 
-  $('#schoolRows').innerHTML = cfg.schools
-    .map(
-      (s, i) => `
+  $('#schoolRows').innerHTML = cfg.schools.length
+    ? cfg.schools
+        .map(
+          (s, i) => `
       <div class="adm-row" data-i="${i}">
         <input type="text" value="${esc(s.name)}" data-f="name" placeholder="שם בית הספר">
         <input type="text" value="${esc(s.city)}" data-f="city" placeholder="עיר">
-        <code>${esc(s.key)}</code>
-        <button class="btn tiny" type="button" data-copykey="${esc(s.key)}">העתקה</button>
-        <button class="btn tiny" type="button" data-newkey="${i}">החלפת מפתח</button>
+        <input type="text" value="${esc(s.domain || '')}" data-f="domain" placeholder="דומיין גוגל (לא חובה)">
         <label><input type="checkbox" data-f="active" ${s.active === false ? '' : 'checked'}> פעיל</label>
       </div>`
-    )
-    .join('');
+        )
+        .join('')
+    : '<p class="panel-note">עוד לא הוגדרו בתי ספר. מוסיפים כאן את הראשון.</p>';
 
   $('#catRows').innerHTML = cfg.cats
     .map(
@@ -546,21 +835,6 @@ async function renderAdmin() {
 
 $('#viewAdmin').addEventListener('click', async (e) => {
   const t = e.target;
-
-  if (t.dataset.copykey) {
-    try {
-      await navigator.clipboard.writeText(t.dataset.copykey);
-      toast('המפתח הועתק — אפשר לשלוח אותו למורות של בית הספר');
-    } catch {
-      toast('לא הצלחתי להעתיק. המפתח מוצג על המסך.');
-    }
-  }
-  if (t.dataset.newkey != null) {
-    if (!confirm('להחליף את המפתח? המפתח הקודם יפסיק לעבוד לכל המורות של בית הספר.')) return;
-    collectCfg();
-    cfg.schools[+t.dataset.newkey].newKey = true;
-    await saveCfg();
-  }
   if (t.dataset.up != null || t.dataset.down != null) {
     collectCfg();
     const i = +(t.dataset.up ?? t.dataset.down);
@@ -587,6 +861,7 @@ function collectCfg() {
     if (!s) return;
     s.name = $('[data-f="name"]', row).value;
     s.city = $('[data-f="city"]', row).value;
+    s.domain = $('[data-f="domain"]', row).value;
     s.active = $('[data-f="active"]', row).checked;
   });
   $$('#catRows .adm-row').forEach((row) => {
@@ -622,7 +897,7 @@ $('#saveCfg').addEventListener('click', () => {
 
 $('#addSchool').addEventListener('click', () => {
   collectCfg();
-  cfg.schools.push({ id: '', name: 'בית ספר חדש', city: '', active: true });
+  cfg.schools.push({ id: '', name: 'בית ספר חדש', city: '', domain: '', active: true });
   renderAdmin();
 });
 
@@ -630,7 +905,13 @@ $('#addCat').addEventListener('click', () => {
   collectCfg();
   const name = prompt('שם הקטגוריה החדשה:');
   if (!name) return;
-  const slug = 'c' + Date.now().toString(36);
-  cfg.cats.push({ slug, name, group: 'event', order: cfg.cats.length, hidden: false, desc: '' });
+  cfg.cats.push({
+    slug: 'c' + Date.now().toString(36),
+    name,
+    group: 'event',
+    order: cfg.cats.length,
+    hidden: false,
+    desc: '',
+  });
   renderAdmin();
 });

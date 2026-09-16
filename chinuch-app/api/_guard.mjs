@@ -1,16 +1,18 @@
-/* זיהוי, הרשאות והגבלת קצב.
+/* זהות, הרשאות והגבלת קצב.
 
-   בשלב הזה של המערכת אין עוד חשבונות אישיות למורות (הן מגיעות בשלב הבא).
-   מה שיש הוא **מפתח לכל בית ספר** ומפתח ניהול אחד:
+   הזהות מגיעה מגוגל (ראה _google.mjs). אחרי האימות הראשון אנחנו מנפיקים
+   **עוגיית סשן משלנו**, חתומה ב-HMAC, ולא שומרים את הטוקן של גוגל: הוא פג
+   אחרי שעה, והמורה לא אמורה להתחבר מחדש כל שעה.
 
-   · מפתח ניהול (ADMIN_KEY)  → רואה ועורכת הכל, מנהלת קטגוריות ובתי ספר
-   · מפתח בית ספר            → רואה את הכל שמשותף + את מה שבית הספר שלה העלה
+   העוגייה נושאת רק כתובת מייל וזמן הנפקה. התפקיד, בית הספר והמצב נקראים
+   **מחדש בכל בקשה** מתוך רשימת המשתמשות — כדי שהסרה של מורה תיכנס לתוקף
+   באותו רגע ולא בעוד שלושים יום. */
 
-   הבחירה במפתח לכל בית ספר ולא במפתח אחד לכולן היא מה שהופך את הסימון
-   "בית הספר שלי בלבד" לגבול אמיתי שהשרת אוכף, ולא רק לסינון בתצוגה.
-   כשיתווספו חשבונות אישיות — מתחלף רק המקור של הזהות, לא מודל הנתונים. */
+import { kvIncr, kvGet, kvSet } from './_store.mjs';
 
-import { kvIncr, kvGet } from './_store.mjs';
+const MAX_AGE = 60 * 60 * 24 * 30; // שלושים יום
+export const COOKIE = 'bcs';
+const USERS = 'users';
 
 const header = (req, name) => {
   const h = req.headers;
@@ -24,7 +26,7 @@ export const clientIp = (req) =>
     .split(',')[0]
     .trim() || 'unknown';
 
-// השוואה באורך קבוע, כדי שמפתח שגוי לא ידליף מידע דרך זמן התגובה
+// השוואה באורך קבוע, כדי שחתימה שגויה לא תדליף מידע דרך זמן התגובה
 export const safeEqual = (a, b) => {
   if (typeof a !== 'string' || typeof b !== 'string' || a.length !== b.length) return false;
   let diff = 0;
@@ -32,44 +34,114 @@ export const safeEqual = (a, b) => {
   return diff === 0;
 };
 
-export const COOKIE = 'ck';
+/* ---------- עוגיית הסשן ---------- */
 
-function cookieValue(req, name) {
+export const sessionReady = () => Boolean(process.env.SESSION_SECRET);
+
+const b64url = (bytes) =>
+  btoa(String.fromCharCode(...new Uint8Array(bytes)))
+    .replace(/\+/g, '-')
+    .replace(/\//g, '_')
+    .replace(/=+$/, '');
+
+async function hmac(data) {
+  const key = await crypto.subtle.importKey(
+    'raw',
+    new TextEncoder().encode(process.env.SESSION_SECRET || ''),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  return b64url(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(data)));
+}
+
+export async function signSession(email) {
+  const payload = b64url(new TextEncoder().encode(JSON.stringify({ e: email, t: Date.now() })));
+  return `${payload}.${await hmac(payload)}`;
+}
+
+async function readSession(req) {
+  if (!sessionReady()) return '';
   const raw = header(req, 'cookie');
   if (!raw) return '';
+  let token = '';
   for (const part of raw.split(';')) {
     const [k, ...rest] = part.trim().split('=');
-    if (k === name) return decodeURIComponent(rest.join('='));
+    if (k === COOKIE) token = decodeURIComponent(rest.join('='));
   }
-  return '';
+  if (!token) return '';
+  const [payload, sig] = token.split('.');
+  if (!payload || !sig) return '';
+  if (!safeEqual(sig, await hmac(payload))) return '';
+  try {
+    const { e, t } = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/')));
+    if (!e || !t || Date.now() - t > MAX_AGE * 1000) return '';
+    return String(e).toLowerCase();
+  } catch {
+    return '';
+  }
 }
 
-export const sessionCookie = (key) =>
-  `${COOKIE}=${encodeURIComponent(key)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${60 * 60 * 24 * 30}`;
+const cookieFlags = `Path=/; HttpOnly; Secure; SameSite=Lax`;
+export const sessionCookie = (token) => `${COOKIE}=${encodeURIComponent(token)}; ${cookieFlags}; Max-Age=${MAX_AGE}`;
+export const clearCookie = () => `${COOKIE}=; ${cookieFlags}; Max-Age=0`;
 
-export const clearCookie = () => `${COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`;
+/* ---------- המשתמשות ---------- */
 
-/* המפתח מגיע מהעוגייה (כך גם תמונות תצוגה והורדות עובדות כקישור רגיל),
-   ובכותרת כגיבוי לקריאות fetch מהפאנל. */
-export const requestKey = (req) => cookieValue(req, COOKIE) || header(req, 'x-key') || '';
+export const normEmail = (v) => String(v || '').trim().toLowerCase().slice(0, 160);
 
-export async function identify(req, key = requestKey(req)) {
-  if (!key) return null;
-  if (process.env.ADMIN_KEY && safeEqual(key, process.env.ADMIN_KEY)) {
-    return { role: 'admin', schoolId: null, schoolName: 'ניהול המערכת' };
+export const loadUsers = async () => (await kvGet(USERS)) || [];
+export const saveUsers = (list) => kvSet(USERS, list.slice(0, 5000));
+
+/* מנהלות־על מוגדרות במשתנה סביבה ולא בפאנל, כי אחרת אין דרך להיכנס
+   למערכת ריקה בפעם הראשונה — וגם כדי שלא תהיה דרך להעניק לעצמך את
+   התפקיד הזה מתוך המערכת. */
+export const superAdmins = () =>
+  String(process.env.SUPER_ADMINS || '')
+    .split(/[,\s]+/)
+    .map(normEmail)
+    .filter(Boolean);
+
+export const isSuper = (email) => superAdmins().includes(normEmail(email));
+
+/* מי הפונה: קוראת את העוגייה, ומרכיבה את הזהות מהרשומה העדכנית ב-KV. */
+export async function identify(req) {
+  const email = await readSession(req);
+  if (!email) return null;
+
+  const users = await loadUsers();
+  const rec = users.find((u) => u && normEmail(u.email) === email) || null;
+
+  if (isSuper(email)) {
+    return {
+      email,
+      name: rec?.name || email,
+      role: 'super',
+      schoolId: rec?.schoolId || null,
+      status: 'active',
+    };
   }
-  const cfg = (await kvGet('config')) || {};
-  const schools = Array.isArray(cfg.schools) ? cfg.schools : [];
-  for (const s of schools) {
-    if (s && s.key && s.active !== false && safeEqual(key, s.key)) {
-      return { role: 'member', schoolId: s.id, schoolName: s.name };
-    }
+  if (!rec) return { email, name: '', role: 'pending', schoolId: null, status: 'unknown' };
+  if (rec.status !== 'active') {
+    return {
+      email,
+      name: rec.name || '',
+      role: 'pending',
+      schoolId: rec.schoolId || null,
+      status: rec.status || 'pending',
+    };
   }
-  return null;
+  return {
+    email,
+    name: rec.name || '',
+    role: rec.role === 'principal' ? 'principal' : 'teacher',
+    schoolId: rec.schoolId || null,
+    status: 'active',
+  };
 }
 
-/* חלון קצב קבוע. מחזיר true כל עוד הפונה בתוך התקציב.
-   אם ה-KV לא נגיש המגבלה נפתחת — תקלת אחסון לא צריכה להפיל את האתר. */
+/* ---------- הגבלת קצב ---------- */
+
 export async function withinLimit(req, bucket, limit, windowSec) {
   const slot = Math.floor(Date.now() / (windowSec * 1000));
   const n = await kvIncr(`rl:${bucket}:${clientIp(req)}:${slot}`, windowSec + 5);
@@ -86,14 +158,23 @@ export async function limitPublic(req, bucket, limit, windowSec = 3600) {
   return (await withinLimit(req, bucket, limit, windowSec)) ? null : tooMany();
 }
 
-/* שומר לכל נקודת קצה שדורשת זיהוי. מחזיר { me } או { denied } */
+/* שומר לכל נקודת קצה שדורשת זיהוי.
+   'member' = כל מורה מאושרת · 'staff' = מנהלת בית ספר ומעלה · 'super' = ניהול */
 export async function requireUser(req, minRole = 'member') {
   const me = await identify(req);
-  if (!me) {
-    if (!(await withinLimit(req, 'keyfail', 20, 900))) return { denied: tooMany() };
-    return { denied: Response.json({ error: 'unauthorized' }, { status: 401 }) };
+  if (!me) return { denied: Response.json({ error: 'unauthorized' }, { status: 401 }) };
+  if (me.role === 'pending') {
+    return {
+      denied: Response.json(
+        { error: 'הבקשה שלך ממתינה לאישור מנהלת בית הספר', pending: true },
+        { status: 403 }
+      ),
+    };
   }
-  if (minRole === 'admin' && me.role !== 'admin') {
+  if (minRole === 'super' && me.role !== 'super') {
+    return { denied: Response.json({ error: 'forbidden' }, { status: 403 }) };
+  }
+  if (minRole === 'staff' && me.role !== 'super' && me.role !== 'principal') {
     return { denied: Response.json({ error: 'forbidden' }, { status: 403 }) };
   }
   return { me };

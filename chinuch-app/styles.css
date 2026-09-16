@@ -99,16 +99,6 @@ a { color: var(--blue-2); }
   padding: .6rem .75rem;
   background: var(--surface);
 }
-.gate-card button {
-  margin-top: 1.1rem;
-  background: var(--blue);
-  color: #fff;
-  border: 0;
-  border-radius: 999px;
-  padding: .65rem;
-  font-weight: 500;
-  cursor: pointer;
-}
 .gate-err { color: var(--bad); font-size: .88rem; margin-top: .7rem; }
 .opt { font-weight: 400; color: var(--ink-3); font-size: .8rem; }
 .req { color: var(--bad); }
@@ -435,3 +425,73 @@ main { max-width: 76rem; margin: 0 auto; padding: 1.5rem 20px 3rem; }
 @media (prefers-reduced-motion: reduce) {
   * { transition: none !important; animation: none !important; }
 }
+
+/* ---------- כניסה עם גוגל והמתנה לאישור ---------- */
+.gbtn {
+  margin: 1.1rem 0 .3rem;
+  display: flex;
+  justify-content: center;
+  min-height: 2.6rem;
+}
+.gate-note {
+  font-size: .84rem;
+  color: var(--ink-3);
+  line-height: 1.55;
+  margin-top: .6rem;
+}
+.gate-card select {
+  border: 1px solid var(--rule);
+  border-radius: var(--r);
+  padding: .55rem .7rem;
+  background: var(--surface);
+  width: 100%;
+  margin-bottom: .8rem;
+}
+.gate-acts { display: flex; gap: .5rem; margin-top: 1.1rem; flex-wrap: wrap; }
+.btn.wide { width: 100%; }
+
+/* ---------- פאנל המורות ---------- */
+.badge {
+  display: inline-grid;
+  place-items: center;
+  min-width: 1.25rem;
+  height: 1.25rem;
+  margin-inline-start: .35rem;
+  padding: 0 .3rem;
+  border-radius: 999px;
+  background: var(--flag);
+  color: #fff;
+  font-size: .72rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.count-pill {
+  font-size: .78rem;
+  font-weight: 500;
+  color: var(--flag);
+  background: var(--flag-soft);
+  border-radius: 999px;
+  padding: .05rem .5rem;
+  margin-inline-start: .3rem;
+}
+.who { display: grid; line-height: 1.3; flex: 1 1 11rem; min-width: 0; }
+.who b { font-weight: 500; font-size: .93rem; }
+.who em {
+  font-style: normal;
+  font-size: .78rem;
+  color: var(--ink-3);
+  overflow-wrap: anywhere;
+}
+.muted { font-size: .82rem; color: var(--ink-3); }
+.role-pill {
+  font-size: .78rem;
+  background: var(--blue-soft);
+  color: var(--blue);
+  border-radius: 999px;
+  padding: .05rem .55rem;
+}
+.adm-row input[type="email"] {
+  border: 1px solid var(--rule); border-radius: 8px; padding: .3rem .55rem;
+  min-width: 9rem; max-width: 16rem; flex: 1 1 10rem;
+}
+.btn.tiny.primary { background: var(--blue); border-color: var(--blue); color: #fff; }

@@ -40,9 +40,9 @@ export const DEFAULT_CATS = [
   { slug: 'shotef', name: 'שוטף — מערכות, שילוט, תעודות', group: 'event' },
 ];
 
-/* בית ספר לדוגמה, כדי שהמערכת לא תעלה ריקה. המפתח נוצר אקראי בהקמה
-   ומוחלף בפאנל. */
-export const seedConfig = (key) => ({
-  schools: [{ id: 'demo', name: 'בית ספר לדוגמה', city: '', key, active: true }],
+/* המערכת עולה עם הקטגוריות אבל בלי בתי ספר: מנהלת המערכת מגדירה אותם
+   בפאנל, וכל בית ספר מקבל מנהלת משלו מרשימת המשתמשות. */
+export const seedConfig = () => ({
+  schools: [],
   cats: DEFAULT_CATS.map((c, i) => ({ ...c, order: i, hidden: false, desc: '' })),
 });

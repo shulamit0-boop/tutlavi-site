@@ -13,19 +13,41 @@
 <body>
 
 <!-- ============ מסך כניסה ============ -->
-<div id="gate" class="gate">
-  <form class="gate-card" id="gateForm">
+<div id="gate" class="gate" hidden>
+  <div class="gate-card">
     <p class="gate-eyebrow">ארכיון העיצובים</p>
     <h1>בית חינוך חב״ד</h1>
-    <p class="gate-text">הכניסה למורות מורשות. הקלידי את מפתח בית הספר שקיבלת מהמנהלת.</p>
-    <label for="gateKey">מפתח בית הספר</label>
-    <input id="gateKey" name="key" type="password" autocomplete="current-password" required
-           inputmode="latin" placeholder="••••••••">
-    <label for="gateName">השם שלך <span class="opt">(כדי שיהיה רשום מי העלתה — נשמר במחשב שלך)</span></label>
-    <input id="gateName" name="name" type="text" autocomplete="name" placeholder="לדוגמה: מיכל כהן">
-    <button type="submit" id="gateBtn">כניסה</button>
+    <p class="gate-text">הכניסה למורות מורשות, עם חשבון הגוגל שלך.</p>
+    <div id="gBtn" class="gbtn"></div>
+    <p class="gate-note">
+      מורה חדשה? הכניסה תיצור בקשת הרשאה שמנהלת בית הספר שלך מאשרת.
+      עד לאישור לא נפתח שום תוכן.
+    </p>
     <p class="gate-err" id="gateErr" hidden></p>
-  </form>
+    <p class="gate-err" id="gateSetup" hidden></p>
+  </div>
+</div>
+
+<!-- ============ ממתינה לאישור ============ -->
+<div id="wait" class="gate" hidden>
+  <div class="gate-card">
+    <p class="gate-eyebrow">בקשת הרשאה</p>
+    <h1 id="waitTitle">הבקשה ממתינה לאישור</h1>
+    <p class="gate-text" id="waitWho"></p>
+
+    <div id="waitPick" hidden>
+      <label for="waitSchool">באיזה בית ספר את מלמדת?</label>
+      <select id="waitSchool"></select>
+      <button type="button" class="btn primary wide" id="waitSend">שליחת הבקשה</button>
+    </div>
+
+    <p class="gate-text" id="waitState"></p>
+    <div class="gate-acts">
+      <button type="button" class="btn ghost" id="waitRefresh">בדיקה מחדש</button>
+      <button type="button" class="btn ghost" id="waitOut">יציאה</button>
+    </div>
+    <p class="gate-err" id="waitErr" hidden></p>
+  </div>
 </div>
 
 <!-- ============ האפליקציה ============ -->
@@ -42,6 +64,7 @@
         <input id="search" type="search" placeholder="חיפוש לפי שם, תיאור או תגית" autocomplete="off">
       </label>
       <button class="btn primary" id="addBtn">+ הוספת עיצוב</button>
+      <button class="btn ghost" id="staffBtn" hidden>מורות<span class="badge" id="pendBadge" hidden></span></button>
       <button class="btn ghost" id="adminBtn" hidden>ניהול</button>
       <button class="btn ghost" id="outBtn" title="יציאה מהמערכת">יציאה</button>
     </div>
@@ -89,14 +112,43 @@
       <div class="grid" id="listGrid"></div>
     </section>
 
+    <!-- ---------- המורות ---------- -->
+    <section id="viewStaff" hidden>
+      <a class="back" href="#/">→ חזרה לארכיון</a>
+      <h2>המורות</h2>
+
+      <div class="panel">
+        <h3>בקשות ממתינות <span id="pendCount" class="count-pill"></span></h3>
+        <p class="panel-note">מורה שנכנסה עם גוגל ועדיין לא אושרה. עד האישור היא לא רואה שום עיצוב.</p>
+        <div id="pendRows"></div>
+      </div>
+
+      <div class="panel">
+        <h3>הזמנת מורה</h3>
+        <p class="panel-note">אם את מכניסה את המייל שלה מראש, הכניסה הראשונה שלה עם גוגל תעבוד ישר — בלי לחכות לאישור.</p>
+        <div class="adm-row">
+          <input type="email" id="invEmail" placeholder="כתובת הגוגל של המורה">
+          <input type="text" id="invName" placeholder="שם (לא חובה)">
+          <select id="invSchool" hidden></select>
+          <button class="btn" type="button" id="invBtn">הזמנה</button>
+        </div>
+        <p class="form-err" id="invErr" hidden></p>
+      </div>
+
+      <div class="panel">
+        <h3>מורות מאושרות</h3>
+        <div id="userRows"></div>
+      </div>
+    </section>
+
     <!-- ---------- ניהול ---------- -->
     <section id="viewAdmin" hidden>
       <a class="back" href="#/">→ חזרה לארכיון</a>
       <h2>ניהול המערכת</h2>
 
       <div class="panel">
-        <h3>בתי ספר ומפתחות</h3>
-        <p class="panel-note">כל בית ספר מקבל מפתח משלו. זה מה שהופך את הסימון "בית הספר שלי בלבד" לגבול אמיתי, ולא רק לסינון בתצוגה. מפתח שדלף — לחצי "החלפת מפתח", והקודם מפסיק לעבוד מיד.</p>
+        <h3>בתי ספר</h3>
+        <p class="panel-note">אחרי הוספת בית ספר אפשר למנות לו מנהלת במסך "המורות" — היא זו שתאשר את המורות שלו. הדומיין הוא לא חובה: אם לבית הספר יש חשבון Google Workspace משלו, מורה שנכנסת עם חשבון כזה משויכת אליו אוטומטית.</p>
         <div id="schoolRows"></div>
         <button class="btn ghost" id="addSchool">+ בית ספר</button>
       </div>

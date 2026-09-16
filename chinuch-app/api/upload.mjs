@@ -27,6 +27,7 @@ export default async function handler(req, res) {
 
   const me = await identify(req);
   if (!me) return res.status(401).json({ error: 'unauthorized' });
+  if (me.role === 'pending') return res.status(403).json({ error: 'הבקשה שלך ממתינה לאישור' });
 
   const body = req.body || {};
 

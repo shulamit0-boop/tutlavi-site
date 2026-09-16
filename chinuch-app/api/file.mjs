@@ -25,7 +25,7 @@ export default async function handler(req) {
 
   const it = await kvGet(`item:${id}`);
   if (!it || it.deletedAt) return new Response('לא נמצא', { status: 404 });
-  if (me.role !== 'admin' && it.visibility !== 'all' && it.schoolId !== me.schoolId) {
+  if (me.role !== 'super' && it.visibility !== 'all' && it.schoolId !== me.schoolId) {
     return new Response('אין הרשאה', { status: 403 });
   }
 

@@ -1,5 +1,8 @@
-/* בתי הספר והקטגוריות. נקודת הקצה הזו כולה לניהול בלבד — היא מחזירה גם את
-   מפתחות בתי הספר. */
+/* בתי הספר והקטגוריות — נקודת קצה לניהול המערכת בלבד.
+
+   לבית ספר יש domain אופציונלי: הדומיין של חשבון ה-Google Workspace שלו.
+   מורה שנכנסת עם חשבון כזה משויכת אליו אוטומטית, ולכן הבקשה שלה מגיעה
+   ישר למנהלת הנכונה בלי שהיא תבחר מרשימה. */
 
 import { kvGet, kvSet, storeReady } from './_store.mjs';
 import { requireUser } from './_guard.mjs';
@@ -8,32 +11,26 @@ import { seedConfig, DEFAULT_CATS } from './_seed.mjs';
 export const config = { runtime: 'edge' };
 
 const KEY = 'config';
-const randKey = () =>
-  Array.from(crypto.getRandomValues(new Uint8Array(9)))
-    .map((b) => b.toString(36).padStart(2, '0'))
+const randId = () =>
+  Array.from(crypto.getRandomValues(new Uint8Array(6)))
+    .map((b) => b.toString(36))
     .join('')
-    .slice(0, 14);
+    .slice(0, 8);
 
 const slugOk = (s) => /^[a-z0-9-]{2,40}$/.test(s);
 const clean = (v, n) => String(v == null ? '' : v).slice(0, n);
 
 function sanitize(body, prev) {
-  const prevSchools = Array.isArray(prev?.schools) ? prev.schools : [];
   const schools = (Array.isArray(body?.schools) ? body.schools : [])
     .filter((s) => s && clean(s.name, 120).trim())
     .slice(0, 200)
-    .map((s) => {
-      const id = slugOk(String(s.id || '')) ? String(s.id) : randKey().slice(0, 8);
-      const was = prevSchools.find((p) => p && p.id === id);
-      return {
-        id,
-        name: clean(s.name, 120),
-        city: clean(s.city, 60),
-        // מפתח קיים נשמר כמו שהוא; "החלפת מפתח" מהפאנל מגיעה כ-key ריק
-        key: s.newKey === true || !was?.key ? randKey() : was.key,
-        active: s.active !== false,
-      };
-    });
+    .map((s) => ({
+      id: slugOk(String(s.id || '')) ? String(s.id) : randId(),
+      name: clean(s.name, 120),
+      city: clean(s.city, 60),
+      domain: clean(s.domain, 80).trim().toLowerCase().replace(/^@/, ''),
+      active: s.active !== false,
+    }));
 
   const cats = (Array.isArray(body?.cats) ? body.cats : [])
     .filter((c) => c && slugOk(String(c.slug || '')) && clean(c.name, 80).trim())
@@ -63,13 +60,13 @@ function sanitize(body, prev) {
 export async function loadConfig() {
   const cfg = await kvGet(KEY);
   if (cfg && Array.isArray(cfg.cats) && cfg.cats.length) return cfg;
-  const fresh = seedConfig(randKey());
+  const fresh = seedConfig();
   if (storeReady()) await kvSet(KEY, fresh);
   return fresh;
 }
 
 export default async function handler(req) {
-  const { me, denied } = await requireUser(req, 'admin');
+  const { me, denied } = await requireUser(req, 'super');
   if (denied) return denied;
 
   if (req.method === 'GET') {
@@ -90,9 +87,6 @@ export default async function handler(req) {
     }
     const prev = await loadConfig();
     const next = sanitize(body, prev);
-    if (!next.schools.length) {
-      return Response.json({ error: 'צריך להשאיר לפחות בית ספר אחד' }, { status: 400 });
-    }
     const saved = await kvSet(KEY, next);
     if (!saved) return Response.json({ error: 'store write failed' }, { status: 500 });
     return Response.json({ ok: true, ...next, by: me.role });
