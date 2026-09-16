@@ -170,6 +170,12 @@ function applySiteContent(c) {
       bg.style.backgroundImage =
         'linear-gradient(rgba(255,255,255,.12), rgba(255,255,255,.28)), url("' + src + '")';
     }
+    // the hero is a video now, so an uploaded image becomes its poster: the
+    // still shown until the loop has enough data to play
+    const heroVid = document.querySelector('.hero video');
+    if (!bg && heroVid && (src.startsWith('/') || /^https?:\/\//i.test(src))) {
+      heroVid.setAttribute('poster', src);
+    }
   }
   if (has('footerStudio')) {
     const col = document.getElementById('footerStudioCol');
