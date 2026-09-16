@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>עיצובי בית חינוך</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Heebo:wght@300;400;500;700&display=swap">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<!-- ============ מסך כניסה ============ -->
+<div id="gate" class="gate">
+  <form class="gate-card" id="gateForm">
+    <p class="gate-eyebrow">ארכיון העיצובים</p>
+    <h1>בית חינוך חב״ד</h1>
+    <p class="gate-text">הכניסה למורות מורשות. הקלידי את מפתח בית הספר שקיבלת מהמנהלת.</p>
+    <label for="gateKey">מפתח בית הספר</label>
+    <input id="gateKey" name="key" type="password" autocomplete="current-password" required
+           inputmode="latin" placeholder="••••••••">
+    <label for="gateName">השם שלך <span class="opt">(כדי שיהיה רשום מי העלתה — נשמר במחשב שלך)</span></label>
+    <input id="gateName" name="name" type="text" autocomplete="name" placeholder="לדוגמה: מיכל כהן">
+    <button type="submit" id="gateBtn">כניסה</button>
+    <p class="gate-err" id="gateErr" hidden></p>
+  </form>
+</div>
+
+<!-- ============ האפליקציה ============ -->
+<div id="app" hidden>
+
+  <header class="top">
+    <a class="brand" href="#/">
+      <span class="brand-mark">בח</span>
+      <span class="brand-text">עיצובי בית חינוך<em id="schoolName"></em></span>
+    </a>
+    <div class="top-tools">
+      <label class="search">
+        <span class="sr">חיפוש</span>
+        <input id="search" type="search" placeholder="חיפוש לפי שם, תיאור או תגית" autocomplete="off">
+      </label>
+      <button class="btn primary" id="addBtn">+ הוספת עיצוב</button>
+      <button class="btn ghost" id="adminBtn" hidden>ניהול</button>
+      <button class="btn ghost" id="outBtn" title="יציאה מהמערכת">יציאה</button>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- ---------- דף הבית ---------- -->
+    <section id="viewHome">
+      <div class="rel-head">
+        <div>
+          <h2>רלוונטי עכשיו</h2>
+          <p class="rel-date" id="relDate"></p>
+        </div>
+        <p class="rel-hint" id="relHint"></p>
+      </div>
+      <div class="strip" id="relStrip"></div>
+
+      <h3 class="group-title">חודשי השנה</h3>
+      <div class="tiles" id="monthTiles"></div>
+
+      <h3 class="group-title">אירועים ונושאים</h3>
+      <div class="tiles" id="eventTiles"></div>
+    </section>
+
+    <!-- ---------- דף קטגוריה / תוצאות חיפוש ---------- -->
+    <section id="viewList" hidden>
+      <a class="back" href="#/">→ חזרה לכל הקטגוריות</a>
+      <div class="list-head">
+        <h2 id="listTitle"></h2>
+        <p id="listDesc" class="list-desc"></p>
+      </div>
+      <div class="filters">
+        <select id="fKind" aria-label="סינון לפי סוג">
+          <option value="">הכל</option>
+          <option value="link">קישורי Canva</option>
+          <option value="file">קבצים</option>
+        </select>
+        <select id="fSort" aria-label="מיון">
+          <option value="new">החדש ראשון</option>
+          <option value="title">לפי שם</option>
+          <option value="views">הנצפים ביותר</option>
+        </select>
+        <span class="count" id="listCount"></span>
+      </div>
+      <div class="grid" id="listGrid"></div>
+    </section>
+
+    <!-- ---------- ניהול ---------- -->
+    <section id="viewAdmin" hidden>
+      <a class="back" href="#/">→ חזרה לארכיון</a>
+      <h2>ניהול המערכת</h2>
+
+      <div class="panel">
+        <h3>בתי ספר ומפתחות</h3>
+        <p class="panel-note">כל בית ספר מקבל מפתח משלו. זה מה שהופך את הסימון "בית הספר שלי בלבד" לגבול אמיתי, ולא רק לסינון בתצוגה. מפתח שדלף — לחצי "החלפת מפתח", והקודם מפסיק לעבוד מיד.</p>
+        <div id="schoolRows"></div>
+        <button class="btn ghost" id="addSchool">+ בית ספר</button>
+      </div>
+
+      <div class="panel">
+        <h3>קטגוריות</h3>
+        <p class="panel-note">הסדר כאן הוא הסדר במסך הבית. קטגוריה מוסתרת נשארת עם התוכן שלה אבל לא מוצגת.</p>
+        <div id="catRows"></div>
+        <button class="btn ghost" id="addCat">+ קטגוריה</button>
+      </div>
+
+      <div class="panel">
+        <h3>שמירת הגדרות</h3>
+        <button class="btn primary" id="saveCfg">שמירת בתי ספר וקטגוריות</button>
+        <span id="cfgState" class="save-state"></span>
+      </div>
+
+      <div class="panel">
+        <h3>נמחקו לאחרונה</h3>
+        <p class="panel-note">מחיקה היא רכה — פריט שנמחק בטעות חוזר בלחיצה.</p>
+        <div id="trashRows"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <span id="footStat"></span>
+  </footer>
+</div>
+
+<!-- ============ כרטיס פריט ============ -->
+<dialog id="itemDlg" class="dlg">
+  <div class="dlg-in" id="itemBody"></div>
+</dialog>
+
+<!-- ============ טופס הוספה / עריכה ============ -->
+<dialog id="formDlg" class="dlg">
+  <form class="dlg-in form" id="itemForm">
+    <div class="dlg-head">
+      <h2 id="formTitle">הוספת עיצוב</h2>
+      <button type="button" class="x" data-close aria-label="סגירה">×</button>
+    </div>
+
+    <div class="switch" id="kindSwitch" role="tablist">
+      <button type="button" class="on" data-kind="link" role="tab">קישור Canva</button>
+      <button type="button" data-kind="file" role="tab">העלאת קובץ</button>
+    </div>
+
+    <div id="kindLink">
+      <label for="fUrl">כתובת הקישור</label>
+      <input id="fUrl" type="url" placeholder="https://www.canva.com/design/...">
+      <p class="hint">שתפי קישור מסוג <b>"שימוש כתבנית"</b> ולא קישור עריכה — קישור עריכה נותן לכל מורה לשנות את העיצוב המקורי.</p>
+      <p class="warn" id="editWarn" hidden>הקישור הזה נראה כמו קישור <b>עריכה</b>. מי שתפתח אותו תשנה את העיצוב שלך עצמו. ב-Canva: שיתוף → העתקת קישור → "שימוש כתבנית".</p>
+    </div>
+
+    <div id="kindFile" hidden>
+      <label for="fFile">הקובץ</label>
+      <input id="fFile" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.svg,.pptx,.docx,.xlsx,.mp4,.mov,.zip">
+      <p class="hint">עד 50MB. PDF, תמונה, מצגת, מסמך, וידאו או ZIP.</p>
+    </div>
+
+    <label for="fTitle">שם העיצוב <span class="req">*</span></label>
+    <input id="fTitle" type="text" maxlength="160" required placeholder="לדוגמה: שילוט לכיתות — פתיחת שנה">
+
+    <label for="fDesc">תיאור</label>
+    <textarea id="fDesc" rows="2" maxlength="1200" placeholder="מה זה, לאיזו שכבה, מה כדאי לדעת לפני שמשנים"></textarea>
+
+    <label>קטגוריות <span class="req">*</span></label>
+    <div class="chips" id="fCats"></div>
+
+    <label for="fTags">תגיות <span class="opt">(מופרדות בפסיק)</span></label>
+    <input id="fTags" type="text" placeholder="שילוט, כיתה א, הורים">
+
+    <label for="fThumb">תמונת תצוגה <span class="opt">(מומלץ — צילום מסך של העיצוב)</span></label>
+    <input id="fThumb" type="file" accept="image/*">
+
+    <details class="more">
+      <summary>הגדרות נוספות</summary>
+      <label for="fVis">מי רואה</label>
+      <select id="fVis">
+        <option value="school">בית הספר שלי בלבד</option>
+        <option value="all">כל בתי הספר</option>
+      </select>
+      <label>חלון רלוונטיות <span class="opt">(מופיע ב"רלוונטי עכשיו" בתאריכים האלה)</span></label>
+      <div class="row2">
+        <input id="fFrom" type="date" aria-label="מתאריך">
+        <input id="fTo" type="date" aria-label="עד תאריך">
+      </div>
+    </details>
+
+    <p class="form-err" id="formErr" hidden></p>
+    <div class="dlg-foot">
+      <button type="submit" class="btn primary" id="formSave">שמירה</button>
+      <button type="button" class="btn ghost" data-close>ביטול</button>
+      <span class="prog" id="formProg"></span>
+    </div>
+  </form>
+</dialog>
+
+<div class="toast" id="toast" hidden></div>
+
+<script src="app.js"></script>
+</body>
+</html>
