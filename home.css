@@ -219,6 +219,10 @@ body.menu-open .menu-scrim{ opacity:1; visibility:visible; }
 /* ============ 1 · WHAT IS HERE ============ */
 .two-col{ display:grid; grid-template-columns:1fr; gap:32px; align-items:start; }
 @media (min-width:768px){ .two-col{ grid-template-columns:5fr 7fr; gap:64px; } }
+/* A grid item is min-width:auto by default, so one unbreakable string inside it
+   — the row of dashes in the receipt — widens the whole column past the screen.
+   On a phone that showed up as the contact card hanging off the edge. */
+.two-col > *, .space-intro > *{ min-width:0; }
 .spec-list{ border-top:1px dashed var(--dash); }
 .spec-list li{
   display:grid; grid-template-columns:44px 1fr auto; align-items:baseline; gap:16px;
@@ -399,7 +403,8 @@ body.menu-open .menu-scrim{ opacity:1; visibility:visible; }
 }
 .contact-lead{ margin-top:20px; max-width:38ch; }
 .receipt{
-  background:#fff; border:1px solid var(--line); padding:24px; max-width:460px;
+  background:#fff; border:1px solid var(--line); padding:24px;
+  width:100%; max-width:460px;
   font-family:var(--mono); font-size:12px; letter-spacing:.06em;
   text-transform:uppercase; line-height:2;
 }
@@ -472,6 +477,7 @@ body.menu-open .sticker{ opacity:0; visibility:hidden; }
    ============================================================ */
 .viv-cols{ display:grid; grid-template-columns:1fr; gap:32px; align-items:start; }
 @media (min-width:768px){ .viv-cols{ grid-template-columns:5fr 7fr; gap:64px; } }
+.viv-cols > *{ min-width:0; }
 
 /* the three-line list drops to the foot of the row, so it reads level with the
    two photographs opposite it instead of floating at the top of the column */
