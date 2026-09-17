@@ -4,6 +4,7 @@ import {
   HOLD_DAYS, holdExpiry, placeHold, releaseHold, commitHold,
   withExpiredHoldsCleared,
 } from './_avail.mjs';
+import { text, multiline } from './_input.mjs';
 import {
   mailReady, newRequestToStudio, receiptToClient, contractToClient,
   signedToStudio, confirmedToClient, enquiryToStudio,
@@ -48,12 +49,18 @@ const deriveStatus = (b) => {
   return 'requested';
 };
 
-const str = (v, n) => String(v || '').slice(0, n);
+/* every stored value passes through here: control characters would end a
+   header in the mail and a property in the calendar feed */
+const str = (v, n) => text(v, n);
 const isDate = (v) => /^\d{4}-\d{2}-\d{2}$/.test(v || '');
 const isTime = (v) => /^\d{2}:\d{2}$/.test(v || '');
 
-/* Everything the public may see about a booking. The signature image and the
-   full ID number are deliberately not in here. */
+/* Everything the holder of the contract link may see about a booking. The
+   full ID number is not in here — only its last four digits. The signature
+   image is, because /contract renders the signed agreement back to the
+   person who signed it; the link is 128 random bits and is mailed to them,
+   so its holder is exactly the audience for it. The admin branch above is
+   the only path that returns the raw ID number. */
 const publicView = (b, id) => ({
   id,
   status: deriveStatus(b),
@@ -149,7 +156,7 @@ export default async function handler(req) {
       purpose: str(d.purpose, 160),
       participants: str(d.participants, 30),
       price: str(d.price, 30),
-      message: str(d.message, 1500),
+      message: multiline(d.message, 1500),
       windowId: str(d.windowId, 60),
       idnum: '',
       signature: null,
@@ -210,7 +217,7 @@ export default async function handler(req) {
       name: str(d.name, 120),
       email: str(d.email, 160),
       phone: str(d.phone, 30),
-      message: str(d.message, 1500),
+      message: multiline(d.message, 1500),
     });
     return Response.json({ ok: true, mailed });
   }
@@ -265,7 +272,7 @@ export default async function handler(req) {
        fixes the final price and adds whatever else was agreed. Both land in
        the contract itself, not only in the covering email. */
     if (typeof body.price === 'string') b.price = str(body.price, 30);
-    if (typeof body.note === 'string') b.studioNote = str(body.note, 1500);
+    if (typeof body.note === 'string') b.studioNote = multiline(body.note, 1500);
     /* Re-approving something already signed re-issues it for signature: the
        renter signed the previous terms, and that signature cannot be carried
        over onto new ones. It is voided here and asked for again. */

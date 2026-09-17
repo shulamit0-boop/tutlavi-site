@@ -565,8 +565,7 @@ const FIELDS = [
   { key: 'vivPopupNote', label: 'שורה קטנה מתחת לשם', def: 'מגן אברהם 6, יפו' },
   { key: 'vivComeTitle', label: 'פשוט תגיעו — כותרת', def: 'פשוט תגיעו' },
   { key: 'vivComeLead', label: 'פשוט תגיעו — טקסט', def: 'אין מה להתכונן ואין מה להביא. שולחים הודעה, מקבלים את הכתובת, ומגיעים. כשתיכנסו כבר תחכה לכם כוס — ומשם זה הולך לבד.', multi: true },
-  { key: 'vivUpdatesTitle', label: 'עדכונים — הכותרת הגדולה', def: 'הפעם הבאה שהטוב הזה יתקיים?
-תדעו ראשונים', multi: true },
+  { key: 'vivUpdatesTitle', label: 'עדכונים — הכותרת הגדולה', def: 'הפעם הבאה שהטוב הזה יתקיים?\nתדעו ראשונים', multi: true },
   { key: 'vivUpdatesLead', label: 'עדכונים — משפט', def: 'כותבים לנו את השם, ואנחנו שולחות בוואטסאפ מתי הפופ-אפ הבא — לפני שזה יוצא לאינסטגרם. בלי ספאם, רק דרינקים.', multi: true },
 ];
 
@@ -1251,7 +1250,7 @@ if (key()) start();
 /* Media uploads via Vercel Blob direct client upload. Kept in a module so a
    CDN failure here can never break the rest of the panel. Reads the shared
    globals (content / queueContentSave / key) from the main script. */
-import { upload } from 'https://esm.sh/@vercel/blob@0.27.3/client';
+import { upload } from '/vendor/vercel-blob-client.js';
 
 const DEFAULT_HERO = '/media/hero-poster.jpg';
 const DEFAULT_VIDEO = '/media/hero-loop.mp4';

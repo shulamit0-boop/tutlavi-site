@@ -53,6 +53,9 @@ export default async function handler(req, res) {
     });
     return res.json(result);
   } catch (e) {
-    return res.status(400).json({ error: String((e && e.message) || e) });
+    /* the message can carry the store's own wording and the pathname that
+       was refused; it belongs in the function log, not in the response */
+    console.warn('upload refused:', String((e && e.message) || e));
+    return res.status(400).json({ error: 'upload refused' });
   }
 }

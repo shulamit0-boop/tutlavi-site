@@ -1,5 +1,6 @@
 import { kvGet, kvSet, storeReady } from './_store.mjs';
 import { limitPublic, requireAdmin, safeEqual } from './_guard.mjs';
+import { text, isEmail } from './_input.mjs';
 
 export const config = { runtime: 'edge' };
 
@@ -180,11 +181,11 @@ export default async function handler(req) {
       id: rid(),
       at: new Date().toISOString(),
       eventId: ev.id,
-      eventName: String(ev.name || '').slice(0, 200),
-      eventDate: String(ev.date || '').slice(0, 40),
-      name: String(d.name || '').slice(0, 120),
-      email: String(d.email || '').slice(0, 160),
-      phone: String(d.phone || '').slice(0, 30),
+      eventName: text(ev.name, 200),
+      eventDate: text(ev.date, 40),
+      name: text(d.name, 120),
+      email: text(d.email, 160),
+      phone: text(d.phone, 30),
       qty,
       mode: paid ? 'paid' : 'free',
       price,
@@ -193,6 +194,9 @@ export default async function handler(req) {
     };
     if (!reg.name || !reg.email) {
       return Response.json({ error: 'missing fields' }, { status: 400 });
+    }
+    if (!isEmail(reg.email)) {
+      return Response.json({ error: 'bad email' }, { status: 400 });
     }
 
     // For paid tickets, create the payment page BEFORE saving so a payment
