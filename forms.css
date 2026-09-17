@@ -1,0 +1,458 @@
+/* ============================================================
+   TUTLAVI — modal + forms (rental / collaboration / event
+   registration), in the September 2026 design language.
+
+   Readability rules for this file:
+   · Hebrew has no case, so the decorative uppercase micro-caps used for the
+     Latin eyebrows are *never* applied to functional Hebrew UI text — wide
+     tracking at 10-11px pulls Hebrew letterforms apart and is the main reason
+     forms read as hard work. Labels, buttons, statuses and hints are set at
+     real reading sizes, normal tracking, high contrast.
+   · IBM Plex Mono carries no Hebrew, so it is used only for Latin, digits and
+     the small index labels — never for a Hebrew sentence.
+   · Fields are white on the paper panel with a defined border: more contrast
+     against the text than a grey fill, and it reads calmer.
+   ============================================================ */
+
+.modal{
+  position:fixed; inset:0; z-index:2000;
+  display:flex; align-items:center; justify-content:center; padding:1.2rem;
+  opacity:0; visibility:hidden; transition:opacity .3s ease, visibility .3s ease;
+}
+.modal.open{ opacity:1; visibility:visible; }
+.modal-backdrop{
+  position:absolute; inset:0; background:rgba(22,22,23,.66);
+  backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+}
+.modal-panel{
+  position:relative; z-index:1; width:min(720px,100%); max-height:92vh; overflow-y:auto;
+  counter-reset:fsec;
+  background:var(--paper); color:var(--ink);
+  border:1px solid var(--ink); border-radius:0;
+  padding:clamp(1.9rem,4vw,3rem) clamp(1.5rem,4vw,3rem) clamp(2rem,4vw,3rem);
+  transform:translateY(14px); transition:transform .35s ease;
+  box-shadow:0 40px 90px -24px rgba(0,0,0,.45);
+  scrollbar-width:thin;
+}
+.modal.open .modal-panel{ transform:none; }
+.modal-close{
+  position:absolute; top:.7rem; inset-inline-start:.7rem;
+  width:40px; height:40px;
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.5rem; line-height:1; color:var(--muted);
+  transition:color .2s ease;
+}
+.modal-close:hover{ color:var(--accent); }
+
+/* the panel opens the way a section of the page opens: a mono index line, a
+   large light headline with the red full stop, then a dashed rule */
+.modal-eyebrow{
+  font-family:var(--mono);
+  font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+  color:rgba(27,28,29,.7); margin-bottom:.7rem;
+}
+.modal-eyebrow::before{ content:'/ '; }
+.modal-title{
+  font-size:clamp(1.9rem,4vw,2.6rem); font-weight:500;
+  line-height:1.08; letter-spacing:-.02em; text-wrap:balance;
+  padding-bottom:1.3rem; margin-bottom:1.7rem;
+  border-bottom:1px dashed var(--dash);
+}
+.modal-title::after{ content:'.'; color:var(--accent); }
+
+/* ---- grouping: the rental form is long, so it is read in named steps ---- */
+/* spacing hangs off the *following* section so the last one never leaves a
+   trailing gap, whichever section happens to be last (rental vs. collab) */
+.form-section + .form-section,
+.rental-fields > .form-section:first-child{
+  margin-top:1.9rem; padding-top:1.7rem; border-top:1px dashed var(--dash);
+}
+.form-section > *:last-child{ margin-bottom:0; }
+.form-section-title{
+  display:flex; align-items:baseline; flex-wrap:wrap; gap:.3rem .7rem;
+  font-size:1.05rem; font-weight:600; letter-spacing:-.01em; line-height:1.3;
+  color:var(--ink); margin-bottom:1.15rem;
+}
+/* numbered like the sections of the page. Hidden sections (the rental block in
+   collaboration mode) are display:none, so they are not counted. */
+.form-section-title::after{
+  counter-increment:fsec; content:"( " counter(fsec) " )";
+  margin-inline-start:auto;
+  font-family:var(--mono); font-size:10px; letter-spacing:.14em;
+  font-weight:400; color:var(--muted);
+}
+.form-section-note{ font-size:.85rem; font-weight:400; color:var(--muted); }
+
+.field{ margin-bottom:1.35rem; }
+.modal-grid{ display:grid; grid-template-columns:1fr 1fr; gap:0 1.4rem; }
+.modal-grid .field{ margin-bottom:1.35rem; }
+.field-label{
+  display:block;
+  font-size:.875rem; font-weight:600; line-height:1.4;
+  letter-spacing:0; text-transform:none;
+  color:var(--ink); margin-bottom:.45rem;
+}
+.field-label .req{ color:var(--accent); margin-inline-start:.15rem; font-weight:700; }
+.field-hint{ font-size:.83rem; line-height:1.55; color:var(--muted); margin:.4rem 0 .65rem; }
+
+.field input:not([type=checkbox]):not([type=radio]),
+.field textarea,
+.field select{
+  width:100%; min-height:52px;
+  background:#fff; border:1px solid rgba(27,28,29,.28); border-radius:0;
+  padding:.85rem 1rem;
+  font-family:inherit; font-size:1rem; line-height:1.4; color:var(--ink);
+  outline:none;
+  transition:border-color .2s ease, box-shadow .2s ease;
+}
+.field input:not([type=checkbox]):not([type=radio]):hover,
+.field textarea:hover,
+.field select:hover{ border-color:rgba(27,28,29,.55); }
+.field input:focus, .field textarea:focus, .field select:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 0 3px rgba(217,38,44,.15);
+}
+.field input:focus-visible, .field textarea:focus-visible, .field select:focus-visible{ outline:none; }
+.field input::placeholder, .field textarea::placeholder{ color:rgba(27,28,29,.42); }
+.field textarea{ resize:vertical; min-height:7rem; }
+/* native select chrome is inconsistent and sits on the wrong side in RTL */
+.field select{
+  cursor:pointer; appearance:none; -webkit-appearance:none;
+  padding-inline-end:2.6rem;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1.5 6 6.5 11 1.5' fill='none' stroke='%236c6c6a' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat; background-position:left 1.05rem center;
+}
+.field-split{ display:grid; grid-template-columns:1fr 1fr; gap:1rem; }
+@media (max-width:560px){ .modal-grid{ grid-template-columns:1fr; } }
+
+/* The signature pad and the contract-consent row used to live in this form.
+   They moved to /contract, which has its own styles — the enquiry no longer
+   signs anything. */
+
+/* ---- enquiry type: selectable cards, not bare radio dots ---- */
+.radio-row{ display:flex; flex-wrap:wrap; gap:.7rem; }
+.radio{
+  display:inline-flex; align-items:center; gap:.55rem;
+  padding:.75rem 1.15rem; border:1px solid rgba(27,28,29,.28); background:#fff;
+  font-size:.98rem; font-weight:500; cursor:pointer;
+  transition:border-color .2s ease, background .2s ease, color .2s ease;
+}
+.radio:hover{ border-color:var(--ink); }
+.radio input{ width:auto; min-height:0; margin:0; accent-color:var(--accent); }
+/* .is-on is kept in sync by syncTypeCards() in script.js — see the note there
+   on why this is not :has(input:checked). The chosen card fills with ink, the
+   same move as the black buttons on the page. */
+.radio.is-on{ background:var(--ink); border-color:var(--ink); color:var(--paper); }
+.radio.is-on input{ accent-color:var(--accent); }
+
+.rental-fields[hidden]{ display:none; }
+.rental-fields{ border-top:none; padding-top:0; margin-top:0; }
+.hp-field{ position:absolute; width:1px; height:1px; padding:0; margin:-1px; overflow:hidden; clip:rect(0,0,0,0); border:0; white-space:nowrap; }
+
+/* ---- availability calendar ---- */
+.fcal{
+  border:1px solid var(--line); background:#fff;
+  padding:.9rem; max-width:440px; margin-bottom:.9rem;
+}
+.fcal-head{ display:flex; align-items:center; justify-content:space-between; gap:.5rem; margin-bottom:.75rem; }
+.fcal-head b{ font-weight:600; font-size:1.05rem; letter-spacing:-.01em; }
+.fcal-nav{
+  border:1px solid rgba(27,28,29,.22); width:36px; height:36px; flex:none;
+  display:flex; align-items:center; justify-content:center;
+  font-size:1.2rem; line-height:1; color:var(--ink);
+  transition:background .2s ease, border-color .2s ease, color .2s ease;
+}
+.fcal-nav:hover{ background:var(--ink); border-color:var(--ink); color:#fff; }
+.fcal-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:4px; }
+.fcal-dow{
+  text-align:center; font-size:.72rem; font-weight:600; letter-spacing:0;
+  color:var(--muted); padding-bottom:.35rem;
+}
+.fcal-day{
+  aspect-ratio:1; min-height:40px;
+  display:flex; align-items:center; justify-content:center;
+  border:1px solid var(--line); background:#fff; border-radius:0;
+  font-family:var(--mono); font-size:.9rem; font-weight:400;
+  color:var(--ink); cursor:pointer; padding:0;
+  transition:border-color .18s ease, background .18s ease, color .18s ease;
+}
+.fcal-day:hover:not(:disabled):not(.past){ border-color:var(--ink); }
+.fcal-day.out{ opacity:.28; }
+.fcal-day.past{ opacity:.3; cursor:default; }
+/* the four states stay colour-coded — this is the one place in the design where
+   a traffic light is worth more than the restraint of the palette */
+.fcal-day.open{ background:#eaf3ed; border-color:#a9c9b6; color:#1d6b3a; font-weight:500; }
+.fcal-day.booked{ background:#f0f0ef; border-color:var(--line); color:#9a9a98; text-decoration:line-through; }
+/* held for someone who has an open request — not bookable, but not gone either */
+.fcal-day.pending{ background:#fbf3e2; border-color:#ddc487; color:#856215; }
+.fcal-day.locked{ background:#fbe9e9; border-color:#eab3b3; color:var(--accent); cursor:not-allowed; }
+/* selected must win over every state above — keep it last */
+.fcal-day.sel{ background:var(--ink); border-color:var(--ink); color:#fff; font-weight:500; text-decoration:none; }
+.fcal-legend{
+  display:flex; flex-wrap:wrap; gap:.35rem 1.1rem; margin-top:.75rem;
+  font-size:.78rem; letter-spacing:0; color:var(--muted);
+}
+.fcal-legend span{ display:inline-flex; align-items:center; }
+.fcal-legend .lg{ display:inline-block; width:12px; height:12px; flex:none; margin-inline-end:.4rem; border:1px solid; }
+.lg-open{ background:#eaf3ed; border-color:#a9c9b6; }
+.lg-booked{ background:#f0f0ef; border-color:var(--line); }
+.lg-locked{ background:#fbe9e9; border-color:#eab3b3; }
+.lg-pending{ background:#fbf3e2; border-color:#ddc487; }
+
+/* ---- open time windows ---- */
+.avail-chips{ display:flex; flex-wrap:wrap; gap:.55rem; }
+.avail-chips:not(:empty){ margin-bottom:.3rem; }
+.avail-chip{
+  font-size:.95rem; font-weight:500; line-height:1.3;
+  background:#fff; border:1px solid rgba(27,28,29,.28); color:var(--ink);
+  padding:.6rem 1.05rem; cursor:pointer;
+  transition:border-color .2s ease, background .2s ease, color .2s ease;
+}
+/* hover and "picked" used to be the same red, so you could not tell which
+   window you had actually chosen while the pointer was over another one */
+.avail-chip:hover{ border-color:var(--ink); background:#f6f6f5; }
+.avail-chip.picked, .avail-chip.picked:hover{
+  background:var(--accent); border-color:var(--accent); color:#fff;
+}
+.avail-status{ font-size:.9rem; line-height:1.55; color:var(--muted); margin-top:.5rem; min-height:1em; }
+.avail-status.ok{ color:#1d6b3a; font-weight:500; }
+.avail-status.err{ color:var(--accent); font-weight:500; }
+
+/* ---- price: the single most important number in the form ---- */
+.cost-line{
+  display:flex; align-items:baseline; justify-content:space-between; gap:1rem;
+  background:#fff; border:1px solid var(--line);
+  border-inline-start:3px solid var(--accent);
+  padding:.9rem 1.1rem; margin-bottom:.2rem;
+  font-size:1rem; font-weight:500;
+}
+.cost-line[hidden]{ display:none; }
+.cost-line b{
+  font-family:var(--mono); font-size:1.25rem; font-weight:500;
+  color:var(--accent); font-variant-numeric:tabular-nums;
+}
+
+/* what happens after you press send — the form asks for a lot less than it
+   used to, so it has to say what the rest of the process looks like */
+.next-steps{
+  counter-reset:step; list-style:none;
+  margin:1.4rem 0 .2rem; padding:1.2rem 1.3rem;
+  background:#fff; border:1px solid var(--line);
+}
+.next-steps li{
+  position:relative; padding-inline-start:2.1rem; margin-bottom:.7rem;
+  font-size:.94rem; line-height:1.55; color:var(--muted);
+}
+.next-steps li:last-child{ margin-bottom:0; }
+.next-steps li b{ color:var(--ink); font-weight:600; }
+.next-steps li::before{
+  counter-increment:step; content:counter(step);
+  position:absolute; inset-inline-start:0; top:.15rem;
+  width:1.4rem; height:1.4rem;
+  background:var(--ink); color:#fff;
+  font-family:var(--mono); font-size:.72rem; font-weight:400;
+  line-height:1.4rem; text-align:center;
+}
+
+.modal-submit{
+  width:100%; margin-top:1.6rem;
+  background:var(--ink); color:var(--paper); border:1px solid var(--ink);
+  padding:1.15rem 1.5rem;
+  font-size:1rem; font-weight:500; letter-spacing:.01em; text-transform:none;
+  transition:background .25s ease, border-color .25s ease;
+}
+.modal-submit:hover:not(:disabled){ background:var(--accent); border-color:var(--accent); color:#fff; }
+.modal-submit:disabled{ opacity:.45; cursor:default; }
+
+/* ---- event registration: schedule button ---- */
+.sched-reg{
+  display:inline-flex; align-items:center; gap:.4rem;
+  padding:.5rem 1.05rem; white-space:nowrap;
+  font-size:.82rem; font-weight:500; letter-spacing:.02em;
+  border:1px solid var(--ink); color:var(--ink); background:none;
+  transition:background .25s ease, color .25s ease, border-color .25s ease;
+}
+.sched-reg:hover{ background:var(--ink); color:var(--paper); }
+.sched-reg.paid{ background:var(--accent); border-color:var(--accent); color:#fff; }
+.sched-reg.paid:hover{ background:var(--ink); border-color:var(--ink); }
+
+/* ---- event modal (smaller than the rental modal) ---- */
+.modal-panel-sm{ width:min(540px,100%); }
+.event-modal-sub{ font-size:1rem; line-height:1.55; color:var(--muted); margin:-1.1rem 0 1.7rem; }
+
+/* ---- payment-return toast ---- */
+.toast{
+  position:fixed; left:50%; bottom:26px; transform:translate(-50%,140%);
+  z-index:3000; max-width:calc(100vw - 32px);
+  background:var(--ink); color:var(--paper); padding:.9rem 1.4rem;
+  font-size:.92rem; font-weight:500; box-shadow:0 16px 40px rgba(0,0,0,.28);
+  transition:transform .45s cubic-bezier(.22,1,.36,1);
+}
+.toast.ok{ background:#1d6b3a; color:#fff; }
+.toast.err{ background:var(--accent); color:#fff; }
+.toast.show{ transform:translate(-50%,0); }
+/* the line that tells you whether your booking went through — it used to be
+   set at 11px with tracking, i.e. smaller than everything it was reporting on */
+.form-status{
+  margin-top:1rem; font-size:.92rem; line-height:1.55; letter-spacing:0;
+  min-height:1em; text-align:center;
+}
+.form-status:empty{ margin-top:0; min-height:0; }
+.form-status.ok{ color:#1d6b3a; font-weight:600; background:#eaf3ed; border:1px solid #a9c9b6; padding:.85rem 1rem; }
+.form-status.err{ color:var(--accent); font-weight:600; background:#fbe9e9; border:1px solid #eab3b3; padding:.85rem 1rem; }
+
+/* ---- phones: the form becomes a bottom sheet ---- */
+@media (max-width:600px){
+  .modal{ padding:0; align-items:flex-end; }
+  .modal-panel{
+    width:100%; max-height:94vh; max-height:94dvh;
+    border-inline:none; border-bottom:none;
+    padding:1.7rem 1.2rem 2rem;
+  }
+  .modal-panel-sm{ width:100%; }
+  .modal-close{ top:.5rem; inset-inline-start:.4rem; }
+  .modal-title{ margin-bottom:1.4rem; padding-bottom:1.1rem; }
+  .fcal{ max-width:none; padding:.75rem .6rem; }
+  .fcal-day{ font-size:.85rem; }
+  .field-split{ gap:.7rem; }
+  .radio{ flex:1 1 auto; justify-content:center; }
+  /* the section index wraps onto a line of its own at this width and reads as
+     a stray fragment, so it goes */
+  .form-section-title::after{ display:none; }
+}
+
+/* ============================================================
+   PAPER FORM — the enquiry and the event sign-up, laid out as the
+   printed contact form of the design: a mono header, one numbered
+   line per field, dashed underlines instead of boxes, pills for the
+   choice, and a footer that states the whole requirement in a line.
+
+   The labels carry a little tracking here, which the rest of the UI
+   deliberately avoids on Hebrew: at this size it is what makes the
+   thing read as a form and not as a paragraph. It is kept at .05em
+   and 13px — far short of the 10px/.14em micro-caps that pull Hebrew
+   letterforms apart.
+   ============================================================ */
+.paper-form{ padding-top:.4rem; }
+
+.pf-head{
+  font-family:var(--mono);
+  font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+  text-align:center; color:var(--ink);
+}
+.pf-rule{
+  border-top:1px dashed var(--dash);
+  margin:1.1rem 0 1.3rem;
+}
+.pf-grid{ display:grid; grid-template-columns:1fr 1fr; gap:0 1.6rem; }
+
+.paper-form .field{ margin-bottom:1.5rem; }
+.paper-form .field-label{
+  display:block; margin-bottom:.15rem;
+  font-size:13px; font-weight:400; letter-spacing:.05em;
+  color:rgba(27,28,29,.75);
+}
+.paper-form .field-label .num{
+  font-family:var(--mono); font-style:normal;
+  font-size:10px; letter-spacing:.14em; color:var(--muted);
+  margin-inline-end:.5rem;
+}
+.paper-form .field-label .req{ color:var(--accent); margin-inline-start:.15rem; }
+.paper-form .field-hint{ font-size:12.5px; color:var(--muted); margin:.15rem 0 .5rem; }
+
+/* the line, not the box: the field is a rule you write on */
+.paper-form .field input:not([type=checkbox]):not([type=radio]),
+.paper-form .field textarea,
+.paper-form .field select{
+  width:100%; min-height:44px;
+  background:transparent;
+  border:0; border-bottom:1px dashed rgba(27,28,29,.4); border-radius:0;
+  padding:.5rem .25rem;
+  font-family:var(--sans); font-size:1rem; line-height:1.5; color:var(--ink);
+  outline:none; box-shadow:none;
+  transition:border-color .2s ease;
+}
+.paper-form .field input:hover,
+.paper-form .field textarea:hover,
+.paper-form .field select:hover{ border-bottom-color:rgba(27,28,29,.7); }
+.paper-form .field input:focus,
+.paper-form .field textarea:focus,
+.paper-form .field select:focus{
+  border-bottom:1px solid var(--ink); box-shadow:none;
+}
+.paper-form .field input::placeholder,
+.paper-form .field textarea::placeholder{ color:rgba(27,28,29,.35); }
+.paper-form .field textarea{ min-height:3.5rem; resize:vertical; }
+.paper-form .field select{ background-position:left .25rem center; padding-inline-end:1.8rem; }
+.paper-form .field-split{ gap:1.6rem; }
+
+/* ---- ( 4 ) the choice, as pills ---- */
+.paper-form .radio-row{ gap:.6rem; margin-top:.5rem; }
+.paper-form .radio{
+  border-radius:999px; background:transparent;
+  border:1px solid rgba(27,28,29,.3);
+  padding:.55rem 1.15rem; gap:0;
+  font-size:.95rem; font-weight:400;
+}
+.paper-form .radio:hover{ border-color:var(--ink); }
+/* the native dot adds nothing next to a pill that fills in when chosen */
+.paper-form .radio input{
+  position:absolute; width:1px; height:1px; opacity:0; pointer-events:none;
+}
+.paper-form .radio.is-on{
+  background:var(--ink); border-color:var(--ink); color:var(--paper);
+}
+
+/* ---- the calendar keeps its own frame, just quieter inside the sheet ---- */
+.paper-form .form-section,
+.paper-form .form-section + .form-section,
+.paper-form .rental-fields > .form-section:first-child{
+  margin-top:0; padding-top:0; border-top:none;
+}
+.paper-form .rental-fields[hidden],
+.paper-form .next-steps[hidden]{ display:none; }
+.paper-form .fcal{ border:1px dashed var(--dash); background:transparent; }
+.paper-form .fcal-day{ background:#fff; }
+.paper-form .avail-chip{ border-radius:999px; }
+
+/* ---- what happens next, kept small ---- */
+.paper-form .next-steps{
+  background:transparent; border:1px dashed var(--dash);
+  margin:0 0 1.4rem;
+}
+.paper-form .next-steps li{ font-size:.88rem; }
+.paper-form .cost-line{ background:transparent; border:1px dashed var(--dash); border-inline-start:2px solid var(--accent); }
+
+/* ---- the footer states the whole requirement, and the button keeps it ---- */
+.pf-foot{
+  display:flex; align-items:center; justify-content:space-between;
+  flex-wrap:wrap; gap:1rem; margin-top:.4rem;
+}
+.pf-hint{
+  font-size:12px; letter-spacing:.05em; color:var(--muted); margin:0;
+}
+.paper-form .modal-submit{
+  width:auto; margin-top:0;
+  display:inline-flex; align-items:center; gap:.6rem;
+  border-radius:999px;
+  background:var(--accent); border-color:var(--accent); color:#fff;
+  padding:.95rem 2.1rem;
+  font-size:1rem; font-weight:500;
+  transition:background .25s ease, border-color .25s ease, opacity .25s ease;
+}
+.paper-form .modal-submit:hover:not(:disabled){ background:var(--ink); border-color:var(--ink); }
+/* faded until there is a name and one way to answer — the state the empty
+   form is in, and the reason the button looks soft */
+.paper-form .modal-submit:disabled{ opacity:.45; cursor:default; }
+
+.paper-form .event-modal-sub{
+  text-align:center; font-size:.95rem; margin:.5rem 0 0;
+}
+
+@media (max-width:560px){
+  .pf-grid{ grid-template-columns:1fr; }
+  .paper-form .field-split{ gap:1.2rem; }
+  .pf-foot{ flex-direction:column-reverse; align-items:stretch; }
+  .paper-form .modal-submit{ justify-content:center; width:100%; }
+  .pf-hint{ text-align:center; }
+}

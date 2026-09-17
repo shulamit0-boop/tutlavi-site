@@ -170,6 +170,12 @@ function applySiteContent(c) {
       bg.style.backgroundImage =
         'linear-gradient(rgba(255,255,255,.12), rgba(255,255,255,.28)), url("' + src + '")';
     }
+    // the hero is a video now, so an uploaded image becomes its poster: the
+    // still shown until the loop has enough data to play
+    const heroVid = document.querySelector('.hero video');
+    if (!bg && heroVid && (src.startsWith('/') || /^https?:\/\//i.test(src))) {
+      heroVid.setAttribute('poster', src);
+    }
   }
   if (has('footerStudio')) {
     const col = document.getElementById('footerStudioCol');
@@ -306,7 +312,14 @@ const inquiryForm = document.getElementById('inquiryForm');
 const rentalFields = document.getElementById('rentalFields');
 const rentalInputs = rentalFields.querySelectorAll('input');
 const formStatus = document.getElementById('formStatus');
-const typeRadios = inquiryForm.querySelectorAll('input[name="type"]');
+/* "מה חשבתם" — the chips are the only choice the visitor makes about the kind
+   of request. Everything except "משהו אחר" is a request for the space itself,
+   which is what opens the calendar and creates a real hold. */
+const typeRadios = inquiryForm.querySelectorAll('input[name="event-purpose"]');
+const OTHER_PURPOSE = 'משהו אחר';
+const typeInput = document.getElementById('f-type');
+const dateNoteField = document.getElementById('dateNoteField');
+const rentalSteps = document.getElementById('rentalSteps');
 
 /* Selected-state styling for the enquiry-type cards and the contract checkbox
    is driven from here with a class rather than from CSS :has(input:checked).
@@ -320,6 +333,11 @@ function syncTypeCards() {
 function setRentalVisible(show) {
   syncTypeCards();
   rentalFields.hidden = !show;
+  if (typeInput) typeInput.value = show ? 'השכרת חלל' : 'שיתוף פעולה';
+  // the calendar and the free-text date are the same numbered line ( 5 ), so
+  // exactly one of them is on screen at a time
+  if (dateNoteField) dateNoteField.hidden = show;
+  if (rentalSteps) rentalSteps.hidden = !show;
   // nothing in the rental block is required any more — a principle request can
   // legitimately arrive with only a date in mind, and the contract stage is
   // where the binding details get collected
@@ -534,13 +552,18 @@ async function sendEnquiry(p) {
 /* ---------- modal open/close ---------- */
 function openInquiry(mode) {
   if (menuOverlay.classList.contains('open')) closeMenu();
+  const checked = inquiryForm.querySelector('input[name="event-purpose"]:checked');
   if (mode === 'rental') {
-    inquiryForm.querySelector('input[value="השכרת חלל"]').checked = true;
+    // keep whatever chip is already chosen unless it is the one that skips the
+    // calendar, in which case fall back to the first chip
+    if (!checked || checked.value === OTHER_PURPOSE) typeRadios[0].checked = true;
     setRentalVisible(true);
   } else {
-    inquiryForm.querySelector('input[value="שיתוף פעולה"]').checked = true;
+    const other = inquiryForm.querySelector('input[value="' + OTHER_PURPOSE + '"]');
+    if (other) other.checked = true;
     setRentalVisible(false);
   }
+  syncSubmitState();
   inquiryModal.classList.add('open');
   inquiryModal.setAttribute('aria-hidden', 'false');
   document.body.classList.add('modal-open');
@@ -558,8 +581,27 @@ document.querySelectorAll('[data-close-inquiry]').forEach(el => el.addEventListe
 window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && inquiryModal.classList.contains('open')) closeInquiry(); });
 
 typeRadios.forEach(r => {
-  r.addEventListener('change', () => setRentalVisible(r.value === 'השכרת חלל' && r.checked));
+  r.addEventListener('change', () => setRentalVisible(r.checked && r.value !== OTHER_PURPOSE));
 });
+
+/* ---------- "שם + טלפון או מייל, וזה מספיק" ----------
+   The footer line is a promise, so the button keeps it: it stays faded until
+   there is a name and one way to answer, and nothing else is ever demanded. */
+const nameInput = document.getElementById('f-name');
+const phoneInput = document.getElementById('f-phone');
+const emailInput = document.getElementById('f-email');
+const inquirySubmit = document.getElementById('inquirySubmit');
+
+function canSubmitInquiry() {
+  return !!(nameInput.value.trim() && (phoneInput.value.trim() || emailInput.value.trim()));
+}
+function syncSubmitState() {
+  if (inquirySubmit) inquirySubmit.disabled = !canSubmitInquiry();
+}
+[nameInput, phoneInput, emailInput].forEach(el => {
+  el?.addEventListener('input', syncSubmitState);
+});
+syncSubmitState();
 
 /* ---------- inquiry submit → FormSubmit + booking + reservation ---------- */
 const FORM_ENDPOINT = 'https://formsubmit.co/ajax/vivian.office.info@gmail.com';
@@ -594,15 +636,18 @@ function buildMail(p, isRental, bookingId) {
     'שם': p.name || '',
     'טלפון': p.phone || '',
     'מייל': p.email || '',
-    'מה הם מבקשים': p.message || '',
+    'מה חשבו': p['event-purpose'] || '',
+    'תאריך משוער': p['date-note'] || '',
+    'כמה אנשים': p.participants || '',
+    'עוד משהו': p.message || '',
   };
 
   if (!isRental) return drop(mail);
 
+  // purpose and party size are asked of everyone now, so they are already in
+  // the base mail above — only what the calendar produces is added here
   if (heDate) mail['תאריך מבוקש'] = heDate;
   if (hours) mail['שעות'] = hours;
-  if (p['event-purpose']) mail['מטרה'] = p['event-purpose'];
-  if (p.participants) mail['משתתפים'] = p.participants;
   if (p['estimated-cost']) mail['עלות'] = p['estimated-cost'];
   mail['התאריך מוחזק עד'] = heDateOf(new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10));
   mail['לאישור הבקשה'] = 'https://tutlavi.com/admin';
@@ -626,6 +671,13 @@ function buildMail(p, isRental, bookingId) {
 
 inquiryForm.addEventListener('submit', (e) => {
   e.preventDefault();
+  // the email field is no longer required by the browser, so the "one way to
+  // answer" rule is checked here
+  if (!canSubmitInquiry()) {
+    formStatus.className = 'form-status err';
+    formStatus.textContent = 'צריך שם, ואיך לחזור אליכם — טלפון או מייל.';
+    return;
+  }
   // a partial /api/availability response used to throw here, which killed the
   // submit button silently and lost the enquiry
   if (!rentalFields.hidden && dateInput.value && (availability?.locked || []).includes(dateInput.value)) {
@@ -688,7 +740,9 @@ inquiryForm.addEventListener('submit', (e) => {
     availChips.innerHTML = '';
     availStatus.textContent = '';
     document.getElementById('costLine').hidden = true;
-    setRentalVisible(false);
+    // reset() puts the first chip back, so the block under ( 5 ) follows it
+    setRentalVisible(true);
+    syncSubmitState();
     loadAvailability(true);
   })()
     .catch(() => {

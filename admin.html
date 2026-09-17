@@ -289,7 +289,7 @@ button.danger{ background:var(--accent); border-color:var(--accent); }
     <div class="cgroup">
       <h2>מדיה — תמונה ווידאו</h2>
       <div class="cfield">
-        <label>תמונת הרקע של הפתיחה</label>
+        <label>התמונה שנראית לפני שהווידאו עולה</label>
         <div class="media-row">
           <img id="heroPreview" class="media-thumb" alt="תצוגה מקדימה של תמונת הפתיחה">
           <div class="media-side">
@@ -301,7 +301,7 @@ button.danger{ background:var(--accent); border-color:var(--accent); }
         </div>
       </div>
       <div class="cfield">
-        <label>הווידאו שליד המשפט הגדול</label>
+        <label>הווידאו שרץ בפתיחת העמוד</label>
         <div class="media-row">
           <video id="videoPreview" class="media-thumb" muted playsinline loop autoplay></video>
           <div class="media-side">
@@ -519,31 +519,55 @@ $('nextM').addEventListener('click', () => { view.setMonth(view.getMonth() + 1);
 /* Defaults mirror the built-in texts in index.html. An emptied field falls
    back to the built-in text on the site. */
 const FIELDS = [
-  { sec: 'עמוד ראשי' },
-  { key: 'heroTitle', label: 'כותרת ענק (פתיחת העמוד)', def: 'TUTLAVI', dir: 'ltr' },
-  { key: 'splitHeadline', label: 'המשפט ליד הווידאו (כל שורה = שורה חדשה)', def: 'Creativity\nCanvas\nfor everything\nwe love', multi: true, dir: 'ltr' },
-  { sec: 'לו"ז הסטודיו' },
-  { key: 'schedEyebrow', label: 'שורת התקופה (מעל הכותרת)', def: 'יולי–אוגוסט 2026' },
-  { key: 'schedTitle', label: 'כותרת הסקשן', def: 'לו"ז הסטודיו' },
-  { sec: 'מי אנחנו' },
-  { key: 'aboutTitle', label: 'כותרת', def: 'מי אנחנו' },
-  { key: 'aboutLead', label: 'משפט פתיחה', def: 'תות — tutlavi, מ־"toute la vie" — כל החיים.' },
-  { key: 'aboutBody', label: 'פסקת תיאור', def: 'אוצרות אישית וקפדנית, שותפים שפועלים ממקום אמיתי של עשייה, ואנשי לב שמביאים אנרגיה שתורמת להרמוניה של הסטודיו. מתחם כשר שמאפשר אירוח פרימיום לקהל רחב.', multi: true },
-  { sec: 'השכרת החלל ושיתופי פעולה' },
-  { key: 'rentEyebrow', label: 'שורת תיוג (מעל הכותרת)', def: 'השכרת החלל · שיתופי פעולה' },
-  { key: 'rentTitle', label: 'כותרת (כל שורה = שורה חדשה)', def: 'המרחב שלכם\nלאירוע הבא', multi: true },
-  { key: 'rentCtaRent', label: 'כפתור — השכרת החלל', def: 'השכרת החלל' },
-  { key: 'rentCtaCollab', label: 'כפתור — שיתופי פעולה', def: 'שיתופי פעולה' },
-  { sec: 'צור קשר' },
-  { key: 'contactTitle', label: 'כותרת (כל שורה = שורה חדשה)', def: 'דברו\nאיתנו', multi: true },
-  { key: 'contactEmail', label: 'אימייל', def: 'vivian.office.info@gmail.com', dir: 'ltr', note: 'מתעדכן גם בפוטר' },
-  { key: 'contactPhone', label: 'טלפון', def: '054-312-9933', dir: 'ltr' },
-  { key: 'contactInstagram', label: 'אינסטגרם', def: '@tutlavi_studio', dir: 'ltr', note: 'אפשר @שם או קישור מלא — מתעדכן גם בפוטר' },
-  { key: 'contactAddr', label: 'כתובת', def: 'מגן אברהם 6, תל אביב · מתחם כשר' },
-  { sec: 'פוטר (תחתית העמוד)' },
-  { key: 'footerBrand', label: 'משפט על הסטודיו', def: 'מרחב לאירוח, יצירה ואוצרות במרכז תל אביב.' },
-  { key: 'footerStudio', label: 'עמודת "Studio" (כל שורה = פריט)', def: 'שישי בצהריים\nערבי אמצע שבוע\nסדנאות ואירועים\nאירוח פרטי', multi: true },
-  { key: 'footerAddr', label: 'כתובת בפוטר', def: 'מגן אברהם 6, תל אביב' },
+  { sec: 'פתיחה (ראש העמוד)' },
+  { key: 'heroTitle', label: 'כותרת בכרטיס הפתיחה', def: 'חלל לבן, אור, אמנות והמון השראה' },
+  { key: 'heroLead', label: 'הפסקה בכרטיס הפתיחה', def: 'סטודיו תות הוא חלל קסום ביפו, שמארח את כל מה שאנחנו אוהבים: סדנאות, ארוחות, ימי צילום, וערבים שנגמרים מאוחר.', multi: true },
+  { sec: 'מה יש כאן' },
+  { key: 'hereTitle', label: 'כותרת', def: 'לא הרבה, ובכוונה' },
+  { key: 'hereLead', label: 'משפט מתחת לכותרת', def: 'המקום יודע ללבוש את הצורה שאתם רוצים לתת לו.' },
+  { sec: 'החלל' },
+  { key: 'spaceTitle', label: 'כותרת', def: 'חלל לבן. אור. שקט' },
+  { key: 'spaceLead', label: 'פסקה', def: 'זה חלל שלא מתאמץ. הרהיטים שנמצאים כאן — הספה, המראה, הפרגוד, כמה פמוטים — זזים לפי הצורך, או יוצאים לגמרי.', multi: true },
+  { sec: 'מה קורה כאן' },
+  { key: 'shootTitle', label: 'כרטיס ימי הצילום — כותרת', def: 'ימי צילום' },
+  { key: 'shootBody', label: 'כרטיס ימי הצילום — טקסט', def: 'צלמים אוהבים את הקירות, ואנחנו אוהבים לראות מה יוצא. יש חשמל וווי-פיי, פינה להתארגן ולהתאפר, ואביזרים שמסתובבים כאן ממילא. סטילס, וידאו, לוקבוק — מגיעים עם הצוות, יוצאים עם החומרים.', multi: true },
+  { key: 'eveningTitle', label: 'כרטיס הערבים — כותרת', def: 'סדנאות, ארוחות וערבים' },
+  { key: 'eveningBody', label: 'כרטיס הערבים — טקסט', def: 'סדנה קטנה, ארוחה ארוכה, הרמת כוסית או השקה שקטה. שולחנות וכיסאות, מטבח כשר, סאונד — והבר של ויויאן, אם מתחשק. עד חמישים איש זה עדיין מרגיש כמו בית.', multi: true },
+  { sec: 'ויויאן (הבר)' },
+  { key: 'vivianTitle', label: 'כותרת', def: 'מחפשים קוקטיילים? ויויאן מוזגת' },
+  { key: 'vivianBody', label: 'טקסט', def: 'ערבים סודיים ושישי בצהריים, בבר הקוקטיילים של תות. הכל טרי, הכל עונתי.', multi: true },
+  { sec: 'איך זה הולך' },
+  { key: 'howTitle', label: 'כותרת הסקשן', def: 'איך זה הולך' },
+  { key: 'step1Title', label: 'שלב 1 — כותרת', def: 'כותבים לנו מה חשבתם.' },
+  { key: 'step1Body', label: 'שלב 1 — טקסט', def: 'תאריך, כמה אנשים, ומה בא לכם.' },
+  { key: 'step2Title', label: 'שלב 2 — כותרת', def: 'אנחנו בודקים התאמה וזמינות.' },
+  { key: 'step2Body', label: 'שלב 2 — טקסט', def: 'ואם זה מתאים — מזמינים אתכם לקפה בסטודיו.' },
+  { key: 'step3Title', label: 'שלב 3 — כותרת', def: 'היום שלכם בסטודיו.' },
+  { key: 'step3Body', label: 'שלב 3 — טקסט', def: 'מחיר ההרצה כרגע הוא ₪250 לשעה. הבר בתוספת.' },
+  { sec: 'מה קורה בסטודיו (הלו"ז)' },
+  { key: 'schedTitle', label: 'כותרת הסקשן', def: '/ מה קורה בסטודיו   ( 5 )', note: 'הסקשן מוצג רק כשיש אירוע עתידי ברשימת האירועים' },
+  { sec: 'לכתוב לנו' },
+  { key: 'contactTitle', label: 'הכותרת הענקית', def: 'בואו' },
+  { key: 'contactLead', label: 'משפט מתחת לכותרת', def: 'הכי נוח בוואטסאפ. עונים כשאנחנו לא באמצע סדנה.' },
+  { key: 'contactEmail', label: 'אימייל', def: 'vivian.office.info@gmail.com', dir: 'ltr' },
+  { key: 'contactPhone', label: 'טלפון (וואטסאפ)', def: '054-312-9933', dir: 'ltr', note: 'מתעדכן גם בתפריט' },
+  { key: 'contactInstagram', label: 'אינסטגרם', def: '@tutlavi_studio', dir: 'ltr', note: 'אפשר @שם או קישור מלא' },
+  { key: 'innerCircle', label: 'שורת Inner Circle', def: 'יש לנו קבוצת וואטסאפ קטנה. שם מספרים קודם על ערבים, סדנאות וארוחות. אפשר להצטרף.', multi: true },
+  { key: 'addr', label: 'כתובת', def: 'מגן אברהם 6, יפו', note: 'מופיעה גם בפוטר' },
+  { sec: 'עמוד ויויאן (tutlavi.com/vivian)' },
+  { key: 'vivBarTitle', label: 'על הבר — כותרת', def: 'בר. כיפי. וזהו' },
+  { key: 'vivBarLead', label: 'על הבר — משפט', def: 'שמחה, טריות ושפע — וזה כל הפילוסופיה.' },
+  { key: 'vivPopupTitle', label: 'הפופ-אפ הקרוב — כותרת', def: 'הפופ-אפ הקרוב' },
+  { key: 'vivPopupLead', label: 'הפופ-אפ הקרוב — משפט', def: 'נושא אחד, תפריט אחד, ערב אחד. הכתובת המדויקת נשלחת רק אחרי ההרשמה. מקומות מוגבלים.', multi: true },
+  { key: 'vivPopupDate', label: '★ תאריך הפופ-אפ', def: '02.10', dir: 'ltr', note: 'זה מה שמעדכנים כשנקבע ערב חדש' },
+  { key: 'vivPopupHeb', label: 'תאריך עברי', def: 'כ״א בתשרי' },
+  { key: 'vivPopupName', label: 'שם הערב', def: 'ויויאן פופ-אפ' },
+  { key: 'vivPopupNote', label: 'שורה קטנה מתחת לשם', def: 'הכתובת? רק אחרי ההרשמה.' },
+  { key: 'vivComeTitle', label: 'פשוט תגיעו — כותרת', def: 'פשוט תגיעו' },
+  { key: 'vivComeLead', label: 'פשוט תגיעו — טקסט', def: 'אין מה להתכונן ואין מה להביא. שולחים הודעה, מקבלים את הכתובת, ומגיעים. כשתיכנסו כבר תחכה לכם כוס — ומשם זה הולך לבד.', multi: true },
+  { key: 'vivUpdatesTitle', label: 'עדכונים — הכותרת הגדולה', def: 'הפעם הבאה שהטוב הזה יתקיים?
+תדעו ראשונים', multi: true },
+  { key: 'vivUpdatesLead', label: 'עדכונים — משפט', def: 'כותבים לנו את השם, ואנחנו שולחות בוואטסאפ מתי הפופ-אפ הבא — לפני שזה יוצא לאינסטגרם. בלי ספאם, רק דרינקים.', multi: true },
 ];
 
 const DEFAULT_EVENTS = [
@@ -1229,8 +1253,8 @@ if (key()) start();
    globals (content / queueContentSave / key) from the main script. */
 import { upload } from 'https://esm.sh/@vercel/blob@0.27.3/client';
 
-const DEFAULT_HERO = '/media/hero.jpg';
-const DEFAULT_VIDEO = '/media/studio.mp4';
+const DEFAULT_HERO = '/media/hero-poster.jpg';
+const DEFAULT_VIDEO = '/media/hero-loop.mp4';
 
 window.renderMediaUI = () => {
   const t = content.texts || {};

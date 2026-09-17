@@ -3,380 +3,437 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>תות - Studio Tutlavi | מרחב לאירוח ואוצרות</title>
-<meta name="description" content="סטודיו תות - מרחב לאירוח ואוצרות. מפגש ישיר בין קולינריה ליצירה. 24.07 אירוע פתיחה.">
+<title>תות · חלל לבן לסדנאות, ימי צילום וערבים ביפו</title>
+<meta name="description" content="סטודיו תות — חלל לבן ומואר במגן אברהם 6, יפו. סדנאות, ארוחות, ימי צילום וערבים. מטבח כשר, סאונד ותאורה, בר קוקטיילים.">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="favicon.png">
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="home.css">
+<link rel="stylesheet" href="forms.css">
 </head>
 <body>
 
 <!-- ============ HEADER ============ -->
 <header class="site-header" id="siteHeader">
-  <a href="#top" class="brand" aria-label="תות">
-    <img class="brand-logo brand-logo-dark" src="media/logo-mark.png" alt="תות" width="645" height="249">
-    <img class="brand-logo brand-logo-light" src="media/logo-mark-white.png" alt="" aria-hidden="true" width="645" height="249">
+  <a href="#hero" class="brand" aria-label="תות — ראש העמוד">
+    <img class="brand-logo" src="media/logo-tut.png" alt="תות" width="645" height="249">
   </a>
   <button class="menu-btn" id="menuBtn" aria-label="תפריט" aria-expanded="false">
     <span></span><span></span><span></span>
   </button>
+  <a href="#contact" class="head-cta">לכתוב לנו <i aria-hidden="true">( 1 )</i></a>
 </header>
 
-<!-- ============ FULL-SCREEN MENU OVERLAY ============ -->
+<!-- ============ MENU DRAWER ============ -->
+<div class="menu-scrim" id="menuScrim" aria-hidden="true"></div>
 <div class="menu-overlay" id="menuOverlay" aria-hidden="true">
-  <div class="menu-noise" aria-hidden="true"></div>
   <div class="menu-top">
-    <span class="brand"><img class="brand-logo" src="media/logo-mark.png" alt="תות" width="645" height="249"></span>
+    <img class="brand-logo" src="media/logo-tut.png" alt="תות" width="645" height="249">
+    <span class="menu-index" dir="ltr">/ INDEX</span>
     <button class="menu-close" id="menuClose" aria-label="סגירה">&times;</button>
   </div>
   <nav class="menu-list">
-    <!-- להשקה: הופנה זמנית מ-#schedule ל-#rent כי הלו"ז מוסתר — להחזרה: החליפו #rent חזרה ל-#schedule -->
-    <a href="#rent" class="menu-item">
-      <span class="menu-item-main">בואו ליצור בסטודיו</span>
-      <span class="menu-item-sub" dir="ltr">Come create in studio</span>
-      <span class="menu-arrow" aria-hidden="true">↗</span>
+    <a href="#here" class="menu-item">
+      <span class="menu-item-main">/ מה יש כאן</span>
+      <span class="menu-item-num">( 1 )</span>
     </a>
-    <a href="https://chat.whatsapp.com/Hbqqk4mGVwJ484JZAbEH8y" target="_blank" rel="noopener" class="menu-item">
-      <span class="menu-item-main">הצטרפו לקהילה</span>
-      <span class="menu-item-sub" dir="ltr">Join the community</span>
-      <span class="menu-arrow" aria-hidden="true">↗</span>
+    <a href="#space" class="menu-item">
+      <span class="menu-item-main">/ החלל</span>
+      <span class="menu-item-num">( 2 )</span>
     </a>
-    <a href="#about" class="menu-item">
-      <span class="menu-item-main">מי אנחנו</span>
-      <span class="menu-item-sub" dir="ltr">Who we are</span>
-      <span class="menu-arrow" aria-hidden="true">↗</span>
+    <a href="#uses" class="menu-item">
+      <span class="menu-item-main">/ מה קורה כאן</span>
+      <span class="menu-item-num">( 3 )</span>
+    </a>
+    <a href="#how" class="menu-item">
+      <span class="menu-item-main">/ איך זה הולך</span>
+      <span class="menu-item-num">( 4 )</span>
+    </a>
+    <a href="#schedule" class="menu-item">
+      <span class="menu-item-main">/ מה קורה בסטודיו</span>
+      <span class="menu-item-num">( 5 )</span>
+    </a>
+    <a href="#contact" class="menu-item">
+      <span class="menu-item-main">/ לכתוב לנו</span>
+      <span class="menu-item-num">( 6 )</span>
     </a>
     <button type="button" class="menu-item" data-open-inquiry="rental">
-      <span class="menu-item-main">השכרת החלל</span>
-      <span class="menu-item-sub" dir="ltr">Rent the space</span>
-      <span class="menu-arrow" aria-hidden="true">↗</span>
+      <span class="menu-item-main">/ להשכיר את החלל</span>
+      <span class="menu-item-num">( 7 )</span>
     </button>
   </nav>
-  <div class="menu-foot" dir="ltr">© 2026 תות Studio · toute la vie</div>
+  <div class="menu-foot" dir="ltr">
+    TUTLAVI — JAFFA, IL<br>
+    <a href="https://wa.me/972543129933" target="_blank" rel="noopener" data-phone>WHATSAPP · <span dir="ltr">054-312-9933</span></a>
+  </div>
 </div>
 
-<span id="top"></span>
-
-<!-- ============ 1 · HERO ============ -->
+<!-- ============ HERO ============ -->
 <section class="hero" id="hero">
-  <div class="hero-bg" aria-hidden="true"></div>
-  <h1 class="hero-title" dir="ltr" data-edit="heroTitle" data-dot>TUTLAVI<span class="dot">.</span></h1>
+  <video src="media/hero-loop.mp4" data-video-src="media/hero-loop.mp4" data-role="split"
+         poster="media/hero-poster.jpg" autoplay muted loop playsinline aria-hidden="true"></video>
+
+  <div class="hero-meta" dir="ltr">TUTLAVI<br>JAFFA, IL<br>EST. 2026</div>
+  <div class="hero-scroll" dir="ltr">/ 01 &nbsp;&nbsp; SCROLL ↓</div>
+
+  <div class="hero-card">
+    <h1 class="hero-title" data-edit="heroTitle" data-dot>חלל לבן, אור, אמנות והמון השראה<span class="dot">.</span></h1>
+    <p class="hero-lead" data-edit="heroLead">סטודיו תות הוא חלל קסום ביפו, שמארח את כל מה שאנחנו אוהבים: סדנאות, ארוחות, ימי צילום, וערבים שנגמרים מאוחר.</p>
+    <a href="#contact" class="hero-cta">
+      <span class="marquee-line"><span>לכתוב לנו &nbsp;•&nbsp; לכתוב לנו &nbsp;•&nbsp; לכתוב לנו &nbsp;•&nbsp; לכתוב לנו &nbsp;•&nbsp; לכתוב לנו &nbsp;•&nbsp; לכתוב לנו &nbsp;•&nbsp;</span></span>
+      <span class="cta-box" aria-hidden="true">←</span>
+    </a>
+  </div>
 </section>
 
-<!-- ============ 2 · SPLIT (video + statement) ============ -->
-<section class="split" id="intro">
-  <div class="split-media">
-    <video data-role="split" muted loop playsinline preload="metadata"></video>
-    <div class="split-media-fade" aria-hidden="true"></div>
-  </div>
-  <div class="split-text">
-    <h2 class="split-headline reveal" dir="ltr" data-edit="splitHeadline" data-dot>
-      Creativity<br>Canvas<br>for everything<br>we love<span class="dot">.</span>
-    </h2>
+<!-- ============ 1 · WHAT IS HERE ============ -->
+<section class="sec" id="here">
+  <div class="two-col">
+    <div class="reveal">
+      <p class="eyebrow">/ מה יש כאן &nbsp;&nbsp;( 1 )</p>
+      <h2 class="h2" data-edit="hereTitle" data-dot style="margin-top:16px">לא הרבה, ובכוונה<span class="dot">.</span></h2>
+      <p class="lead" data-edit="hereLead" style="margin-top:20px;max-width:40ch">המקום יודע ללבוש את הצורה שאתם רוצים לתת לו.</p>
+    </div>
+    <div class="reveal">
+      <ul class="spec-list">
+        <li><span class="num">( 1 )</span><span>מקום לחמישים איש, בערך</span><span class="tag" dir="ltr">capacity</span></li>
+        <li><span class="num">( 2 )</span><span>אור טבעי מהבוקר עד אחר הצהריים</span><span class="tag" dir="ltr">light</span></li>
+        <li><span class="num">( 3 )</span><span>מטבח כשר ומאובזר</span><span class="tag" dir="ltr">kitchen</span></li>
+        <li><span class="num">( 4 )</span><span>סאונד ותאורה</span><span class="tag" dir="ltr">sound / light</span></li>
+        <li><span class="num">( 5 )</span><span>ווי-פיי, חשמל בכל פינה</span><span class="tag" dir="ltr">wifi / power</span></li>
+        <li><span class="num">( 6 )</span><span>בר קוקטיילים, אם רוצים</span><span class="tag" dir="ltr">bar</span></li>
+      </ul>
+    </div>
   </div>
 </section>
 
-<!-- ============ 3 · SCHEDULE ============ -->
-<!-- לו"ז מוסתר זמנית לצורך ההשקה — להחזרה: מחקו את style="display:none" מהשורה הבאה -->
-<section class="schedule" id="schedule" style="display:none">
-  <div class="wrap">
-    <div class="sched-head reveal">
+<!-- ============ 2 · THE SPACE ============ -->
+<section class="sec" id="space">
+  <div class="sec-head">
+    <p class="eyebrow">/ החלל &nbsp;&nbsp;( 2 )</p>
+    <p class="eyebrow" dir="ltr">WHITE / LIGHT / JAFFA</p>
+  </div>
+
+  <div class="space-intro reveal">
+    <h2 class="h2" data-edit="spaceTitle" data-dot>חלל לבן. אור. שקט<span class="dot">.</span></h2>
+    <p class="lead" data-edit="spaceLead">זה חלל שלא מתאמץ. הרהיטים שנמצאים כאן — הספה, המראה, הפרגוד, כמה פמוטים — זזים לפי הצורך, או יוצאים לגמרי.</p>
+  </div>
+
+  <div class="tiles reveal">
+    <figure class="tile tile-lg">
+      <img src="media/ice-glass.jpg" alt="כוס עם קרח באור שמש" loading="lazy" width="1200" height="900">
+      <span class="tile-num" dir="ltr">/ 01</span>
+      <span class="tile-cap" dir="ltr">LIGHT · 14:00</span>
+    </figure>
+    <figure class="tile tile-sm">
+      <img src="media/candles-sm.jpg" alt="פמוטים שחורים על מגש" loading="lazy" width="800" height="600">
+      <span class="tile-num" dir="ltr">/ 02</span>
+      <span class="tile-cap" dir="ltr">DETAILS</span>
+    </figure>
+    <figure class="tile tile-sm">
+      <img src="media/bar-tools-sm.jpg" alt="כלי בר על מגש" loading="lazy" width="800" height="600">
+      <span class="tile-num" dir="ltr">/ 03</span>
+      <span class="tile-cap" dir="ltr">THE BAR</span>
+    </figure>
+    <figure class="tile tile-lg">
+      <img src="media/glass-light.jpg" alt="כוס זכוכית באור על בד לבן" loading="lazy" width="1200" height="900">
+      <span class="tile-num" dir="ltr">/ 04</span>
+      <span class="tile-cap" dir="ltr">AFTERNOON</span>
+    </figure>
+  </div>
+</section>
+
+<!-- ============ 3 · WHAT HAPPENS HERE ============ -->
+<section class="sec" id="uses">
+  <div class="sec-head">
+    <p class="eyebrow">/ מה קורה כאן &nbsp;&nbsp;( 3 )</p>
+    <p class="eyebrow" dir="ltr">DAYS / NIGHTS</p>
+  </div>
+
+  <div class="uses">
+    <div class="use reveal">
+      <img src="media/shoot-day.jpg" alt="יום צילום בסטודיו" loading="lazy" width="1200" height="1600">
+      <span class="use-tag" dir="ltr">/ SHOOT DAYS</span>
+      <div class="use-body">
+        <h3 data-edit="shootTitle">ימי צילום</h3>
+        <p data-edit="shootBody">צלמים אוהבים את הקירות, ואנחנו אוהבים לראות מה יוצא. יש חשמל וווי-פיי, פינה להתארגן ולהתאפר, ואביזרים שמסתובבים כאן ממילא. סטילס, וידאו, לוקבוק — מגיעים עם הצוות, יוצאים עם החומרים.</p>
+      </div>
+    </div>
+    <div class="use reveal">
+      <video src="media/bar-loop.mp4" data-video-src="media/bar-loop.mp4"
+             poster="media/bar-poster.jpg" autoplay muted loop playsinline aria-hidden="true"></video>
+      <span class="use-tag" dir="ltr">/ EVENINGS</span>
+      <div class="use-body">
+        <h3 data-edit="eveningTitle">סדנאות, ארוחות וערבים</h3>
+        <p data-edit="eveningBody">סדנה קטנה, ארוחה ארוכה, הרמת כוסית או השקה שקטה. שולחנות וכיסאות, מטבח כשר, סאונד — והבר של ויויאן, אם מתחשק. עד חמישים איש זה עדיין מרגיש כמו בית.</p>
+      </div>
+    </div>
+  </div>
+
+  <p class="use-after">
+    <button type="button" data-open-inquiry="rental">רוצים לבוא? אפשר לבדוק תאריך ולכתוב לנו &nbsp;←</button>
+  </p>
+</section>
+
+<!-- ============ VIVIAN ============ -->
+<section class="sec">
+  <a class="vivian reveal" href="/vivian#top">
+    <span class="vivian-face">
+      <img src="media/vivian-round.webp" alt="ויויאן — Cocktail Party" loading="lazy" width="384" height="384">
+    </span>
+    <span class="vivian-text">
+      <span class="vivian-eyebrow" dir="ltr">/ VIVIAN COCKTAIL PARTY</span>
+      <h3 data-edit="vivianTitle" data-dot>מחפשים קוקטיילים? ויויאן מוזגת<span class="dot">.</span></h3>
+      <p data-edit="vivianBody">ערבים סודיים ושישי בצהריים, בבר הקוקטיילים של תות. הכל טרי, הכל עונתי.</p>
+    </span>
+    <span class="vivian-arrow" aria-hidden="true">←</span>
+  </a>
+</section>
+
+<!-- ============ BRAND MARQUEE ============ -->
+<div class="band" dir="ltr" aria-hidden="true">
+  <div class="band-track">
+    <span>תות.</span><span class="lat">TOUTE LA VIE —</span>
+    <span>תות.</span><span class="lat">TOUTE LA VIE —</span>
+    <span>תות.</span><span class="lat">TOUTE LA VIE —</span>
+    <span>תות.</span><span class="lat">TOUTE LA VIE —</span>
+  </div>
+</div>
+
+<!-- ============ 4 · HOW IT GOES ============ -->
+<section class="sec" id="how" style="border-top:none">
+  <div class="sec-head">
+    <p class="eyebrow">/ איך זה הולך &nbsp;&nbsp;( 4 )</p>
+    <p class="eyebrow" dir="ltr">3 STEPS</p>
+  </div>
+
+  <h2 class="h2 reveal" data-edit="howTitle" data-dot style="margin-bottom:32px">איך זה הולך<span class="dot">.</span></h2>
+
+  <div class="steps">
+    <div class="step reveal">
+      <div class="step-num" dir="ltr">1</div>
       <div>
-        <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span><span data-edit="schedEyebrow">יולי–אוגוסט 2026</span></p>
-        <h2 class="sched-title" data-edit="schedTitle" data-dot>לו"ז הסטודיו<span class="dot">.</span></h2>
-      </div>
-      <span class="sched-count" id="schedCount">5 אירועים קרובים</span>
-    </div>
-
-    <div class="sched-cols reveal">
-      <span></span>
-      <span>תאריך</span>
-      <span>אירוע</span>
-      <span class="col-cat">קטגוריה</span>
-      <span class="col-status">סטטוס</span>
-    </div>
-
-    <ul class="sched-list" id="schedList">
-      <li class="sched-row reveal">
-        <span class="sched-flag on"></span>
-        <span class="sched-date" dir="ltr">24.07.2026</span>
-        <span class="sched-main">
-          <span class="sched-name">אירוע פתיחה — חותכים את הסרט</span>
-          <span class="sched-desc">ליין-אפ מוזיקלי · תערוכה מתחלפת · ויויאן · אוניגירי מנטנטן</span>
-        </span>
-        <span class="sched-cat">אירוע</span>
-        <span class="sched-status on">בקרוב</span>
-      </li>
-      <li class="sched-row reveal">
-        <span class="sched-flag on"></span>
-        <span class="sched-date" dir="ltr">31.07.2026</span>
-        <span class="sched-main">
-          <span class="sched-name">ליין שישי — פופ-אפ מקומי</span>
-          <span class="sched-desc">ירידים ופופ-אפים של יוצרים מקומיים בצהרי שישי.</span>
-        </span>
-        <span class="sched-cat">פופ-אפ</span>
-        <span class="sched-status on">פתוח</span>
-      </li>
-      <li class="sched-row reveal">
-        <span class="sched-flag"></span>
-        <span class="sched-date" dir="ltr">05.08.2026</span>
-        <span class="sched-main">
-          <span class="sched-name">ערב קולנוע זר</span>
-          <span class="sched-desc">הקרנה נבחרת, בר פתוח והשראה באמצע השבוע.</span>
-        </span>
-        <span class="sched-cat">קולנוע</span>
-        <span class="sched-status">בקרוב</span>
-      </li>
-      <li class="sched-row reveal">
-        <span class="sched-flag on"></span>
-        <span class="sched-date" dir="ltr">12.08.2026</span>
-        <span class="sched-main">
-          <span class="sched-name">סדנת יין</span>
-          <span class="sched-desc">טעימות וטעינה — סדנה אינטימית סביב הבר.</span>
-        </span>
-        <span class="sched-cat">סדנה</span>
-        <span class="sched-status on">פתוח להרשמה</span>
-      </li>
-      <li class="sched-row reveal">
-        <span class="sched-flag"></span>
-        <span class="sched-date" dir="ltr">21.08.2026</span>
-        <span class="sched-main">
-          <span class="sched-name">השמעה אקוסטית</span>
-          <span class="sched-desc">ערב מוזיקה חיה בחלל הסטודיו.</span>
-        </span>
-        <span class="sched-cat">מוזיקה</span>
-        <span class="sched-status">בקרוב</span>
-      </li>
-    </ul>
-  </div>
-</section>
-
-<!-- ============ 4 · ABOUT (dark) ============ -->
-<section class="about" id="about">
-  <div class="wrap about-grid">
-    <div class="about-left reveal">
-      <p class="eyebrow light"><span class="rule" aria-hidden="true"></span><span data-edit="aboutEyebrow">מי אנחנו</span></p>
-      <div class="about-rings">
-        <svg class="rings-svg" viewBox="0 0 600 600" aria-hidden="true">
-          <defs>
-            <path id="ar-1" d="M60,300 A240,240 0 1,1 540,300 A240,240 0 1,1 60,300"/>
-            <path id="ar-2" d="M125,300 A175,175 0 1,1 475,300 A175,175 0 1,1 125,300"/>
-            <path id="ar-3" d="M185,300 A115,115 0 1,1 415,300 A115,115 0 1,1 185,300"/>
-          </defs>
-          <text class="rings-text rings-text--1"><textPath href="#ar-1" xlink:href="#ar-1" textLength="1508">TUTLAVI · TOUTE LA VIE · STUDIO · </textPath></text>
-          <text class="rings-text rings-text--2"><textPath href="#ar-2" xlink:href="#ar-2" textLength="1100">HOSPITALITY · CURATION · CREATION · CULINARY · </textPath></text>
-          <text class="rings-text rings-text--3"><textPath href="#ar-3" xlink:href="#ar-3" textLength="722">MAGEN AVRAHAM 6 · TEL AVIV · </textPath></text>
-        </svg>
-        <h2 class="about-title" data-edit="aboutTitle" data-dot>מי אנחנו<span class="dot">.</span></h2>
+        <h4 data-edit="step1Title">כותבים לנו מה חשבתם.</h4>
+        <p data-edit="step1Body">תאריך, כמה אנשים, ומה בא לכם.</p>
       </div>
     </div>
-    <div class="about-right reveal">
-      <p class="about-lead" data-edit="aboutLead">
-        <strong>תות</strong> — <span dir="ltr">tutlavi</span>, מ־<span dir="ltr">"toute la vie"</span> — כל החיים.
-      </p>
-      <p class="about-body" data-edit="aboutBody">
-        אוצרות אישית וקפדנית, שותפים שפועלים ממקום אמיתי של עשייה, ואנשי לב שמביאים אנרגיה שתורמת
-        להרמוניה של הסטודיו. מתחם כשר שמאפשר אירוח פרימיום לקהל רחב.
-      </p>
+    <div class="step reveal">
+      <div class="step-num" dir="ltr">2</div>
+      <div>
+        <h4 data-edit="step2Title">אנחנו בודקים התאמה וזמינות.</h4>
+        <p data-edit="step2Body">ואם זה מתאים — מזמינים אתכם לקפה בסטודיו.</p>
+      </div>
     </div>
-  </div>
-</section>
-
-<!-- ============ 4.5 · RENT / COLLAB (image hero) ============ -->
-<section class="rentspace" id="rent">
-  <div class="rent-hero reveal">
-    <img class="rent-hero-bg" src="media/gallery/space.jpg" alt="חלל הסטודיו של תות" loading="lazy">
-    <div class="rent-hero-shade" aria-hidden="true"></div>
-    <span class="rent-hero-tag" dir="ltr">Magen Avraham 6 · TLV</span>
-    <div class="rent-hero-inner">
-      <p class="eyebrow"><span class="pulse-dot" aria-hidden="true"></span><span data-edit="rentEyebrow">השכרת החלל · שיתופי פעולה</span></p>
-      <h2 class="rent-hero-title" data-edit="rentTitle" data-dot>המרחב שלכם<br>לאירוע הבא<span class="dot">.</span></h2>
-      <div class="rent-hero-actions">
-        <button type="button" class="rent-btn rent-btn-primary" data-open-inquiry="rental">
-          <span data-edit="rentCtaRent">השכרת החלל</span> <span dir="ltr" aria-hidden="true">←</span>
-        </button>
-        <button type="button" class="rent-btn rent-btn-ghost" data-open-inquiry="collab">
-          <span data-edit="rentCtaCollab">שיתופי פעולה</span> <span dir="ltr" aria-hidden="true">←</span>
-        </button>
+    <div class="step reveal">
+      <div class="step-num" dir="ltr">3</div>
+      <div>
+        <h4 data-edit="step3Title">היום שלכם בסטודיו.</h4>
+        <p data-edit="step3Body">מחיר ההרצה כרגע הוא ₪250 לשעה. הבר בתוספת.</p>
       </div>
     </div>
   </div>
 </section>
 
-<!-- ============ 5 · CONTACT ============ -->
-<section class="contact" id="contact">
-  <div class="wrap contact-min reveal">
-    <p class="eyebrow"><span class="rule dark" aria-hidden="true"></span><span dir="ltr">Contact</span></p>
-    <h2 class="contact-title" data-edit="contactTitle" data-dot>דברו איתנו<span class="dot">.</span></h2>
+<!-- ============ 5 · SCHEDULE ============
+     Hidden by script.js while there is no upcoming event saved in /admin. -->
+<section class="sec" id="schedule" style="display:none">
+  <div class="sec-head">
+    <p class="eyebrow" data-edit="schedTitle">/ מה קורה בסטודיו &nbsp;&nbsp;( 5 )</p>
+    <p class="eyebrow"><span id="schedCount">FROM CALENDAR</span></p>
+  </div>
+  <ul class="sched-list" id="schedList"></ul>
+</section>
 
-    <div class="contact-actions">
-      <a href="https://chat.whatsapp.com/Hbqqk4mGVwJ484JZAbEH8y" target="_blank" rel="noopener" class="wa-join" data-wa-group>
-        <span class="wa-ico" aria-hidden="true">✆</span>
-        הצטרפו לקבוצת הוואטסאפ הסודית
-      </a>
-      <a href="https://wa.me/972543129933" target="_blank" rel="noopener" class="wa-write">כתבו לנו ישירות <span dir="ltr" aria-hidden="true">←</span></a>
+<!-- ============ 6 · CONTACT ============ -->
+<section class="sec" id="contact">
+  <div class="two-col">
+    <div class="reveal">
+      <p class="eyebrow">/ לכתוב לנו &nbsp;&nbsp;( 6 )</p>
+      <h2 class="contact-title" data-edit="contactTitle" data-dot>בואו<span class="dot">.</span></h2>
+      <p class="lead contact-lead" data-edit="contactLead">הכי נוח בוואטסאפ. עונים כשאנחנו לא באמצע סדנה.</p>
+      <button type="button" class="contact-book" data-open-inquiry="rental">
+        לבדוק תאריך ולשלוח בקשה <span dir="ltr" aria-hidden="true">←</span>
+      </button>
     </div>
 
-    <div class="contact-mini">
-      <a href="mailto:vivian.office.info@gmail.com" dir="ltr" data-email>vivian.office.info@gmail.com</a>
-      <span aria-hidden="true">·</span>
-      <a href="https://www.instagram.com/tutlavi_studio" target="_blank" rel="noopener" dir="ltr" data-insta>@tutlavi_studio</a>
+    <div class="reveal">
+      <div class="receipt" dir="ltr">
+        <div class="receipt-mid">TUTLAVI</div>
+        <div class="receipt-rule">- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -</div>
+        <div class="receipt-row">
+          <span>LOCATION</span>
+          <span class="he" dir="rtl" data-edit="addr">מגן אברהם 6, יפו</span>
+        </div>
+        <a href="https://wa.me/972543129933" target="_blank" rel="noopener" data-phone>
+          <div class="receipt-row"><span>WHATSAPP</span><span dir="ltr">054-312-9933</span></div>
+        </a>
+        <a href="mailto:vivian.office.info@gmail.com" data-email>
+          <div class="receipt-row"><span>EMAIL</span><span dir="ltr">vivian.office.info@gmail.com</span></div>
+        </a>
+        <a href="https://www.instagram.com/tutlavi_studio" target="_blank" rel="noopener" data-insta>
+          <div class="receipt-row"><span>INSTAGRAM</span><span dir="ltr">@tutlavi_studio</span></div>
+        </a>
+        <div class="receipt-rule">- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -</div>
+        <a href="https://chat.whatsapp.com/Hbqqk4mGVwJ484JZAbEH8y" target="_blank" rel="noopener">
+          <div class="receipt-row">
+            <span>INNER CIRCLE</span>
+            <span class="he" dir="rtl" data-edit="innerCircle">יש לנו קבוצת וואטסאפ קטנה. שם מספרים קודם על ערבים, סדנאות וארוחות. אפשר להצטרף.</span>
+          </div>
+        </a>
+      </div>
     </div>
-    <p class="contact-addr" data-edit="contactAddr">מגן אברהם 6, תל אביב · מתחם כשר</p>
   </div>
 </section>
 
 <!-- ============ FOOTER ============ -->
 <footer class="site-footer">
-  <div class="wrap">
-    <div class="footer-bottom">
-      <p dir="ltr">© 2026 תות Studio — All rights reserved</p>
-      <a href="/admin" class="footer-admin">ניהול האתר</a>
-      <p dir="ltr">toute la vie</p>
-    </div>
-  </div>
+  <span>© 2026 סטודיו תות · <span data-edit="addr">מגן אברהם 6, יפו</span></span>
+  <a href="/admin">ניהול האתר</a>
+  <span dir="ltr">TUTLAVI — TOUTE LA VIE</span>
 </footer>
 
-<!-- ============ FLOATING PLAY BUTTON ============ -->
-<button class="play-btn" id="playBtn" aria-label="פתיחת תפריט">
-  <span dir="ltr">Come play<br>with us</span>
+<!-- ============ RED STICKER ============ -->
+<button type="button" class="sticker" data-open-inquiry="rental" aria-label="ליצירת קשר">
+  <svg viewBox="0 0 100 100" aria-hidden="true">
+    <defs>
+      <path id="tutCircle" d="M50,50 m-38,0 a38,38 0 1,1 76,0 a38,38 0 1,1 -76,0"></path>
+    </defs>
+    <text fill="currentColor" font-size="10.5" font-weight="500" letter-spacing="0.4" style="font-family:Heebo, system-ui, sans-serif">
+      <textPath href="#tutCircle" startOffset="0">ליצירת קשר  ·  ליצירת קשר  ·  ליצירת קשר  ·  </textPath>
+    </text>
+  </svg>
+  <img src="media/logo-tut.png" alt="" width="645" height="249">
 </button>
 
-<!-- ============ INQUIRY MODAL (rental / collaboration) ============ -->
+
+<!-- ============ INQUIRY MODAL (rental / general) ============
+     Laid out as the paper contact form of the new design: a mono header, a
+     numbered line per field, dashed underlines instead of boxes and pills for
+     the choice. The plumbing underneath is unchanged — the calendar still
+     places a real hold, and the contract still comes out of it. -->
 <div class="modal" id="inquiryModal" aria-hidden="true">
   <div class="modal-backdrop" data-close-inquiry></div>
   <div class="modal-panel" role="dialog" aria-modal="true" aria-labelledby="inquiryTitle">
     <button class="modal-close" data-close-inquiry aria-label="סגירה">&times;</button>
-    <p class="modal-eyebrow" dir="ltr">Inquiry</p>
-    <h2 class="modal-title" id="inquiryTitle">שיתופי פעולה והשכרת החלל</h2>
 
-    <form id="inquiryForm">
+    <form id="inquiryForm" class="paper-form">
       <!-- the mail itself (subject, template, Hebrew labels) is assembled in
            buildMail() in script.js; only the honeypot has to sit in the form -->
       <input type="hidden" name="_captcha" value="false">
+      <!-- set by setRentalVisible() from the chosen chip: everything but
+           "משהו אחר" is a request for the space itself -->
+      <input type="hidden" name="type" id="f-type" value="השכרת חלל">
       <p class="hp-field"><label>אל תמלאו: <input name="_honey"></label></p>
 
-      <div class="form-section">
-        <h3 class="form-section-title">הפנייה שלכם <span class="form-section-note">כדי שנדע במה מדובר ולמי לחזור</span></h3>
+      <p class="pf-head" id="inquiryTitle" dir="ltr">TUTLAVI — CONTACT FORM</p>
+      <div class="pf-rule" aria-hidden="true"></div>
 
+      <div class="pf-grid">
         <div class="field">
-          <span class="field-label">סוג הפנייה</span>
-          <div class="radio-row">
-            <label class="radio"><input type="radio" name="type" value="שיתוף פעולה" checked> שיתוף פעולה</label>
-            <label class="radio"><input type="radio" name="type" value="השכרת חלל"> השכרת חלל</label>
-          </div>
+          <label class="field-label" for="f-name"><i class="num">( 1 )</i> שם</label>
+          <input id="f-name" type="text" name="name" autocomplete="name" required>
         </div>
-
-        <div class="modal-grid">
-          <div class="field">
-            <label class="field-label" for="f-name">שם<span class="req" aria-hidden="true">*</span></label>
-            <input id="f-name" type="text" name="name" autocomplete="name" required>
-          </div>
-
-          <div class="field">
-            <label class="field-label" for="f-email">מייל<span class="req" aria-hidden="true">*</span></label>
-            <input id="f-email" type="email" name="email" dir="ltr" autocomplete="email" required>
-          </div>
-        </div>
-
         <div class="field">
-          <label class="field-label" for="f-phone">טלפון</label>
+          <label class="field-label" for="f-phone"><i class="num">( 2 )</i> טלפון</label>
           <input id="f-phone" type="tel" name="phone" inputmode="tel" autocomplete="tel" dir="ltr">
         </div>
+      </div>
 
-        <div class="field">
-          <label class="field-label" for="f-message">מה תרצו לעשות אצלנו?<span class="req" aria-hidden="true">*</span></label>
-          <textarea id="f-message" name="message" rows="3" required></textarea>
-          <p class="field-hint">כמה מילים על האירוע או על שיתוף הפעולה — ככל שנדע יותר, נוכל לחזור אליכם עם תשובה מדויקת.</p>
+      <div class="field">
+        <label class="field-label" for="f-email"><i class="num">( 3 )</i> מייל</label>
+        <input id="f-email" type="email" name="email" dir="ltr" autocomplete="email">
+      </div>
+
+      <div class="pf-rule" aria-hidden="true"></div>
+
+      <div class="field">
+        <span class="field-label"><i class="num">( 4 )</i> מה חשבתם</span>
+        <div class="radio-row">
+          <label class="radio"><input type="radio" name="event-purpose" value="יום צילום" checked> יום צילום</label>
+          <label class="radio"><input type="radio" name="event-purpose" value="סדנה"> סדנה</label>
+          <label class="radio"><input type="radio" name="event-purpose" value="ארוחה או ערב"> ארוחה או ערב</label>
+          <label class="radio"><input type="radio" name="event-purpose" value="אירוע חברה"> אירוע חברה</label>
+          <label class="radio"><input type="radio" name="event-purpose" value="משהו אחר"> משהו אחר</label>
         </div>
       </div>
 
-      <!-- rental-only fields -->
-      <div class="rental-fields" id="rentalFields" hidden>
-
-       <div class="form-section">
-        <h3 class="form-section-title">מועד ההשכרה</h3>
-
-        <div class="field">
-          <span class="field-label">בחירת תאריך מהיומן</span>
-          <p class="field-hint">לחצו על יום ירוק כדי לראות את חלונות השעות הפנויים בו.</p>
-          <div class="fcal" id="fcal">
-            <div class="fcal-head">
-              <button type="button" class="fcal-nav" id="fcalPrev">‹</button>
-              <b id="fcalLabel"></b>
-              <button type="button" class="fcal-nav" id="fcalNext">›</button>
-            </div>
-            <div class="fcal-grid" id="fcalGrid"></div>
-            <div class="fcal-legend">
-              <span><i class="lg lg-open"></i>פנוי</span>
-              <span><i class="lg lg-pending"></i>ממתין</span>
-              <span><i class="lg lg-booked"></i>תפוס</span>
-              <span><i class="lg lg-locked"></i>נעול</span>
-            </div>
-          </div>
-          <div class="avail-chips" id="availChips"></div>
-          <p class="avail-status" id="availStatus"></p>
-        </div>
-        <input id="f-date" type="hidden" name="event-date">
-        <input type="hidden" name="window-id" id="f-window-id">
-
-        <div class="field field-split">
-          <div>
-            <label class="field-label" for="f-start">משעה</label>
-            <select id="f-start" name="event-start"></select>
-          </div>
-          <div>
-            <label class="field-label" for="f-end">עד שעה</label>
-            <select id="f-end" name="event-end"></select>
-          </div>
-        </div>
-       </div>
-
-       <div class="form-section">
-        <h3 class="form-section-title">פרטי האירוע</h3>
-
-        <div class="modal-grid">
-          <div class="field">
-            <label class="field-label" for="f-purpose">מטרת ההשכרה</label>
-            <select id="f-purpose" name="event-purpose">
-              <option value="">בחרו מטרה…</option>
-              <option>השקה</option>
-              <option>יום צילומים</option>
-              <option>אירוע חברה</option>
-              <option>סדנה</option>
-              <option>ארוחה פרטית</option>
-              <option>הרמת כוסית</option>
-              <option>אחר</option>
-            </select>
-          </div>
-
-          <div class="field">
-            <label class="field-label" for="f-participants">מספר משתתפים</label>
-            <select id="f-participants" name="participants">
-              <option value="">בחרו…</option>
-              <option>עד 10</option>
-              <option>11–20</option>
-              <option>21–30</option>
-              <option>31–50</option>
-              <option>50+</option>
-            </select>
-          </div>
-        </div>
-
-        <input type="hidden" name="estimated-cost" id="f-cost">
-        <p class="cost-line" id="costLine" hidden>עלות ההשכרה <b id="costVal"></b></p>
-
-        <ol class="next-steps">
-          <li><b>הבקשה נשלחת אלינו</b> והתאריך שבחרתם נשמר עבורכם.</li>
-          <li><b>אנחנו חוזרים אליכם</b> ושולחים חוזה לחתימה במייל.</li>
-          <li><b>אתם חותמים</b> בקישור — שם תתבקשו גם את ת.ז / ח.פ.</li>
-          <li><b>אנחנו חותמים בחזרה</b> והתאריך שלכם סגור.</li>
-        </ol>
-        <p class="field-hint">זו בקשה עקרונית בלבד — בשלב הזה אתם לא מתחייבים לכלום ולא נדרשת חתימה.</p>
-       </div>
+      <!-- ( 5 ) date · free text when the request is not for the space itself -->
+      <div class="field" id="dateNoteField" hidden>
+        <label class="field-label" for="f-date-note"><i class="num">( 5 )</i> תאריך משוער</label>
+        <input id="f-date-note" type="text" name="date-note" placeholder="למשל: אמצע נובמבר">
       </div>
 
-      <button type="submit" class="modal-submit" id="inquirySubmit">שליחה</button>
+      <!-- ( 5 ) date · the real availability calendar, for requests for the space -->
+      <div class="rental-fields" id="rentalFields">
+        <div class="form-section">
+          <div class="field">
+            <span class="field-label"><i class="num">( 5 )</i> תאריך</span>
+            <p class="field-hint">לחצו על יום ירוק כדי לראות את חלונות השעות הפנויים בו.</p>
+            <div class="fcal" id="fcal">
+              <div class="fcal-head">
+                <button type="button" class="fcal-nav" id="fcalPrev">‹</button>
+                <b id="fcalLabel"></b>
+                <button type="button" class="fcal-nav" id="fcalNext">›</button>
+              </div>
+              <div class="fcal-grid" id="fcalGrid"></div>
+              <div class="fcal-legend">
+                <span><i class="lg lg-open"></i>פנוי</span>
+                <span><i class="lg lg-pending"></i>ממתין</span>
+                <span><i class="lg lg-booked"></i>תפוס</span>
+                <span><i class="lg lg-locked"></i>נעול</span>
+              </div>
+            </div>
+            <div class="avail-chips" id="availChips"></div>
+            <p class="avail-status" id="availStatus"></p>
+          </div>
+          <input id="f-date" type="hidden" name="event-date">
+          <input type="hidden" name="window-id" id="f-window-id">
+
+          <div class="field field-split">
+            <div>
+              <label class="field-label" for="f-start">משעה</label>
+              <select id="f-start" name="event-start"></select>
+            </div>
+            <div>
+              <label class="field-label" for="f-end">עד שעה</label>
+              <select id="f-end" name="event-end"></select>
+            </div>
+          </div>
+
+          <input type="hidden" name="estimated-cost" id="f-cost">
+          <p class="cost-line" id="costLine" hidden>עלות ההשכרה <b id="costVal"></b></p>
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="f-participants"><i class="num">( 6 )</i> כמה אנשים</label>
+        <select id="f-participants" name="participants">
+          <option value="">בערך…</option>
+          <option>עד 10</option>
+          <option>11–20</option>
+          <option>21–30</option>
+          <option>31–50</option>
+          <option>50+</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label class="field-label" for="f-message"><i class="num">( 7 )</i> עוד משהו</label>
+        <textarea id="f-message" name="message" rows="2"></textarea>
+      </div>
+
+      <div class="pf-rule" aria-hidden="true"></div>
+
+      <ol class="next-steps" id="rentalSteps">
+        <li><b>הבקשה נשלחת אלינו</b> והתאריך שבחרתם נשמר עבורכם.</li>
+        <li><b>אנחנו חוזרים אליכם</b> ושולחים חוזה לחתימה במייל.</li>
+        <li><b>אתם חותמים</b> בקישור — שם תתבקשו גם את ת.ז / ח.פ.</li>
+        <li><b>אנחנו חותמים בחזרה</b> והתאריך שלכם סגור.</li>
+      </ol>
+
+      <div class="pf-foot">
+        <p class="pf-hint">שם + טלפון או מייל, וזה מספיק</p>
+        <button type="submit" class="modal-submit" id="inquirySubmit" disabled>לשלוח <span dir="ltr" aria-hidden="true">←</span></button>
+      </div>
       <p class="form-status" id="formStatus" role="status" aria-live="polite"></p>
     </form>
   </div>
@@ -387,31 +444,31 @@
   <div class="modal-backdrop" data-close-event></div>
   <div class="modal-panel modal-panel-sm" role="dialog" aria-modal="true" aria-labelledby="eventModalTitle">
     <button class="modal-close" data-close-event aria-label="סגירה">&times;</button>
-    <p class="modal-eyebrow" dir="ltr">Register</p>
-    <h2 class="modal-title" id="eventModalTitle">הרשמה לאירוע</h2>
-    <p class="event-modal-sub" id="eventModalSub"></p>
-
-    <form id="eventForm">
+    <form id="eventForm" class="paper-form">
       <p class="hp-field"><label>אל תמלאו: <input name="_honey"></label></p>
 
-      <div class="modal-grid">
+      <p class="pf-head" id="eventModalTitle" dir="ltr">TUTLAVI — EVENT SIGN-UP</p>
+      <p class="event-modal-sub" id="eventModalSub"></p>
+      <div class="pf-rule" aria-hidden="true"></div>
+
+      <div class="pf-grid">
         <div class="field">
-          <label class="field-label" for="ev-name">שם מלא<span class="req" aria-hidden="true">*</span></label>
+          <label class="field-label" for="ev-name"><i class="num">( 1 )</i> שם מלא<span class="req" aria-hidden="true">*</span></label>
           <input id="ev-name" name="name" type="text" autocomplete="name" required>
         </div>
         <div class="field">
-          <label class="field-label" for="ev-email">מייל<span class="req" aria-hidden="true">*</span></label>
+          <label class="field-label" for="ev-email"><i class="num">( 2 )</i> מייל<span class="req" aria-hidden="true">*</span></label>
           <input id="ev-email" name="email" type="email" dir="ltr" autocomplete="email" required>
         </div>
       </div>
 
-      <div class="modal-grid">
+      <div class="pf-grid">
         <div class="field">
-          <label class="field-label" for="ev-phone">טלפון</label>
+          <label class="field-label" for="ev-phone"><i class="num">( 3 )</i> טלפון</label>
           <input id="ev-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" dir="ltr">
         </div>
         <div class="field">
-          <label class="field-label" for="ev-qty" id="ev-qty-label">כמות</label>
+          <label class="field-label" for="ev-qty" id="ev-qty-label"><i class="num">( 4 )</i> כמות</label>
           <select id="ev-qty" name="qty">
             <option>1</option><option>2</option><option>3</option><option>4</option>
             <option>5</option><option>6</option><option>7</option><option>8</option>
@@ -422,13 +479,16 @@
 
       <p class="cost-line" id="evCostLine" hidden>סה"כ לתשלום <b id="evCostVal"></b></p>
 
-      <button type="submit" class="modal-submit" id="evSubmit">אישור הרשמה</button>
+      <div class="pf-rule" aria-hidden="true"></div>
+      <div class="pf-foot">
+        <p class="pf-hint">שם ומייל, וזה מספיק</p>
+        <button type="submit" class="modal-submit" id="evSubmit">אישור הרשמה <span dir="ltr" aria-hidden="true">←</span></button>
+      </div>
       <p class="form-status" id="evStatus" role="status" aria-live="polite"></p>
     </form>
   </div>
 </div>
 
-<script src="https://unpkg.com/gsap@3.12.5/dist/gsap.min.js"></script>
 <script src="script.js"></script>
 </body>
 </html>
