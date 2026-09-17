@@ -320,3 +320,139 @@
      a stray fragment, so it goes */
   .form-section-title::after{ display:none; }
 }
+
+/* ============================================================
+   PAPER FORM — the enquiry and the event sign-up, laid out as the
+   printed contact form of the design: a mono header, one numbered
+   line per field, dashed underlines instead of boxes, pills for the
+   choice, and a footer that states the whole requirement in a line.
+
+   The labels carry a little tracking here, which the rest of the UI
+   deliberately avoids on Hebrew: at this size it is what makes the
+   thing read as a form and not as a paragraph. It is kept at .05em
+   and 13px — far short of the 10px/.14em micro-caps that pull Hebrew
+   letterforms apart.
+   ============================================================ */
+.paper-form{ padding-top:.4rem; }
+
+.pf-head{
+  font-family:var(--mono);
+  font-size:12px; letter-spacing:.14em; text-transform:uppercase;
+  text-align:center; color:var(--ink);
+}
+.pf-rule{
+  border-top:1px dashed var(--dash);
+  margin:1.1rem 0 1.3rem;
+}
+.pf-grid{ display:grid; grid-template-columns:1fr 1fr; gap:0 1.6rem; }
+
+.paper-form .field{ margin-bottom:1.5rem; }
+.paper-form .field-label{
+  display:block; margin-bottom:.15rem;
+  font-size:13px; font-weight:400; letter-spacing:.05em;
+  color:rgba(27,28,29,.75);
+}
+.paper-form .field-label .num{
+  font-family:var(--mono); font-style:normal;
+  font-size:10px; letter-spacing:.14em; color:var(--muted);
+  margin-inline-end:.5rem;
+}
+.paper-form .field-label .req{ color:var(--accent); margin-inline-start:.15rem; }
+.paper-form .field-hint{ font-size:12.5px; color:var(--muted); margin:.15rem 0 .5rem; }
+
+/* the line, not the box: the field is a rule you write on */
+.paper-form .field input:not([type=checkbox]):not([type=radio]),
+.paper-form .field textarea,
+.paper-form .field select{
+  width:100%; min-height:44px;
+  background:transparent;
+  border:0; border-bottom:1px dashed rgba(27,28,29,.4); border-radius:0;
+  padding:.5rem .25rem;
+  font-family:var(--sans); font-size:1rem; line-height:1.5; color:var(--ink);
+  outline:none; box-shadow:none;
+  transition:border-color .2s ease;
+}
+.paper-form .field input:hover,
+.paper-form .field textarea:hover,
+.paper-form .field select:hover{ border-bottom-color:rgba(27,28,29,.7); }
+.paper-form .field input:focus,
+.paper-form .field textarea:focus,
+.paper-form .field select:focus{
+  border-bottom:1px solid var(--ink); box-shadow:none;
+}
+.paper-form .field input::placeholder,
+.paper-form .field textarea::placeholder{ color:rgba(27,28,29,.35); }
+.paper-form .field textarea{ min-height:3.5rem; resize:vertical; }
+.paper-form .field select{ background-position:left .25rem center; padding-inline-end:1.8rem; }
+.paper-form .field-split{ gap:1.6rem; }
+
+/* ---- ( 4 ) the choice, as pills ---- */
+.paper-form .radio-row{ gap:.6rem; margin-top:.5rem; }
+.paper-form .radio{
+  border-radius:999px; background:transparent;
+  border:1px solid rgba(27,28,29,.3);
+  padding:.55rem 1.15rem; gap:0;
+  font-size:.95rem; font-weight:400;
+}
+.paper-form .radio:hover{ border-color:var(--ink); }
+/* the native dot adds nothing next to a pill that fills in when chosen */
+.paper-form .radio input{
+  position:absolute; width:1px; height:1px; opacity:0; pointer-events:none;
+}
+.paper-form .radio.is-on{
+  background:var(--ink); border-color:var(--ink); color:var(--paper);
+}
+
+/* ---- the calendar keeps its own frame, just quieter inside the sheet ---- */
+.paper-form .form-section,
+.paper-form .form-section + .form-section,
+.paper-form .rental-fields > .form-section:first-child{
+  margin-top:0; padding-top:0; border-top:none;
+}
+.paper-form .rental-fields[hidden],
+.paper-form .next-steps[hidden]{ display:none; }
+.paper-form .fcal{ border:1px dashed var(--dash); background:transparent; }
+.paper-form .fcal-day{ background:#fff; }
+.paper-form .avail-chip{ border-radius:999px; }
+
+/* ---- what happens next, kept small ---- */
+.paper-form .next-steps{
+  background:transparent; border:1px dashed var(--dash);
+  margin:0 0 1.4rem;
+}
+.paper-form .next-steps li{ font-size:.88rem; }
+.paper-form .cost-line{ background:transparent; border:1px dashed var(--dash); border-inline-start:2px solid var(--accent); }
+
+/* ---- the footer states the whole requirement, and the button keeps it ---- */
+.pf-foot{
+  display:flex; align-items:center; justify-content:space-between;
+  flex-wrap:wrap; gap:1rem; margin-top:.4rem;
+}
+.pf-hint{
+  font-size:12px; letter-spacing:.05em; color:var(--muted); margin:0;
+}
+.paper-form .modal-submit{
+  width:auto; margin-top:0;
+  display:inline-flex; align-items:center; gap:.6rem;
+  border-radius:999px;
+  background:var(--accent); border-color:var(--accent); color:#fff;
+  padding:.95rem 2.1rem;
+  font-size:1rem; font-weight:500;
+  transition:background .25s ease, border-color .25s ease, opacity .25s ease;
+}
+.paper-form .modal-submit:hover:not(:disabled){ background:var(--ink); border-color:var(--ink); }
+/* faded until there is a name and one way to answer — the state the empty
+   form is in, and the reason the button looks soft */
+.paper-form .modal-submit:disabled{ opacity:.45; cursor:default; }
+
+.paper-form .event-modal-sub{
+  text-align:center; font-size:.95rem; margin:.5rem 0 0;
+}
+
+@media (max-width:560px){
+  .pf-grid{ grid-template-columns:1fr; }
+  .paper-form .field-split{ gap:1.2rem; }
+  .pf-foot{ flex-direction:column-reverse; align-items:stretch; }
+  .paper-form .modal-submit{ justify-content:center; width:100%; }
+  .pf-hint{ text-align:center; }
+}
