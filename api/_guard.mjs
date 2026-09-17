@@ -33,6 +33,16 @@ export const safeEqual = (a, b) => {
   return diff === 0;
 };
 
+
+/* Short tag for a client, so repeated attempts can be correlated in the
+   function log without writing the address itself there again. Not a
+   security control — Vercel already records the real IP per request. */
+const tag = (ip) => {
+  let h = 2166136261;
+  for (let i = 0; i < ip.length; i++) { h ^= ip.charCodeAt(i); h = Math.imul(h, 16777619); }
+  return (h >>> 0).toString(36);
+};
+
 export const isAdmin = (req) => {
   const expected = process.env.ADMIN_KEY || '';
   return Boolean(expected) && safeEqual(header(req, 'x-admin-key'), expected);
@@ -53,7 +63,9 @@ const tooMany = () =>
 
 /* Guard for public endpoints. Returns a 429 Response to send back, or null. */
 export async function limitPublic(req, bucket, limit, windowSec = 3600) {
-  return (await withinLimit(req, bucket, limit, windowSec)) ? null : tooMany();
+  if (await withinLimit(req, bucket, limit, windowSec)) return null;
+  console.warn('rate limit hit', { bucket, client: tag(clientIp(req)) });
+  return tooMany();
 }
 
 /* Guard for admin endpoints. Returns a Response to send back, or null when the
@@ -61,6 +73,13 @@ export async function limitPublic(req, bucket, limit, windowSec = 3600) {
    guessing run gets anywhere; correct keys are never rate limited. */
 export async function requireAdmin(req) {
   if (isAdmin(req)) return null;
-  if (!(await withinLimit(req, 'adminfail', 10, 900))) return tooMany();
+  /* A failed key is the one event on this site worth noticing, so it is
+     written to the function log where it can be searched after the fact. */
+  const client = tag(clientIp(req));
+  if (!(await withinLimit(req, 'adminfail', 10, 900))) {
+    console.warn('admin auth: locked out', { client });
+    return tooMany();
+  }
+  console.warn('admin auth: wrong key', { client });
   return Response.json({ error: 'unauthorized' }, { status: 401 });
 }

@@ -11,6 +11,8 @@
    what survives Gmail, Outlook and iOS Mail. No external images either: the
    wordmark is type, so the mail looks right with images blocked. */
 
+import { isEmail } from './_input.mjs';
+
 const ENDPOINT = 'https://api.resend.com/emails';
 const KEY = process.env.RESEND_API_KEY || '';
 const FROM = process.env.MAIL_FROM || 'סטודיו תות <hello@tutlavi.com>';
@@ -94,7 +96,10 @@ function layout({ eyebrow, title, lead, body, cta }) {
 }
 
 async function send({ to, subject, html, text, replyTo }) {
-  if (!mailReady() || !to) return false;
+  /* The recipient comes straight out of a public form. Anything that is not
+     a usable address is dropped here rather than handed to the provider —
+     the studio still sees whatever the visitor typed, on the booking. */
+  if (!mailReady() || !isEmail(to)) return false;
   try {
     const res = await fetch(ENDPOINT, {
       method: 'POST',
