@@ -74,6 +74,68 @@ def _stop(pin: str) -> int:
     return 1
 
 
+def _confirm_uninstall() -> int:
+    """חלון קוד הורים לפני הסרה. 0 = הקוד נכון, 3 = בוטל.
+
+    בלי זה כל ילד/ה יכולים ללחוץ על "הסרה" ברשימת האפליקציות של Windows.
+    """
+    from .store import Store
+
+    store = Store()
+    if not store.has_pin:
+        return 0
+
+    import tkinter as tk
+
+    from . import theme
+    from .config import fmt_clock
+
+    root = tk.Tk()
+    root.title("הסרת KidTime")
+    root.configure(bg=theme.PANEL, padx=36, pady=30)
+    root.resizable(False, False)
+    root.attributes("-topmost", True)
+    result = {"code": 3}
+
+    theme.label(root, "הסרת מערכת זמן המסך", size=20, weight="bold",
+                bg=theme.PANEL).pack(anchor="e")
+    theme.label(root, "כדי להסיר צריך את קוד ההורים.", size=12, fg=theme.MUTED,
+                bg=theme.PANEL).pack(anchor="e", pady=(6, 16))
+    field = theme.entry(root, show="•", width=16, size=20, justify="center")
+    field.pack(anchor="e", ipady=5)
+    error = theme.label(root, "", size=12, fg=theme.DANGER, bg=theme.PANEL)
+    error.pack(anchor="e", pady=(10, 14))
+
+    def submit() -> None:
+        locked = store.pin_locked_for()
+        if locked:
+            error.configure(text=f"יותר מדי ניסיונות. נסו שוב בעוד {fmt_clock(locked)}")
+            return
+        ok = store.check_pin(field.get())
+        store.save()
+        if ok:
+            result["code"] = 0
+            root.destroy()
+            return
+        field.delete(0, "end")
+        error.configure(text="קוד שגוי.")
+
+    row = tk.Frame(root, bg=theme.PANEL)
+    row.pack(anchor="e")
+    theme.button(row, "הסרה", submit, bg=theme.DANGER, padx=26).pack(side="right", padx=6)
+    theme.button(row, "ביטול", root.destroy, bg=theme.PANEL2,
+                 fg=theme.MUTED).pack(side="right")
+    root.bind("<Return>", lambda _e: submit())
+    root.bind("<Escape>", lambda _e: root.destroy())
+    root.update_idletasks()
+    x = (root.winfo_screenwidth() - root.winfo_reqwidth()) // 2
+    y = (root.winfo_screenheight() - root.winfo_reqheight()) // 3
+    root.geometry(f"+{max(0, x)}+{max(0, y)}")
+    root.after(200, field.focus_force)
+    root.mainloop()
+    return result["code"]
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(
         prog="kidtime", description="מגביל זמן מסך לילדים")
@@ -85,6 +147,8 @@ def main(argv: list[str] | None = None) -> int:
                         help="החזרת שורת המשימות אם המערכת נסגרה באמצע")
     parser.add_argument("--stop", metavar="PIN", nargs="?", const="",
                         help="עצירת המערכת הרצה (דורש את קוד ההורים)")
+    parser.add_argument("--confirm-uninstall", action="store_true",
+                        help="בקשת קוד הורים לפני הסרה (משמש את סקריפט ההסרה)")
     parser.add_argument("--verbose", action="store_true", help="לוג מפורט גם למסך")
     parser.add_argument("--version", action="version", version=f"KidTime {__version__}")
     args = parser.parse_args(argv)
@@ -97,6 +161,8 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.status:
         return _print_status()
+    if args.confirm_uninstall:
+        return _confirm_uninstall()
     if args.reset_pin:
         return _reset_pin(args.reset_pin)
     if args.stop is not None:

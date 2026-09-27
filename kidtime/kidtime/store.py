@@ -4,6 +4,8 @@
 """
 from __future__ import annotations
 
+import hashlib
+import hmac
 import json
 import os
 import secrets
@@ -12,9 +14,15 @@ from datetime import datetime, timedelta
 from pathlib import Path
 
 from . import config
-from .security import hash_pin, verify_pin
+from .security import hash_pin, protect, unprotect, verify_pin
 
 STATE_VERSION = 1
+
+# הפעולות שקישור במייל יכול לבקש. ``full`` = כל הדקות שהילד/ה ביקש/ה.
+MAIL_ACTIONS = ("full", "some", "deny")
+
+# הגדרות שנשמרות מוצפנות בקובץ המצב (ראו ``security.protect``)
+SECRET_KEYS = ("smtp_password",)
 
 
 def _now(now: datetime | None = None) -> datetime:
@@ -61,6 +69,7 @@ class Store:
             "last_day_key": None,
             "clock_warning": False,
             "grace_boot_at": None,
+            "mail_secret": None,
         }
 
     def _load(self) -> dict:
@@ -83,7 +92,24 @@ class Store:
         merged = dict(config.DEFAULT_CONFIG)
         merged.update(raw.get("config") or {})
         raw["config"] = merged
+        self._migrate(raw)
         return raw
+
+    @staticmethod
+    def _migrate(raw: dict) -> None:
+        """משלים שדות שנוספו בגרסאות מאוחרות יותר.
+
+        בקשות שנוצרו לפני שהמייל היה קיים נחשבות כאילו כבר נשלחו — אחרת
+        ברגע שמחברים תיבת דואר כל ההיסטוריה הממתינה יוצאת בבת אחת.
+        """
+        for request in raw.get("requests") or []:
+            request.setdefault("mailed", True)
+            request.setdefault("decided_by", None)
+        # סיסמה שנשמרה בגרסה קודמת כטקסט גלוי — נעטפת עכשיו
+        settings = raw.get("config") or {}
+        for key in SECRET_KEYS:
+            if settings.get(key):
+                settings[key] = protect(settings[key])
 
     def save(self) -> None:
         """כתיבה אטומית — קובץ זמני ואז ``os.replace``."""
@@ -120,11 +146,29 @@ class Store:
 
     # ------------------------------------------------------------------ הגדרות
     def cfg(self, key: str):
-        return self.data["config"].get(key, config.DEFAULT_CONFIG.get(key))
+        value = self.data["config"].get(key, config.DEFAULT_CONFIG.get(key))
+        if key in SECRET_KEYS:
+            return unprotect(value)
+        return value
 
     def set_cfg(self, key: str, value) -> None:
+        if key in SECRET_KEYS:
+            value = protect(value)
         self.data["config"][key] = value
         self.dirty = True
+
+    MAIL_KEYS = ("mail_enabled", "mail_to", "smtp_host", "smtp_port", "smtp_user",
+                 "smtp_password", "imap_host", "imap_port", "mail_poll_seconds")
+
+    def mail_settings(self) -> dict:
+        """צילום מצב של הגדרות המייל — נמסר לחוט הרקע כדי שלא ייגע ב-Store."""
+        return {key: self.cfg(key) for key in self.MAIL_KEYS}
+
+    @property
+    def mail_ready(self) -> bool:
+        """האם יש מספיק פרטים כדי לשלוח בכלל."""
+        return bool(self.cfg("mail_enabled") and self.cfg("mail_to")
+                    and self.cfg("smtp_user") and self.cfg("smtp_password"))
 
     # -------------------------------------------------------------------- יום
     def today(self, now: datetime | None = None) -> str:
@@ -227,9 +271,33 @@ class Store:
         self.dirty = True
 
     # ---------------------------------------------------------------- בקשות
+    def request_wait_seconds(self, child_id: str, now: datetime | None = None) -> int:
+        """כמה שניות עד שהילד/ה יכול/ה לשלוח בקשה חדשה (0 = אפשר עכשיו).
+
+        כל בקשה יוצאת כמייל. בלי הגבלה, לחיצה חוזרת על "שליחת הבקשה" מציפה את
+        תיבת ההורה — ו-Gmail חוסם זמנית חשבון ששולח יותר מדי.
+        """
+        gap = timedelta(minutes=float(self.cfg("request_cooldown_minutes") or 0))
+        latest = None
+        for item in self.pending_requests():
+            if item["child_id"] == child_id:
+                created = _parse(item.get("created_at"))
+                if created and (latest is None or created > latest):
+                    latest = created
+        if latest is None:
+            return 0
+        left = (latest + gap - _now(now)).total_seconds()
+        return int(left) + 1 if left > 0 else 0
+
     def create_request(self, child_id: str, minutes: int, reason: str = "",
                        now: datetime | None = None) -> dict:
         minutes = max(1, min(int(minutes), int(self.cfg("max_request_minutes"))))
+        # בקשה אחת פתוחה לכל ילד/ה: בקשה חדשה מחליפה את הקודמת, כדי שההורה לא
+        # יאשר בטעות שתי בקשות ויעניק את הדקות פעמיים.
+        for item in self.pending_requests():
+            if item["child_id"] == child_id:
+                item["status"] = "replaced"
+                item["decided_at"] = _iso(_now(now))
         request = {
             "id": new_id(),
             "child_id": child_id,
@@ -239,10 +307,22 @@ class Store:
             "status": "pending",
             "decided_at": None,
             "granted_minutes": None,
+            "mailed": False,        # האם כבר נשלח מייל להורה על הבקשה הזו
+            "decided_by": None,     # "local" מפאנל ההורים, "mail" מקישור במייל
         }
         self.data["requests"].append(request)
         self.dirty = True
         return request
+
+    def unmailed_requests(self) -> list[dict]:
+        """בקשות ממתינות שעדיין לא נשלח עליהן מייל."""
+        return [r for r in self.pending_requests() if not r.get("mailed")]
+
+    def mark_mailed(self, request_id: str, ok: bool = True) -> None:
+        item = self.request(request_id)
+        if item is not None:
+            item["mailed"] = bool(ok)
+            self.dirty = True
 
     def pending_requests(self) -> list[dict]:
         return [r for r in self.data["requests"] if r["status"] == "pending"]
@@ -254,18 +334,77 @@ class Store:
         return None
 
     def decide_request(self, request_id: str, approve: bool, minutes: int | None = None,
-                       now: datetime | None = None) -> bool:
+                       now: datetime | None = None, by: str = "local") -> bool:
         item = self.request(request_id)
         if not item or item["status"] != "pending":
             return False
         item["status"] = "approved" if approve else "denied"
         item["decided_at"] = _iso(_now(now))
+        item["decided_by"] = by
         if approve:
             granted = int(minutes if minutes is not None else item["minutes"])
             item["granted_minutes"] = granted
             self.grant_minutes(item["child_id"], granted, now)
         self.dirty = True
         return True
+
+    # --------------------------------------------------- אישור מרחוק במייל
+    def mail_secret(self) -> str:
+        """סוד מקומי שממנו נגזרות חתימות קישורי האישור. נוצר פעם אחת."""
+        secret = self.data.get("mail_secret")
+        if not secret:
+            secret = secrets.token_hex(32)
+            self.data["mail_secret"] = secret
+            self.dirty = True
+        return secret
+
+    def mail_token(self, request_id: str, action: str, minutes: int) -> str:
+        """הקוד שנוסע בנושא המייל. בלעדיו אי אפשר להכריע בקשה מרחוק."""
+        message = f"{request_id}.{action}.{int(minutes)}".encode("utf-8")
+        digest = hmac.new(self.mail_secret().encode("utf-8"), message,
+                          hashlib.sha256).hexdigest()
+        return f"{request_id}.{action}.{int(minutes)}.{digest[:20]}"
+
+    def parse_mail_token(self, token: str) -> tuple[str, str, int] | None:
+        """מפרק ומאמת קוד שחזר במייל. ``None`` = מזויף או פגום."""
+        parts = (token or "").strip().split(".")
+        if len(parts) != 4:
+            return None
+        request_id, action, raw_minutes, signature = parts
+        if action not in MAIL_ACTIONS:
+            return None
+        try:
+            minutes = int(raw_minutes)
+        except ValueError:
+            return None
+        expected = self.mail_token(request_id, action, minutes)
+        if not hmac.compare_digest(expected, token.strip()):
+            return None
+        return request_id, action, minutes
+
+    def apply_mail_token(self, token: str, now: datetime | None = None) -> dict | None:
+        """מכריע בקשה לפי קוד שהגיע במייל.
+
+        מחזיר את הבקשה שהוכרעה, או ``None`` אם הקוד לא תקין, פג תוקף,
+        או שהבקשה כבר הוכרעה (למשל אושרה בינתיים מפאנל ההורים).
+        """
+        parsed = self.parse_mail_token(token)
+        if parsed is None:
+            return None
+        request_id, action, minutes = parsed
+        item = self.request(request_id)
+        if not item or item["status"] != "pending":
+            return None
+        created = _parse(item.get("created_at"))
+        hours = float(self.cfg("mail_token_hours") or 0)
+        if created and hours > 0 and _now(now) - created > timedelta(hours=hours):
+            return None
+        approve = action != "deny"
+        granted = minutes if action == "some" else item["minutes"]
+        if not self.decide_request(request_id, approve, granted if approve else None,
+                                   now, by="mail"):
+            return None
+        return item
 
     # -------------------------------------------------- חלון בטיחות להורים
     def claim_boot_grace(self, boot_stamp: float, tolerance: float = 120.0) -> bool:

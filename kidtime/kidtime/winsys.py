@@ -47,6 +47,142 @@ def idle_seconds() -> float:
         return 0.0
 
 
+# ------------------------------------------------------------------- שמע
+# ``GetLastInputInfo`` לא יודע להבדיל בין "קמו מהמחשב" לבין "צופים בסרט":
+# בשני המקרים אף אחד לא נוגע במקלדת, והשעון נעצר באמצע סרט שלם. לכן שואלים
+# את התקן הפלט של כרטיס הקול מה עוצמת הסאונד ברגע זה. כל מה שמתנגן במחשב
+# עובר דרכו — דפדפן, נגן, משחק — ולכן זו הבדיקה היחידה שצריך.
+#
+# הכל דרך ctypes ישירות ל-COM, בלי שום תלות חיצונית. כשמשהו לא מסתדר
+# מחזירים ``None`` והמערכת פשוט מתנהגת כמו קודם.
+if IS_WINDOWS:  # pragma: no cover - נבדק ידנית על Windows
+    ole32 = ctypes.WinDLL("ole32", use_last_error=True)
+
+    class _GUID(ctypes.Structure):
+        _fields_ = [("Data1", wintypes.DWORD), ("Data2", wintypes.WORD),
+                    ("Data3", wintypes.WORD), ("Data4", ctypes.c_ubyte * 8)]
+
+    _CLSCTX_ALL = 0x17
+    _E_RENDER, _E_CONSOLE = 0, 0
+    _RPC_E_CHANGED_MODE = -2147417850      # 0x80010106
+    _METER_MAX_AGE = 60.0                  # רענון ההתקן, למשל אחרי חיבור אוזניות
+
+    _com_ready = False
+    _meter: ctypes.c_void_p | None = None
+    _meter_at = 0.0
+
+    def _guid(text: str) -> "_GUID":
+        value = _GUID()
+        ole32.CLSIDFromString(ctypes.c_wchar_p(text), ctypes.byref(value))
+        return value
+
+    def _method(pointer, index: int, *argtypes):
+        """מצביע לשיטה מספר ``index`` בטבלת הווירטואלית של ממשק COM."""
+        vtable = ctypes.cast(pointer, ctypes.POINTER(ctypes.c_void_p)).contents.value
+        slot = ctypes.cast(vtable, ctypes.POINTER(ctypes.c_void_p))[index]
+        # לא ``ctypes.HRESULT``: הוא הופך כל כישלון לחריגה, ואנחנו רוצים
+        # לבדוק את הקוד בעצמנו ולהמשיך בשקט.
+        return ctypes.WINFUNCTYPE(ctypes.c_long, ctypes.c_void_p, *argtypes)(slot)
+
+    def _release(pointer) -> None:
+        if not pointer:
+            return
+        try:
+            vtable = ctypes.cast(pointer, ctypes.POINTER(ctypes.c_void_p)).contents.value
+            slot = ctypes.cast(vtable, ctypes.POINTER(ctypes.c_void_p))[2]
+            ctypes.WINFUNCTYPE(ctypes.c_ulong, ctypes.c_void_p)(slot)(pointer)
+        except Exception:
+            pass
+
+    def _open_meter():
+        """מד עוצמה של התקן הפלט הראשי, או ``None``."""
+        global _com_ready
+        if not _com_ready:
+            result = ole32.CoInitializeEx(None, 0x2)     # APARTMENTTHREADED
+            # S_OK / S_FALSE / "כבר אותחל אחרת" — בכולם אפשר להמשיך
+            if result < 0 and result != _RPC_E_CHANGED_MODE:
+                return None
+            _com_ready = True
+
+        enumerator = ctypes.c_void_p()
+        if ole32.CoCreateInstance(
+                ctypes.byref(_guid("{BCDE0395-E52F-467C-8E3D-C4579291692E}")), None,
+                _CLSCTX_ALL,
+                ctypes.byref(_guid("{A95664D2-9614-4F35-A746-DE8DB63617E6}")),
+                ctypes.byref(enumerator)) < 0 or not enumerator:
+            return None
+
+        device = ctypes.c_void_p()
+        try:
+            # IMMDeviceEnumerator::GetDefaultAudioEndpoint
+            hresult = _method(enumerator, 4, ctypes.c_int, ctypes.c_int,
+                              ctypes.POINTER(ctypes.c_void_p))(
+                enumerator, _E_RENDER, _E_CONSOLE, ctypes.byref(device))
+        finally:
+            _release(enumerator)
+        if hresult < 0 or not device:
+            return None
+
+        meter = ctypes.c_void_p()
+        try:
+            # IMMDevice::Activate עבור IAudioMeterInformation
+            hresult = _method(device, 3, ctypes.POINTER(_GUID), wintypes.DWORD,
+                              ctypes.c_void_p, ctypes.POINTER(ctypes.c_void_p))(
+                device, ctypes.byref(_guid("{C02216F6-8C67-4B5B-9D00-D008E73E0064}")),
+                _CLSCTX_ALL, None, ctypes.byref(meter))
+        finally:
+            _release(device)
+        return meter if hresult >= 0 and meter else None
+
+
+def audio_peak() -> float | None:
+    """עוצמת השמע המתנגן ברגע זה, 0..1. ``None`` = לא ניתן לדעת.
+
+    אפס פירושו שקט מוחלט. ערך קטן אך חיובי מספיק כדי לדעת שמשהו מתנגן.
+    """
+    if not IS_WINDOWS:
+        return None
+    global _meter, _meter_at
+    try:  # pragma: no cover
+        now = time.monotonic()
+        if _meter is None or now - _meter_at > _METER_MAX_AGE:
+            _release(_meter)
+            _meter = _open_meter()
+            _meter_at = now
+            if _meter is None:
+                return None
+        peak = ctypes.c_float()
+        # IAudioMeterInformation::GetPeakValue
+        if _method(_meter, 3, ctypes.POINTER(ctypes.c_float))(
+                _meter, ctypes.byref(peak)) < 0:
+            _release(_meter)
+            _meter = None
+            return None
+        return float(peak.value)
+    except Exception:
+        return None
+
+
+# מסך מלא הוא הסימן השני לצפייה: נגן וידאו, יוטיוב במסך מלא ומשחקים כולם
+# מבקשים מ-Windows "אל תפריע", ומצב זה ניתן לשאילתה בלי הרשאות מיוחדות.
+# זה מה שתופס וידאו גם כשלמחשב אין כרטיס קול פעיל.
+_FULLSCREEN_STATES = (2, 3, 4, 7)   # BUSY, D3D_FULL_SCREEN, PRESENTATION, APP
+
+
+def fullscreen_app_active() -> bool:
+    """האם רצה כרגע אפליקציה במסך מלא (וידאו, משחק, מצגת)."""
+    if not IS_WINDOWS:
+        return False
+    try:  # pragma: no cover
+        state = ctypes.c_int()
+        shell32 = ctypes.WinDLL("shell32", use_last_error=True)
+        if shell32.SHQueryUserNotificationState(ctypes.byref(state)) < 0:
+            return False
+        return state.value in _FULLSCREEN_STATES
+    except Exception:
+        return False
+
+
 def uptime_seconds() -> float:
     """כמה שניות המחשב דולק. 0 אם לא ידוע."""
     if IS_WINDOWS:
@@ -204,8 +340,9 @@ if IS_WINDOWS:  # pragma: no cover
             ("dwExtraInfo", ctypes.POINTER(ctypes.c_ulong)),
         ]
 
+    # LRESULT ברוחב מצביע. עם ``c_long`` (32 ביט) ערך ההחזרה נחתך ב-64 ביט.
     _HOOKPROC = ctypes.WINFUNCTYPE(
-        ctypes.c_long, ctypes.c_int, wintypes.WPARAM, wintypes.LPARAM
+        wintypes.LPARAM, ctypes.c_int, wintypes.WPARAM, wintypes.LPARAM
     )
 
 
@@ -228,12 +365,19 @@ class KeyBlocker:
             return self.active
         try:  # pragma: no cover
             self._proc = _HOOKPROC(self._callback)
+            # בלי restype מפורש ctypes מחזיר int של 32 ביט — ה-handle נחתך,
+            # ו-SetWindowsHookExW נכשל עם שגיאה 126 (המודול לא נמצא).
+            # זו הסיבה שחסימת Win / Alt+Tab לא עבדה בפועל.
+            kernel32.GetModuleHandleW.restype = wintypes.HMODULE
+            kernel32.GetModuleHandleW.argtypes = [wintypes.LPCWSTR]
             module = kernel32.GetModuleHandleW(None)
             user32.SetWindowsHookExW.restype = wintypes.HHOOK
             user32.SetWindowsHookExW.argtypes = [
                 ctypes.c_int, _HOOKPROC, wintypes.HINSTANCE, wintypes.DWORD
             ]
-            user32.CallNextHookEx.restype = ctypes.c_long
+            user32.CallNextHookEx.restype = wintypes.LPARAM
+            user32.UnhookWindowsHookEx.argtypes = [wintypes.HHOOK]
+            user32.UnhookWindowsHookEx.restype = wintypes.BOOL
             user32.CallNextHookEx.argtypes = [
                 wintypes.HHOOK, ctypes.c_int, wintypes.WPARAM, wintypes.LPARAM
             ]

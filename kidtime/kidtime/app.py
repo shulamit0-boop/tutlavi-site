@@ -12,6 +12,7 @@ from .control import SingleInstance  # noqa: F401  — מיוצא מכאן לת�
 from .grace import GraceWindow
 from .hud import Hud
 from .lockscreen import LockScreen
+from .mailer import MailBridge, build_request_mail, build_test_mail
 from .parent import ParentPanel, PinDialog
 from .setup_wizard import SetupWizard
 from .store import Store
@@ -24,6 +25,8 @@ TICK_MS = 1000
 MAX_TICK_DELTA = 10.0   # לא מחייבים יותר מזה בטיק אחד (עומס/השהיה)
 SLEEP_GAP = 60.0        # פער גדול מזה = המחשב היה ישן — מסיימים סשן
 SAVE_EVERY = 5          # שמירה לדיסק כל 5 טיקים, כדי שכיבוי פתאומי לא ימחק זמן
+AUDIO_ON = 0.004        # עוצמת שמע שמעליה נחשב שמשהו מתנגן
+MEDIA_GRACE = 25.0      # שניות של שקט לפני שמפסיקים להחשיב את זה כצפייה
 
 
 class KidTimeApp:
@@ -40,6 +43,7 @@ class KidTimeApp:
         self.keys = winsys.KeyBlocker()
         self._kiosk = False
         self._ticks = 0
+        self._media_at = 0.0
         self._toast: tk.Toplevel | None = None
 
         self._owns_root = root is None
@@ -48,10 +52,15 @@ class KidTimeApp:
             self.root.withdraw()
             self.root.title("KidTime")
         theme.family(self.root)
+        theme.detect_direction(self.root)   # לפני שנוצר טקסט כלשהו
 
         self.lock = LockScreen(self)
         self.hud = Hud(self)
         self.grace = GraceWindow(self)
+
+        # גשר המייל עולה רק כשהוגדרה תיבה — מחשב בלי מייל לא פותח חוט רקע
+        self.mail = MailBridge(self.store.mail_settings())
+        self.mail_changed()
 
     # ------------------------------------------------------------------ הפעלה
     def run(self) -> None:
@@ -61,9 +70,11 @@ class KidTimeApp:
 
     def start(self) -> None:
         """המסך הראשון: אשף, חלון בטיחות, או נעילה — לפי המצב."""
-        if not self.store.has_pin or not self.store.children:
+        if not self.store.has_pin:
             # מחשב שעדיין לא הוגדר לא נועל את עצמו: קודם האשף, והנעילה
             # מתחילה רק אחרי שיש קוד הורים ולפחות ילד/ה אחד/ת.
+            # כשכבר יש קוד — לא פותחים את האשף גם אם אין ילדים, אחרת כל מי
+            # שעובר ליד המחשב יכול לקבוע קוד הורים חדש במקום הקוד הקיים.
             self.setup_mode = True
             SetupWizard(self, self._setup_finished)
             return
@@ -94,6 +105,7 @@ class KidTimeApp:
         self._stopping = True
         self.end_session("shutdown")
         self.set_kiosk(False)
+        self.mail.stop()
         self.store.save_if_dirty()
         if not self._owns_root:
             return
@@ -261,6 +273,7 @@ class KidTimeApp:
         if self._stopping or self.setup_mode:
             return
         self._ticks += 1
+        self._mail_pump()
         now = datetime.now()
 
         if self.store.is_disabled(now):
@@ -307,7 +320,8 @@ class KidTimeApp:
             return
 
         idle = winsys.idle_seconds()
-        paused = idle >= float(self.store.cfg("idle_pause_seconds"))
+        paused = (idle >= float(self.store.cfg("idle_pause_seconds"))
+                  and not self._media_active())
         if not paused:
             self.store.add_usage(child_id, min(elapsed, MAX_TICK_DELTA), now)
 
@@ -325,9 +339,96 @@ class KidTimeApp:
         if remaining <= 0:
             self._time_is_up()
 
+    def _media_active(self) -> bool:
+        """האם המחשב מציג תוכן גם בלי שנוגעים בו — שמע או מסך מלא.
+
+        בלי זה השעון נעצר באמצע סרט: אף אחד לא נוגע במקלדת שעה שלמה,
+        ו-``GetLastInputInfo`` לא מבדיל בין זה לבין ילד/ה שקמו מהמחשב.
+        שני סימנים נבדקים, כי לא כל מחשב יודע לדווח על שניהם: עוצמת השמע
+        (תופסת גם וידאו בחלון) ואפליקציה במסך מלא (תופסת גם כשאין כרטיס קול).
+        הזיהוי דביק לרבע דקה, כדי ששתיקה בין משפטים בסרט לא תעצור את השעון.
+        """
+        if not self.store.cfg("media_keeps_clock"):
+            return False
+        peak = winsys.audio_peak()
+        if (peak is not None and peak > AUDIO_ON) or winsys.fullscreen_app_active():
+            self._media_at = time.monotonic()
+        return bool(self._media_at) and time.monotonic() - self._media_at < MEDIA_GRACE
+
     def _periodic_save(self) -> None:
         if self._ticks % SAVE_EVERY == 0:
             self.store.save_if_dirty()
+
+    # ------------------------------------------------------------------ מייל
+    def mail_changed(self) -> None:
+        """נקראת אחרי שינוי בהגדרות המייל — מדליקה או מכבה את חוט הרקע."""
+        self.mail.update(self.store.mail_settings())
+        if self.store.mail_ready:
+            self.mail.start()
+        else:
+            self.mail.stop()
+
+    def mail_test(self) -> None:
+        """שולחת מייל בדיקה ומוודאת שאפשר גם לקרוא מהתיבה."""
+        self.mail.update(self.store.mail_settings())
+        self.mail.start()
+        self.mail.probe(build_test_mail(self.store.cfg("mail_to")))
+
+    def _compose_request_mail(self, request: dict) -> dict:
+        kid = self.store.child(request["child_id"])
+        name = kid["name"] if kid else "ילד/ה"
+        used = self.store.used_seconds(request["child_id"])
+        remaining = self.store.remaining_seconds(request["child_id"])
+        partial = min(5, int(request["minutes"]))
+        return build_request_mail(
+            to=self.store.cfg("mail_to"),
+            box=self.store.cfg("smtp_user"),
+            child=name,
+            minutes=int(request["minutes"]),
+            reason=request.get("reason") or "",
+            remaining_text=(f"נוצלו היום {fmt_clock(used)}, "
+                            f"ונותרו {fmt_clock(remaining)}."),
+            tokens={
+                "full": self.store.mail_token(request["id"], "full", request["minutes"]),
+                "some": self.store.mail_token(request["id"], "some", partial),
+                "deny": self.store.mail_token(request["id"], "deny", 0),
+            },
+            partial_minutes=partial,
+        )
+
+    def _mail_pump(self) -> None:
+        """מוציאה בקשות חדשות למייל וקולטת החלטות שחזרו ממנו."""
+        decided = [self.store.apply_mail_token(token)
+                   for token in self.mail.pop_tokens()]
+        for request in [r for r in decided if r]:
+            self._announce_mail_decision(request)
+
+        if not self.store.mail_ready:
+            return
+        for request in self.store.unmailed_requests():
+            try:
+                self.mail.send(self._compose_request_mail(request))
+            except Exception:       # noqa: BLE001 — בקשה לא נופלת בגלל המייל
+                log.exception("בניית מייל הבקשה נכשלה")
+                continue
+            self.store.mark_mailed(request["id"])
+
+    def _announce_mail_decision(self, request: dict) -> None:
+        kid = self.store.child(request["child_id"])
+        name = kid["name"] if kid else ""
+        if request["status"] == "approved":
+            minutes = request.get("granted_minutes") or request["minutes"]
+            text = f"ההורים אישרו {minutes} דקות ל{name} 🎉"
+            color = theme.OK
+        else:
+            text = f"ההורים ענו: לא עכשיו ({name})."
+            color = theme.MUTED
+        log.info("החלטה מהמייל: %s", text)
+        self.store.save()
+        self.on_state_changed()
+        self.toast(text, color, 8)
+        if self.mode == LOCKED:
+            self.lock.message(text, color, 12)
 
     # ----------------------------------------------------------------- הורים
     def open_parent(self) -> None:

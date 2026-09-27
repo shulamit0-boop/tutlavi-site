@@ -22,30 +22,30 @@ class GraceWindow:
 
         self.win = tk.Toplevel(app.root)
         self.win.title("מערכת זמן המסך")
-        self.win.configure(bg=theme.PANEL, padx=30, pady=24)
+        self.win.configure(bg=theme.PANEL, padx=34, pady=28)
         self.win.resizable(False, False)
         self.win.protocol("WM_DELETE_WINDOW", self.app.end_grace)
         self.win.withdraw()
 
-        theme.label(self.win, "מערכת זמן המסך עולה", size=18, weight="bold",
+        theme.label(self.win, "מערכת זמן המסך עולה", size=21, weight="bold",
                     bg=theme.PANEL).pack(anchor="e")
         theme.label(
             self.win,
             "זה החלון שמאפשר להורים להיכנס לפני שהמסך ננעל.\n"
             "המחשב פתוח לגמרי כרגע — שורת המשימות והמקשים עובדים.",
-            size=11, fg=theme.MUTED, bg=theme.PANEL, justify="right",
-        ).pack(anchor="e", pady=(6, 16))
+            size=12, fg=theme.MUTED, bg=theme.PANEL, justify="right",
+        ).pack(anchor="e", pady=(8, 18))
 
-        self.countdown = theme.label(self.win, "", size=15, weight="bold",
+        self.countdown = theme.label(self.win, "", size=17, weight="bold",
                                      fg=theme.WARN, bg=theme.PANEL)
         self.countdown.pack(anchor="e", pady=(0, 16))
 
         row = tk.Frame(self.win, bg=theme.PANEL)
         row.pack(anchor="e")
-        theme.button(row, "השהיה למבוגרים", self.pause, bg=theme.OK,
-                     size=12).pack(side="right", padx=6)
+        theme.button(row, "השהיה למבוגרים", self.pause, bg=theme.ACCENT,
+                     size=13, padx=22).pack(side="right", padx=6)
         theme.button(row, "נעל עכשיו", self.app.end_grace, bg=theme.PANEL2,
-                     size=12).pack(side="right")
+                     fg=theme.TEXT, size=13, padx=22).pack(side="right")
 
     # ------------------------------------------------------------------ תצוגה
     def show(self, seconds: int) -> None:
@@ -76,7 +76,7 @@ class GraceWindow:
     def _render(self) -> None:
         self.countdown.configure(
             text=f"הנעילה תתחיל בעוד {fmt_clock(self.remaining)}",
-            fg=theme.ACCENT if self.remaining <= 10 else theme.WARN,
+            fg=theme.DANGER if self.remaining <= 10 else theme.WARN,
         )
 
     # ----------------------------------------------------------------- השהיה
