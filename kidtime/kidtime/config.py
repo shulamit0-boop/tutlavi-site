@@ -28,6 +28,7 @@ DEFAULT_CONFIG = {
     "warn_seconds": [300, 60, 10],  # התראות לפני סוף הזמן
     "max_request_minutes": 60,    # תקרה לבקשת זמן של ילד/ה
     "request_cooldown_minutes": 10,  # זמן מינימלי בין שתי בקשות של אותו ילד/ה
+    "panel_idle_seconds": 180,    # סגירה אוטומטית של פאנל ההורים ללא שימוש
     "pin_max_failures": 5,        # כמה טעויות PIN לפני השהיה
     "pin_lock_minutes": 5,        # לכמה זמן נועלים את פאנל ההורים אחרי טעויות
     "keep_history_days": 90,      # כמה ימי היסטוריית שימוש לשמור

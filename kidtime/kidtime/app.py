@@ -43,6 +43,7 @@ class KidTimeApp:
         self.keys = winsys.KeyBlocker()
         self._kiosk = False
         self._ticks = 0
+        self.ui_activity_at = time.monotonic()
         self._media_at = 0.0
         self._toast: tk.Toplevel | None = None
 
@@ -431,6 +432,27 @@ class KidTimeApp:
             self.lock.message(text, color, 12)
 
     # ----------------------------------------------------------------- הורים
+    def note_activity(self, _event=None) -> None:
+        """כל נגיעה בחלון של ההורים מאפסת את שעון הסגירה האוטומטית."""
+        self.ui_activity_at = time.monotonic()
+
+    def restore_from_disabled(self) -> None:
+        """מחזיר את המערכת מהשבתה זמנית — מול קוד הורים."""
+        log.info("נלחץ כפתור החזרת המערכת")
+        if self.modal_open:
+            return
+
+        def apply() -> None:
+            self.store.enable_now()
+            self.store.save()
+            self.on_state_changed()
+            self.toast("המערכת חזרה לפעול.", theme.OK, 5)
+
+        if not self.store.has_pin:
+            apply()
+            return
+        PinDialog(self, apply, "קוד הורים — החזרת המערכת")
+
     def open_parent(self) -> None:
         log.info("נלחץ כפתור ההורים")
         if self.modal_open:

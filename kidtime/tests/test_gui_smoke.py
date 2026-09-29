@@ -18,6 +18,7 @@ if sys.platform.startswith("linux") and not os.environ.get("DISPLAY"):
     pytest.skip("אין תצוגה גרפית", allow_module_level=True)
 
 from kidtime import lockscreen, theme  # noqa: E402
+from kidtime import app as appmod  # noqa: E402
 from kidtime.app import KidTimeApp  # noqa: E402
 from kidtime.control import SingleInstance, send_stop  # noqa: E402
 from kidtime.lockscreen import RequestDialog  # noqa: E402
@@ -542,3 +543,92 @@ def test_clicking_a_child_tile_starts_a_session(app):
     tile["frame"].event_generate("<Button-1>", x=5, y=5)
     pump(app)
     assert app.session_child_id() == kid["id"]
+
+
+# ------------------------------------------- סגירה אוטומטית של פאנל ההורים
+def test_parent_panel_closes_itself_when_left_open(app):
+    """פאנל פתוח = הגנה מבוטלת: אפשר להוסיף זמן בלי הגבלה ולכבות את המערכת."""
+    app.store.set_cfg("panel_idle_seconds", 60)
+    panel = ParentPanel(app)
+    pump(app)
+    assert panel.win.winfo_exists()
+    app.ui_activity_at -= 61            # כאילו עברה דקה בלי נגיעה
+    panel._idle_watch()
+    pump(app)
+    assert not panel.win.winfo_exists()
+    assert app.modal_open is False
+
+
+def test_touching_the_panel_keeps_it_open(app):
+    app.store.set_cfg("panel_idle_seconds", 60)
+    panel = ParentPanel(app)
+    pump(app)
+    app.ui_activity_at -= 61
+    app.note_activity()                 # מישהו נגע בפאנל
+    panel._idle_watch()
+    pump(app)
+    assert panel.win.winfo_exists()
+    panel.close()
+
+
+def test_zero_turns_the_auto_close_off(app):
+    app.store.set_cfg("panel_idle_seconds", 0)
+    panel = ParentPanel(app)
+    pump(app)
+    app.ui_activity_at -= 10_000
+    panel._idle_watch()
+    pump(app)
+    assert panel.win.winfo_exists()
+    panel.close()
+
+
+def test_pin_dialog_closes_itself_when_left_open(app):
+    app.store.set_cfg("panel_idle_seconds", 30)
+    dialog = PinDialog(app, lambda: None)
+    pump(app)
+    app.ui_activity_at -= 31
+    dialog._tick()
+    pump(app)
+    assert not dialog.win.winfo_exists()
+    assert app.modal_open is False
+
+
+# ------------------------------------------------ המנעול בזמן השבתה זמנית
+def test_lock_icon_offers_to_restore_while_disabled(app):
+    app.store.disable_for(60)
+    app._tick_once()
+    pump(app)
+    assert app.mode == "disabled"
+    assert app.hud.parent_btn.cget("text") == "🔓 הפעלה"
+
+
+def test_lock_icon_opens_the_panel_in_every_other_mode(app):
+    app.enter_locked()
+    app.start_session(app.store.children[0]["id"])
+    pump(app)
+    assert app.hud.parent_btn.cget("text") == "🔒"
+
+
+def test_restoring_from_disabled_needs_the_pin(app, monkeypatch):
+    asked = []
+    monkeypatch.setattr(appmod, "PinDialog",
+                        lambda a, on_success, title="": asked.append(title))
+    app.store.disable_for(60)
+    app._tick_once()
+    pump(app)
+    app.restore_from_disabled()
+    assert len(asked) == 1
+    assert app.store.is_disabled() is True      # עדיין מושבת — הקוד לא אושר
+
+
+def test_the_right_pin_brings_the_system_back(app, monkeypatch):
+    monkeypatch.setattr(appmod, "PinDialog",
+                        lambda a, on_success, title="": on_success())
+    app.store.disable_for(60)
+    app._tick_once()
+    pump(app)
+    app.restore_from_disabled()
+    pump(app)
+    assert app.store.is_disabled() is False
+    assert app.mode == "locked"
+    assert app.lock.visible is True

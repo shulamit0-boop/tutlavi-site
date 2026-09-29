@@ -1,6 +1,7 @@
 """פאנל ההורים: אישור בקשות, הוספת זמן, השבתה זמנית, מייל והגדרות."""
 from __future__ import annotations
 
+import time
 import tkinter as tk
 from datetime import datetime, timedelta
 
@@ -25,6 +26,9 @@ def _modal(app, title: str, width: int | None = None) -> tk.Toplevel:
         win.transient(app.lock.win)
     if width:
         win.minsize(width, 1)
+    for sequence in ("<Button>", "<Key>", "<MouseWheel>", "<Button-4>", "<Button-5>"):
+        win.bind(sequence, app.note_activity, add="+")
+    app.note_activity()
     return win
 
 
@@ -66,6 +70,9 @@ class PinDialog:
     def _tick(self) -> None:
         if not self.win.winfo_exists():
             return
+        if self._idle_expired():
+            self.close()
+            return
         locked = self.store.pin_locked_for()
         if locked:
             self.error.configure(text=f"יותר מדי ניסיונות. אפשר לנסות שוב בעוד {fmt_clock(locked)}")
@@ -73,6 +80,12 @@ class PinDialog:
         else:
             self.entry.configure(state="normal")
         self.win.after(1000, self._tick)
+
+    def _idle_expired(self) -> bool:
+        limit = float(self.store.cfg("panel_idle_seconds"))
+        if limit <= 0:
+            return False
+        return (time.monotonic() - self.app.ui_activity_at) > limit
 
     def submit(self) -> None:
         locked = self.store.pin_locked_for()
@@ -171,6 +184,7 @@ class ParentPanel:
         self.open_tab("requests" if self.store.pending_requests() else "time")
         self._mail_tick()
         theme.show_modal(self.win)
+        self._idle_watch()
 
     # ------------------------------------------------------------------ שלד
     def _resize_body(self, _event=None) -> None:
@@ -605,6 +619,8 @@ class ParentPanel:
         self._number_row(frame, "עצירת השעון אחרי חוסר פעילות (שניות)",
                          "idle_pause_seconds", 15, 3600)
         self._number_row(frame, "תקרה לבקשת זמן של ילד/ה (דקות)", "max_request_minutes", 1, 600)
+        self._number_row(frame, "סגירת פאנל ההורים ללא שימוש (שניות)",
+                         "panel_idle_seconds", 0, 1800)
         self._number_row(frame, "חלון בטיחות אחרי הדלקת המחשב (שניות)", "grace_seconds", 0, 900)
         self._number_row(frame, "זמן פתוח אחרי הגדרה/השהיה (דקות)", "setup_grace_minutes", 0, 240)
 
@@ -678,7 +694,27 @@ class ParentPanel:
                 self.app.shutdown)
 
     # ----------------------------------------------------------------- סגירה
-    def close(self) -> None:
+    def _idle_watch(self) -> None:
+        """סוגר את הפאנל אחרי זמן בלי שימוש.
+
+        פאנל פתוח הוא הגנה מבוטלת: אפשר להוסיף זמן בלי הגבלה ולבטל את
+        המערכת, ומסך הנעילה מאחור לא מחזיר את עצמו לחזית כל עוד מודאל פתוח.
+        """
+        if not self.win.winfo_exists():
+            return
+        limit = float(self.store.cfg("panel_idle_seconds"))
+        if limit > 0:
+            remaining = limit - (time.monotonic() - self.app.ui_activity_at)
+            if remaining <= 0:
+                self.close(idle=True)
+                return
+            if remaining <= 30:
+                self.status.configure(
+                    text=f"הפאנל ייסגר בעוד {int(remaining)} שניות ללא שימוש",
+                    fg=theme.WARN)
+        self.win.after(1000, self._idle_watch)
+
+    def close(self, idle: bool = False) -> None:
         self.store.save_if_dirty()
         self._wheel(False)
         self.app.modal_open = False
@@ -688,6 +724,8 @@ class ParentPanel:
         except tk.TclError:
             pass
         self.app.on_state_changed()
+        if idle:
+            self.app.toast("פאנל ההורים נסגר מעצמו — לא היה בשימוש.", theme.WARN, 6)
         self.app.lock.assert_on_top()
 
 

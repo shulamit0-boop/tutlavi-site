@@ -1,7 +1,10 @@
 @echo off
 title KidTime setup
-if not exist "%~dp0app\install-windows.ps1" goto notextracted
-powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0app\install-windows.ps1"
+rem find the installer in both layouts: app\ subfolder or flat
+set "PS1=%~dp0app\install-windows.ps1"
+if not exist "%PS1%" set "PS1=%~dp0install-windows.ps1"
+if not exist "%PS1%" goto notextracted
+powershell -NoProfile -ExecutionPolicy Bypass -File "%PS1%"
 echo.
 pause
 exit /b

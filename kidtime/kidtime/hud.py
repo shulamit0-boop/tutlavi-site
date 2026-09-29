@@ -93,7 +93,16 @@ class Hud:
             f"+{event.x_root - self._drag_origin[0]}+{event.y_root - self._drag_origin[1]}")
 
     # ------------------------------------------------------------ הצגה/עדכון
+    def _set_parent_button(self, mode: str) -> None:
+        """בהשבתה, המנעול מחזיר את המערכת. אחרת הוא פותח את פאנל ההורים."""
+        if mode == "disabled":
+            self.parent_btn.configure(text="🔓 הפעלה",
+                                      command=self.app.restore_from_disabled)
+        else:
+            self.parent_btn.configure(text="🔒", command=self.app.open_parent)
+
     def show(self, mode: str = "session") -> None:
+        self._set_parent_button(mode)
         session = mode == "session"
         for button in (self.end_btn, self.request_btn):
             if session:
