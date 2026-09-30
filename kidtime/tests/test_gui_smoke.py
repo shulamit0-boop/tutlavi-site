@@ -632,3 +632,49 @@ def test_the_right_pin_brings_the_system_back(app, monkeypatch):
     assert app.store.is_disabled() is False
     assert app.mode == "locked"
     assert app.lock.visible is True
+
+
+# -------------------------------------------- נתונים שנמחקו לא פותחים מחשב
+def test_deleted_data_locks_instead_of_opening_the_wizard(tmp_path, clean_root):
+    """מחיקת קובץ המצב הייתה עקיפה מלאה: בלי קוד, האשף נפתח והמחשב חופשי."""
+    state = tmp_path / "state.json"
+    store = Store(state, backup=None)
+    store.set_pin("1234")
+    store.add_child("נועם")
+    store.save()
+    state.unlink()                                  # ילד/ה מוחקים את הקובץ
+
+    damaged = Store(state, backup=None)
+    assert damaged.was_configured is True
+    app = KidTimeApp(windowed=True, store=damaged, root=clean_root)
+    app.start()
+    pump(app)
+    assert app.damaged is True
+    assert app.setup_mode is False
+    assert app.lock.visible is True
+
+
+def test_damaged_state_does_not_let_anyone_set_a_new_pin(tmp_path, clean_root):
+    state = tmp_path / "state.json"
+    store = Store(state, backup=None)
+    store.set_pin("1234")
+    store.save()
+    state.unlink()
+
+    app = KidTimeApp(windowed=True, store=Store(state, backup=None), root=clean_root)
+    app.start()
+    pump(app)
+    app.open_parent()                               # מציג הסבר, לא אשף
+    pump(app)
+    assert app.modal_open is True
+    assert app.store.has_pin is False               # הקוד לא נקבע מחדש
+
+
+def test_a_fresh_computer_still_opens_the_wizard(tmp_path, clean_root):
+    app = KidTimeApp(windowed=True, store=Store(tmp_path / "state.json", backup=None),
+                     root=clean_root)
+    app.start()
+    pump(app)
+    assert app.damaged is False
+    assert app.setup_mode is True
+    assert app.lock.visible is False

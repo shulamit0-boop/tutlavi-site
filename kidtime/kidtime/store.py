@@ -49,8 +49,19 @@ def new_id() -> str:
 class Store:
     """קורא/כותב את ``state.json`` ומחזיק את כל חשבון הזמן."""
 
-    def __init__(self, path: Path | str | None = None):
+    def __init__(self, path: Path | str | None = None,
+                 backup: Path | str | None = None):
         self.path = Path(path) if path else config.state_path()
+        self.marker_path = self.path.parent / "installed"
+        if backup is None and path is None:
+            backup = config.backup_path()
+        self.backup_path = Path(backup) if backup else None
+        # האם היה כאן מצב קודם (גם אם נמחק או נפגם) — ראו ``_load``
+        self.was_configured = False
+        self.restored_from_backup = False
+        # נתיבים שבהם ``os.replace`` נדחה — לא מנסים שוב, אחרת כל שמירה
+        # משאירה קובץ זמני שאין הרשאה למחוק
+        self._inplace: set[Path] = set()
         self.data = self._load()
         self.dirty = False
 
@@ -72,20 +83,35 @@ class Store:
             "mail_secret": None,
         }
 
+    def _read(self, path: Path) -> dict | None:
+        """קורא קובץ מצב. ``None`` אם הוא חסר, פגום או לא מתאים."""
+        if not path.exists():
+            return None
+        try:
+            raw = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            return None
+        return raw if isinstance(raw, dict) else None
+
     def _load(self) -> dict:
         blank = self._blank()
-        if not self.path.exists():
-            return blank
-        try:
-            raw = json.loads(self.path.read_text(encoding="utf-8"))
-        except (OSError, ValueError):
-            # קובץ פגום — לא מוחקים אותו, שומרים בצד ומתחילים נקי
+        self.was_configured = bool(
+            self.path.exists() or self.marker_path.exists()
+            or (self.backup_path and self.backup_path.exists()))
+
+        raw = self._read(self.path)
+        if raw is None and self.path.exists():
+            # קובץ פגום — לא מוחקים אותו, שומרים בצד
             try:
                 self.path.replace(self.path.with_suffix(".corrupt.json"))
             except OSError:
                 pass
-            return blank
-        if not isinstance(raw, dict):
+        if raw is None and self.backup_path is not None:
+            # מחיקת קובץ המצב לא אמורה לאפס את המערכת
+            raw = self._read(self.backup_path)
+            if raw is not None:
+                self.restored_from_backup = True
+        if raw is None:
             return blank
         for key, value in blank.items():
             raw.setdefault(key, value)
@@ -111,24 +137,62 @@ class Store:
             if settings.get(key):
                 settings[key] = protect(settings[key])
 
-    def save(self) -> None:
-        """כתיבה אטומית — קובץ זמני ואז ``os.replace``."""
-        self._prune()
-        self.path.parent.mkdir(parents=True, exist_ok=True)
-        fd, tmp = tempfile.mkstemp(dir=str(self.path.parent), prefix=".state-", suffix=".json")
-        try:
-            with os.fdopen(fd, "w", encoding="utf-8") as handle:
-                json.dump(self.data, handle, ensure_ascii=False, indent=2)
-                handle.flush()
-                os.fsync(handle.fileno())
-            os.replace(tmp, self.path)
-        except BaseException:
+    def _write(self, path: Path) -> None:
+        """כתיבה אטומית, עם נפילה לכתיבה במקום כשאין הרשאת מחיקה.
+
+        ``os.replace`` דורש הרשאת מחיקה על קובץ היעד. תיקייה מוקשחת
+        (``harden-windows.ps1``) שוללת בדיוק את ההרשאה הזו, ולכן במקרה הזה
+        כותבים לתוך הקובץ הקיים.
+        """
+        path.parent.mkdir(parents=True, exist_ok=True)
+        payload = json.dumps(self.data, ensure_ascii=False, indent=2)
+        if path not in self._inplace:
             try:
-                os.unlink(tmp)
+                fd, tmp = tempfile.mkstemp(dir=str(path.parent), prefix=".state-",
+                                           suffix=".json")
+                try:
+                    with os.fdopen(fd, "w", encoding="utf-8") as handle:
+                        handle.write(payload)
+                        handle.flush()
+                        os.fsync(handle.fileno())
+                    os.replace(tmp, path)
+                    return
+                except BaseException:
+                    try:
+                        os.unlink(tmp)
+                    except OSError:
+                        pass
+                    raise
             except OSError:
-                pass
-            raise
+                self._inplace.add(path)
+        with open(path, "w", encoding="utf-8") as handle:
+            handle.write(payload)
+            handle.flush()
+            os.fsync(handle.fileno())
+
+    def save(self) -> None:
+        self._prune()
+        self._write(self.path)
         self.dirty = False
+        self._mark_installed()
+        self._save_backup()
+
+    def _mark_installed(self) -> None:
+        try:
+            self.marker_path.parent.mkdir(parents=True, exist_ok=True)
+            self.marker_path.touch()
+        except OSError:
+            pass
+
+    def _save_backup(self) -> None:
+        """מרענן את הגיבוי. כישלון כאן לא שובר כלום — הגיבוי עשוי להיות
+        לקריאה בלבד עבור המשתמש הנוכחי, וזו בדיוק הכוונה."""
+        if self.backup_path is None or self.backup_path == self.path:
+            return
+        try:
+            self._write(self.backup_path)
+        except OSError:
+            pass
 
     def save_if_dirty(self) -> None:
         if self.dirty:

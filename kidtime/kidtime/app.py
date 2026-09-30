@@ -13,7 +13,7 @@ from .grace import GraceWindow
 from .hud import Hud
 from .lockscreen import LockScreen
 from .mailer import MailBridge, build_request_mail, build_test_mail
-from .parent import ParentPanel, PinDialog
+from .parent import Notice, ParentPanel, PinDialog
 from .setup_wizard import SetupWizard
 from .store import Store
 
@@ -35,6 +35,7 @@ class KidTimeApp:
         self.windowed = windowed
         self.guard = guard
         self.setup_mode = False
+        self.damaged = False
         self._stopping = False
         self.store = store or Store()
         self.modal_open = False
@@ -72,6 +73,14 @@ class KidTimeApp:
     def start(self) -> None:
         """המסך הראשון: אשף, חלון בטיחות, או נעילה — לפי המצב."""
         if not self.store.has_pin:
+            if self.store.was_configured:
+                # היה כאן מצב קודם והוא נמחק או נפגם. פתיחת אשף כאן הייתה
+                # הופכת מחיקה של קובץ אחד לעקיפה מלאה של המערכת.
+                log.warning("נתוני המערכת חסרים או פגומים — נכנסים למצב נעול")
+                self.damaged = True
+                self.enter_locked()
+                self._damaged_message()
+                return
             # מחשב שעדיין לא הוגדר לא נועל את עצמו: קודם האשף, והנעילה
             # מתחילה רק אחרי שיש קוד הורים ולפחות ילד/ה אחד/ת.
             # כשכבר יש קוד — לא פותחים את האשף גם אם אין ילדים, אחרת כל מי
@@ -453,10 +462,27 @@ class KidTimeApp:
             return
         PinDialog(self, apply, "קוד הורים — החזרת המערכת")
 
+    DAMAGED_HELP = (
+        "קובץ הנתונים של המערכת נמחק או נפגם, ולכן המחשב נשאר נעול.\n\n"
+        "לשחזור צריך שורת פקודה עם הרשאות מנהל, מתוך תיקיית ההתקנה:\n"
+        "    python -m kidtime --reset-pin 1234\n\n"
+        "הפקודה קובעת קוד הורים חדש. אחריה אפשר להוסיף שוב את הילדים\n"
+        "מפאנל ההורים."
+    )
+
+    def _damaged_message(self) -> None:
+        self.lock.message(
+            "נתוני המערכת נמחקו. נדרשת התערבות של מבוגר — לחצו על \"הורים\".",
+            theme.DANGER, 3600)
+
     def open_parent(self) -> None:
         log.info("נלחץ כפתור ההורים")
         if self.modal_open:
             log.info("דיאלוג אחר כבר פתוח — מתעלמים")
+            return
+        if self.damaged:
+            # בלי קוד הורים אין מה לאמת, ולכן לא פותחים כאן אשף חדש
+            Notice(self, "נדרש שחזור", self.DAMAGED_HELP)
             return
         if not self.store.has_pin:
             SetupWizard(self, self.on_state_changed)

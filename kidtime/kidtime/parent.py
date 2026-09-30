@@ -761,6 +761,33 @@ class Confirm:
             pass
 
 
+class Notice:
+    """חלון הודעה עם כפתור אחד."""
+
+    def __init__(self, app, title: str, body: str):
+        self.app = app
+        app.modal_open = True
+        self.win = _modal(app, title)
+        self.win.configure(padx=30, pady=24)
+        self.win.protocol("WM_DELETE_WINDOW", self.close)
+        theme.label(self.win, title, size=16, weight="bold",
+                    bg=theme.PANEL).pack(anchor="e")
+        theme.label(self.win, body, size=12, fg=theme.MUTED, bg=theme.PANEL,
+                    justify="right").pack(anchor="e", pady=(8, 18))
+        theme.button(self.win, "סגירה", self.close, bg=theme.PANEL2).pack(anchor="e")
+        self.win.bind("<Escape>", lambda _e: self.close())
+        theme.show_modal(self.win)
+
+    def close(self) -> None:
+        self.app.modal_open = False
+        try:
+            self.win.grab_release()
+            self.win.destroy()
+        except tk.TclError:
+            pass
+        self.app.lock.assert_on_top()
+
+
 class ChangePin:
     """החלפת קוד ההורים — דורש את הקוד הנוכחי."""
 

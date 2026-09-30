@@ -98,6 +98,34 @@ def home_dir() -> Path:
     return path
 
 
+def shared_dir() -> Path | None:
+    """תיקייה משותפת לכל המשתמשים — שם יושב הגיבוי המוגן.
+
+    ב-Windows זו ``C:\\ProgramData\\KidTime``. ``harden-windows.ps1`` נותן לה
+    הרשאות שבהן לילד/ה יש קריאה בלבד, ולכן גיבוי ששוכן שם שורד גם מחיקה של
+    כל תיקיית הנתונים האישית.
+    """
+    if IS_WINDOWS:
+        base = os.environ.get("PROGRAMDATA")
+        return Path(base) / APP_NAME if base else None
+    return home_dir() / "backup"
+
+
+def backup_path() -> Path | None:
+    """הנתיב לגיבוי, או ``None`` אם אין מקום מתאים."""
+    folder = shared_dir()
+    return folder / "state.backup.json" if folder else None
+
+
+def marker_path() -> Path:
+    """קובץ ריק שמעיד שהמערכת כבר הוגדרה על המחשב הזה.
+
+    מחיקת ``state.json`` לבדה משאירה אותו, ולכן היא לא מצליחה להחזיר את
+    המערכת למצב "מחשב חדש" — שבו היא לא נועלת כלום.
+    """
+    return home_dir() / "installed"
+
+
 def state_path() -> Path:
     return home_dir() / "state.json"
 

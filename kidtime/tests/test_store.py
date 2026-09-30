@@ -209,3 +209,106 @@ def test_boot_grace_is_given_once_per_boot(store):
 def test_boot_grace_is_given_when_boot_time_is_unknown(store):
     assert store.claim_boot_grace(0) is True
     assert store.claim_boot_grace(0) is True
+
+
+# ------------------------------------------ עמידות מול מחיקה וחבלה בקבצים
+def test_deleting_the_state_file_restores_from_the_backup(tmp_path):
+    backup = tmp_path / "shared" / "state.backup.json"
+    store = Store(tmp_path / "state.json", backup=backup)
+    store.set_pin("1234")
+    kid = store.add_child("נועם")
+    store.save()
+    assert backup.exists()
+
+    (tmp_path / "state.json").unlink()          # ילד/ה מוחקים את קובץ המצב
+    recovered = Store(tmp_path / "state.json", backup=backup)
+    assert recovered.restored_from_backup is True
+    assert recovered.check_pin("1234") is True
+    assert [k["name"] for k in recovered.children] == ["נועם"]
+    assert recovered.child(kid["id"]) is not None
+
+
+def test_a_corrupt_state_file_also_falls_back_to_the_backup(tmp_path):
+    backup = tmp_path / "shared" / "state.backup.json"
+    store = Store(tmp_path / "state.json", backup=backup)
+    store.set_pin("1234")
+    store.add_child("יעל")
+    store.save()
+
+    (tmp_path / "state.json").write_text("{ זבל", encoding="utf-8")
+    recovered = Store(tmp_path / "state.json", backup=backup)
+    assert recovered.restored_from_backup is True
+    assert recovered.check_pin("1234") is True
+
+
+def test_the_marker_survives_deleting_only_the_state_file(tmp_path):
+    """בלי גיבוי כלל — הסימן לבדו מונע חזרה למצב "מחשב חדש"."""
+    store = Store(tmp_path / "state.json", backup=None)
+    store.set_pin("1234")
+    store.save()
+    assert (tmp_path / "installed").exists()
+
+    (tmp_path / "state.json").unlink()
+    fresh = Store(tmp_path / "state.json", backup=None)
+    assert fresh.was_configured is True          # לא "מחשב חדש"
+    assert fresh.has_pin is False                # ואין ממה לשחזר — נעילה
+
+
+def test_a_truly_fresh_computer_is_not_marked_as_configured(tmp_path):
+    store = Store(tmp_path / "state.json", backup=None)
+    assert store.was_configured is False
+    assert store.restored_from_backup is False
+
+
+def test_saving_works_when_atomic_replace_is_denied(tmp_path, monkeypatch):
+    """תיקייה מוקשחת שוללת הרשאת מחיקה, ואז ``os.replace`` נכשל."""
+    store = Store(tmp_path / "state.json", backup=tmp_path / "b.json")
+    store.set_pin("1234")
+    store.add_child("נועם")
+    store.save()
+
+    monkeypatch.setattr(os, "replace",
+                        lambda *a, **k: (_ for _ in ()).throw(PermissionError()))
+    store.grant_minutes(store.children[0]["id"], 10)
+    store.save()                                  # לא אמור לזרוק
+    monkeypatch.undo()
+    again = Store(tmp_path / "state.json", backup=tmp_path / "b.json")
+    assert again.bonus_seconds(again.children[0]["id"]) == 600
+
+
+def test_a_read_only_backup_does_not_break_saving(tmp_path):
+    backup = tmp_path / "shared" / "state.backup.json"
+    backup.parent.mkdir(parents=True)
+    backup.write_text("{}", encoding="utf-8")
+    backup.chmod(0o444)
+    backup.parent.chmod(0o555)                    # אין הרשאת כתיבה לתיקייה
+    try:
+        store = Store(tmp_path / "state.json", backup=backup)
+        store.set_pin("1234")
+        store.save()                              # הגיבוי נכשל בשקט
+        assert (tmp_path / "state.json").exists()
+    finally:
+        backup.parent.chmod(0o755)
+        backup.chmod(0o644)
+
+
+def test_a_denied_replace_is_not_retried_and_leaves_no_litter(tmp_path, monkeypatch):
+    """תיקייה שאוסרת מחיקה: ניסיון חוזר היה מייצר קובץ זמני בכל שמירה."""
+    store = Store(tmp_path / "state.json", backup=None)
+    store.set_pin("1234")
+    store.save()
+
+    calls = []
+
+    def denied(*args, **kwargs):
+        calls.append(args)
+        raise PermissionError()
+
+    monkeypatch.setattr(os, "replace", denied)
+    for _ in range(5):
+        store.set_cfg("daily_minutes", 21)
+        store.save()
+    assert len(calls) == 1                       # ניסיון אחד בלבד
+    monkeypatch.undo()
+    assert not list(tmp_path.glob(".state-*"))   # בלי קבצים זמניים שנשארו
+    assert Store(tmp_path / "state.json", backup=None).cfg("daily_minutes") == 21
