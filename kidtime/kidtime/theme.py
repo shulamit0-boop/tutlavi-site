@@ -486,6 +486,43 @@ def label(parent, text="", *, size=12, weight="normal", fg=TEXT, bg=None, **kwar
     )
 
 
+def rtl_preview(parent, widget, **pack_options):
+    """תצוגה מקדימה של טקסט עברי שמקלידים בשדה.
+
+    בשדה עריכה אי אפשר לסדר את הטקסט ויזואלית: הסמן, המחיקה והסימון עובדים
+    לפי הסדר הלוגי, וסידור היה מזיז אותם למקום הלא נכון. לכן השדה נשאר כמו
+    שהוא, ומתחתיו מופיעה שורה שמראה איך הטקסט ייראה בפועל.
+
+    מחזיר ``None`` כשאין צורך — כלומר כש-Tk כאן מסדר עברית בעצמו.
+    """
+    if not _reorder:
+        return None
+
+    preview = label(parent, "", size=10, fg=MUTED)
+    preview.pack(**({"anchor": "e", "pady": (2, 0)} | pack_options))
+
+    def read() -> str:
+        try:
+            if isinstance(widget, tk.Text):
+                return widget.get("1.0", "end-1c")
+            return widget.get()
+        except tk.TclError:
+            return ""
+
+    def refresh(_event=None) -> None:
+        value = read()
+        if not _HEBREW.search(value):
+            preview.configure(text="")
+            return
+        lines = [ln for ln in value.split("\n") if ln.strip()]
+        preview.configure(text="כך זה ייראה:  " + "  ·  ".join(lines))
+
+    for sequence in ("<KeyRelease>", "<<Paste>>", "<FocusOut>"):
+        widget.bind(sequence, refresh, add="+")
+    refresh()
+    return preview
+
+
 def entry(parent, *, show=None, width=18, size=14, justify="right"):
     """שדה קלט רך. Tk לא מעגל שדות, אז הרכות באה מהמילוי ומהריווח."""
     field = tk.Entry(

@@ -11,29 +11,24 @@ PROBE_WORD = "אבגד"     # ארבע אותיות, בלי רווחים ובל�
 
 
 def tk_reorders_hebrew() -> bool | None:
-    """``True`` אם Tk מסדר עברית נכון, ``False`` אם לא, ``None`` אם אי אפשר לבדוק."""
+    """``True`` אם Tk כאן מסדר עברית בעצמו, ``False`` אם לא, ``None`` אם אי אפשר לבדוק.
+
+    עוטף את ``theme.detect_direction`` כדי שתהיה בדיקה אחת בלבד במערכת —
+    זו שהממשק באמת פועל לפיה.
+    """
     try:
         import tkinter as tk
+
+        from . import theme
     except ImportError:
         return None
     root = None
     try:
         root = tk.Tk()
         root.withdraw()
-        canvas = tk.Canvas(root, width=300, height=80)
-        canvas.pack()
-        root.update()
-        item = canvas.create_text(10, 40, text=PROBE_WORD, anchor="w")
-        root.update()
-        box = canvas.bbox(item)
-        if not box:
-            return None
-        x0, y0, x1, y1 = box
-        middle = (y0 + y1) // 2
-        leftmost = canvas.index(item, f"@{x0 + 3},{middle}")
-        rightmost = canvas.index(item, f"@{x1 - 3},{middle}")
-        # בעברית מסודרת, האות האחרונה לוגית יושבת בקצה השמאלי
-        return leftmost > rightmost
+        theme.family(root)
+        theme._probed = False          # בדיקה טרייה, לא תשובה שמורה
+        return not theme.detect_direction(root)
     except Exception:
         return None
     finally:
@@ -67,9 +62,19 @@ def report() -> int:
     if ordered is None:
         print("עברית:     לא הצלחתי לבדוק")
     elif ordered:
-        print("עברית:     ✓ מסודרת נכון (מימין לשמאל)")
+        print("עברית:     ✓ Tk מסדר בעצמו — נשלחים סימני כיווניות (RLE/PDF)")
     else:
-        print("עברית:     ✗ מוצגת הפוכה — Tk לא מסדר טקסט דו-כיווני")
+        print("עברית:     ✓ Tk לא מסדר — הטקסט נשלח אליו מסודר ויזואלית")
+
+    if ordered is not None:
+        try:
+            from . import theme
+
+            sample = "נותרו 12:34 מתוך 20:00"
+            print(f"דוגמה:     {sample}")
+            print(f"           → {theme.rtl(sample)!r}")
+        except Exception:
+            pass
 
     print(f"נתונים:    {config.home_dir()}")
     return 0

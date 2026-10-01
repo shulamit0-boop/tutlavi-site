@@ -106,7 +106,8 @@ class SetupWizard:
             highlightbackground=theme.PANEL2, highlightcolor=theme.ACCENT,
             font=theme.font(13, "normal", page), padx=10, pady=8,
         )
-        self.names.pack(anchor="e", pady=(6, 16))
+        self.names.pack(anchor="e", pady=(6, 2))
+        theme.rtl_preview(self.names.master, self.names, pady=(0, 14))
         for kid in self.store.children:
             self.names.insert("end", kid["name"] + "\n")
 

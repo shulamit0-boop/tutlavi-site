@@ -311,7 +311,8 @@ class RequestDialog:
         theme.label(self.win, "למה? (לא חובה)", size=13, weight="bold",
                     bg=theme.PANEL).pack(anchor="e")
         self.reason = theme.entry(self.win, width=34)
-        self.reason.pack(anchor="e", pady=(8, 24))
+        self.reason.pack(anchor="e", pady=(8, 2))
+        theme.rtl_preview(self.win, self.reason, pady=(0, 22))
 
         buttons = tk.Frame(self.win, bg=theme.PANEL)
         buttons.pack(anchor="e")

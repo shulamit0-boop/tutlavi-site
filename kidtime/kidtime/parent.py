@@ -432,6 +432,7 @@ class ParentPanel:
             theme.button(row, "מחיקה", lambda k=kid: self._remove_child(k),
                          bg=theme.PANEL, fg=theme.DANGER, size=12,
                          padx=14, pady=6).pack(side="left")
+            theme.rtl_preview(card, name)
 
         add = self._card(frame)
         theme.label(add, "הוספת ילד/ה", size=14, weight="bold",
@@ -444,6 +445,7 @@ class ParentPanel:
         theme.button(row, "הוספה", lambda: self._add_child(new_name), bg=theme.ACCENT,
                      size=12, padx=18, pady=6).pack(side="left", padx=(10, 0))
         new_name.bind("<Return>", lambda _e: self._add_child(new_name))
+        theme.rtl_preview(add, new_name)
         new_name.focus_set()
 
     def _save_child(self, kid: dict, name_entry: tk.Entry, quota_entry: tk.Entry) -> None:

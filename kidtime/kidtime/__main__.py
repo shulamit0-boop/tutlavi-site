@@ -142,6 +142,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--windowed", action="store_true",
                         help="מצב פיתוח: חלון רגיל, בלי מסך מלא ובלי חסימת מקשים")
     parser.add_argument("--status", action="store_true", help="הדפסת מצב הזמנים ויציאה")
+    parser.add_argument("--check", action="store_true",
+                        help="בדיקת סביבה: גרסאות ותצוגת עברית")
     parser.add_argument("--reset-pin", metavar="PIN", help="איפוס קוד ההורים (דורש מנהל)")
     parser.add_argument("--restore-taskbar", action="store_true",
                         help="החזרת שורת המשימות אם המערכת נסגרה באמצע")
@@ -159,6 +161,10 @@ def main(argv: list[str] | None = None) -> int:
         winsys.set_taskbar_visible(True)
         print("שורת המשימות הוחזרה.")
         return 0
+    if args.check:
+        from .diagnose import report
+
+        return report()
     if args.status:
         return _print_status()
     if args.confirm_uninstall:
