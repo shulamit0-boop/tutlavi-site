@@ -14,7 +14,7 @@
 ### היסטוריית אחסון (חשוב)
 האתר **הועבר מ-Netlify ל-Vercel ביולי 2026**, אחרי שהקרדיטים של Netlify נגמרו ופרסומי הפרודקשן הושהו.
 - אתר Netlify הישן (`fabulous-mermaid-3bfcce`) עדיין קיים אבל **לא בשימוש** — אפשר למחוק.
-- `netlify/functions/` ו-`netlify.toml` נשארו בקוד כגיבוי היסטורי בלבד; **הפונקציות הפעילות הן ב-`api/`**.
+- `netlify/`, `netlify.toml`, ה-workflow של GitHub Pages ו-`CNAME` **נמחקו** בניקוי של 01.10.2026. **הפונקציות הפעילות הן ב-`api/`**.
 - `www.tutlavi.com` עדיין מפנה (CNAME) ל-Netlify — לתקן או למחוק.
 - רשומות `_acme-challenge` ב-DNS הן שאריות SSL של Netlify — אפשר למחוק.
 - ⛔ **אסור למחוק** ב-Porkbun את רשומות ה-**MX** ו-**TXT (SPF)** — הן המייל של הדומיין.
@@ -29,20 +29,17 @@
 - `home.css` — העיצוב של העמוד הראשי (ספטמבר 2026)
 - `forms.css` — המודאל, טופס ההשכרה והיומן. הטופס בנוי כ"טופס נייר" (`.paper-form`) — ראה למטה
 - `fonts/web-fonts.css` — Heebo + IBM Plex Mono מאוחסנים מקומית
-- `styles.css` — העיצוב **הישן** (יולי 2026). כבר לא נטען בשום עמוד — רפרנס בלבד
 - `script.js` — אינטראקציות הדף + יומן הזמינות בטופס, חתימה, שליחה
 - `vivian.html` + `vivian.js` — עמוד הבר של ויויאן (`/vivian`). ראה סעיף משלו למטה
 - `contract.html` — עמוד חוזה השכרה. מתמלא מ-`?bid=` (חוזה חתום שנשמר), או מתצוגה מקדימה שהטופס מעביר דרך `localStorage` (מפתח `tut-contract-preview`, נמחק בקריאה). **לא** דרך פרמטרים ב-URL — הת"ז לא נכנסת ל-query string.
 - `admin.html` — פאנל ניהול (מוגן ב-`ADMIN_KEY`) → `tutlavi.com/admin`. שני טאבים: **יומן השכרות** + **תוכן האתר** (עריכת כל הטקסטים והאירועים בלי לגעת בקוד)
-- `v2.html` — **ניסוי עיצובי חלופי** (שפת פוסטר/פסטיבל, פונט Caravan). לא מקושר מהאתר הראשי. לא למחוק.
 - **`api/availability.mjs`** → `/api/availability` (יומן: חלונות פתוחים, ימים נעולים, שריון)
 - **`api/booking.mjs`** → `/api/booking` (יצירת חוזה חתום, חתימת סטודיו)
 - **`api/content.mjs`** → `/api/content` (תוכן האתר הנערך: GET ציבורי, PUT עם `x-admin-key`)
 - **`api/upload.mjs`** → `/api/upload` (העלאת מדיה ל-**Vercel Blob** בזרימת client-upload של `@vercel/blob`; דורש `BLOB_READ_WRITE_TOKEN`)
 - **`api/_store.mjs`** — מתאם KV מול Upstash Redis REST (החליף את Netlify Blobs)
 - `vercel.json` — rewrites ל-`/admin` ו-`/contract` (חיוני: שומר את `?bid=` בקישור לחוזה)
-- `fonts/` — פונטים עבריים (OTF). **לא בשימוש בעיצוב הנוכחי** — נשארו למקרה חזרה.
-- `netlify/`, `netlify.toml` — היסטורי בלבד, לא פעיל.
+- `fonts/` — רק Heebo + IBM Plex Mono (woff2) ו-`web-fonts.css`.
 
 ## עיצוב (שוכתב מחדש בספטמבר 2026 — "Jaffa edition")
 העמוד הראשי שוכתב **שוב** כדי להיות זהה לעיצוב החדש שהמשתמשת בנתה ב-Base44 —
@@ -55,7 +52,6 @@ https://captured-wwwbuildinamsterdamcom-57b80ced.base44.app/ — לפתוח או
 והיומן — הופרד מ-`styles.css` ועוצב מחדש באותה שפה: פאנל על רקע נייר, כותרת Heebo
 עם נקודה אדומה, קווים מקווקווים, שדות לבנים מרובעים, כרטיס נבחר במילוי דיו,
 מספרי סקשן ב-mono, ותאריכים ביומן ב-IBM Plex Mono) + `script.js` (ללא שינוי מהותי).
-`styles.css` הוא גיליון העיצוב **הישן** — כבר לא נטען בשום עמוד, נשאר כרפרנס בלבד.
 
 **פלטה:** נייר `#f3f3f2` · דיו `#1b1c1d` · אדום `#d9262c` · קו `#d5d6d8` · מושתק `#6c6c6a`
 **טיפוגרפיה:** Heebo (300-700) לטקסט, IBM Plex Mono (400/500) לכל התוויות הקטנות באנגלית.
@@ -86,7 +82,7 @@ https://captured-wwwbuildinamsterdamcom-57b80ced.base44.app/ — לפתוח או
 **מדיה:** הכל מקומי תחת `media/` (הורד מ-Base44): `hero-loop.mp4`, `hero-poster.jpg`,
 `bar-loop.mp4`, `bar-poster.jpg`, `ice-glass.jpg`, `candles-sm.jpg`, `bar-tools-sm.jpg`,
 `glass-light.jpg`, `shoot-day.jpg`, `logo-tut.png`, `vivian-round.webp`.
-קבצי העיצוב הישן (`hero.jpg`, `studio.mp4`, `brandfilm.mp4`, `media/gallery/`) נשארו ולא בשימוש.
+`studio.mp4` נשאר כווידאו גיבוי ב-`script.js` (`STUDIO_VIDEO`). שאר קבצי העיצוב הישן נמחקו.
 
 **הערה:** `.reveal` מוסתר רק תחת `html.js`, כדי ששבירת JS לא תשאיר את הדף ריק.
 ל-`html` ול-`body` יש `overflow-x:clip` (לא `hidden`) — `hidden` הופך את ה-body ל-scroll
@@ -260,13 +256,16 @@ container ושובר גלילה, IntersectionObserver וניווט לעוגני�
   הסרה דורשת hash לכל בלוק (ועדכון שלו בכל עריכה) או פיצול לקבצים נפרדים.
 - ההזדהות לפאנל היא מפתח משותף אחד בלי MFA. החוזק תלוי כולו בערך של `ADMIN_KEY`.
 
+## ניקוי מאגר (01.10.2026)
+נשארו רק הקבצים שהאתר החי טוען, `api/`, `tests/` והגדרות Vercel. נמחקו: Netlify, GitHub Pages (`.github/`, `CNAME`), `deploy-marker.txt`, `styles.css`, `v2.html`, פונטים ומדיה שלא בשימוש. הכל זמין בהיסטוריית git (commit שלפני הניקוי: `b779671`).
+מאגר `tutlavi-base44` הוחלט למחוק — אינו חלק מהאתר.
+
 ## פתוח / TODO
 ### ניקוי אחרי המעבר ל-Vercel
 - `www.tutlavi.com` — רשומת CNAME ב-Porkbun עדיין מצביעה ל-Netlify. להוסיף את www ב-Vercel כהפניה ל-apex, ולעדכן/למחוק את ה-CNAME.
 - למחוק ב-Porkbun את שתי רשומות ה-TXT `_acme-challenge` (שאריות SSL של Netlify). **לא לגעת ב-MX/SPF.**
 - למחוק את אתר Netlify הישן `fabulous-mermaid-3bfcce` אחרי תקופת חסד.
 - ב-Upstash יש רשומת בדיקה `booking:mrqtz3rf41jxcjzu` בשם "בדיקת מערכת" — אפשר למחוק.
-- לשקול להסיר את `netlify/`, `netlify.toml` ואת התלות `@netlify/blobs` מ-`package.json`.
 
 ### תוכן ועיצוב
 - ~~להחליף וידאו placeholder~~ ✓ הוחלף בצילום אמיתי (`media/studio.mp4`, יולי 2026)
@@ -279,4 +278,4 @@ container ושובר גלילה, IntersectionObserver וניווט לעוגני�
 ## העדפות המשתמשת
 - לכתוב בעברית תמיד
 - אוהבת לאמת ויזואלית — לתת קישורים ולהסביר איפה ללחוץ
-- לא לשלוח לה סיסמאות/מפתחות; היא מגדירה אותם ב-Netlify בעצמה
+- לא לשלוח לה סיסמאות/מפתחות; היא מגדירה אותם ב-Vercel בעצמה

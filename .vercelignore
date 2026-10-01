@@ -7,11 +7,7 @@
 # which is what actually makes them unreachable in production. Keep both in
 # sync if you add a file here.
 CLAUDE.md
-deploy-marker.txt
 availability-backup.json
 _menu-anim-preview.html
 experiment.html
 
-# leftovers from the Netlify host, superseded by api/
-netlify.toml
-netlify/
