@@ -71,7 +71,7 @@ test('booking: a contract id is checked before it is looked up', async () => {
 });
 
 test('booking: the studio-only actions refuse an unauthenticated caller', async () => {
-  for (const action of ['approve', 'studio-sign', 'decline']) {
+  for (const action of ['approve', 'studio-sign', 'decline', 'delete']) {
     const res = await booking(json('/api/booking', 'POST', { action, id: 'abc123def456' }));
     assert.equal(res.status, 401, action);
   }

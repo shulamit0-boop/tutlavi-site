@@ -28,13 +28,8 @@ const sanitize = (body) => ({
           note: String(w.note || '').slice(0, 120),
           booked: w.booked === true,
           price: Number.isFinite(+w.price) && +w.price > 0 ? Math.min(Math.round(+w.price), 1000000) : 0,
-          /* A hold belongs to the booking flow, not to the calendar editor. It
-             is carried through untouched so that saving the calendar in /admin
-             cannot silently drop a slot someone is mid-way through signing for. */
-          hold:
-            w.hold && typeof w.hold.id === 'string' && typeof w.hold.until === 'string'
-              ? { id: w.hold.id.slice(0, 40), until: w.hold.until.slice(0, 40) }
-              : null,
+          // filled in from the stored record by the PUT handler below
+          hold: null,
         }))
         .slice(0, 2000)
     : [],
@@ -71,6 +66,17 @@ export default async function handler(req) {
     }
     if (!storeReady()) return Response.json({ error: 'store not configured' }, { status: 503 });
     const clean = sanitize(body);
+    /* The panel never sees holds (GET strips them), so whatever it sends back
+       has none. Holds are owned by api/booking.mjs: take them from what is
+       stored, never from the request, so saving the calendar cannot drop a
+       slot someone is mid-way through signing for. */
+    const stored = (await kvGet(KEY)) || EMPTY;
+    const holds = new Map(
+      withExpiredHoldsCleared(stored.windows)
+        .filter((w) => w.hold)
+        .map((w) => [w.id + '|' + w.date, w.hold])
+    );
+    clean.windows.forEach((w) => { w.hold = holds.get(w.id + '|' + w.date) || null; });
     const saved = await kvSet(KEY, clean);
     if (!saved) return Response.json({ error: 'store write failed' }, { status: 500 });
     return Response.json({ ok: true, counts: { locked: clean.locked.length, windows: clean.windows.length } });

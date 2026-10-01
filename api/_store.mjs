@@ -65,3 +65,17 @@ export async function kvSet(key, value) {
     return false;
   }
 }
+
+/* Removes a key outright. Used when the studio deletes a rental request. */
+export async function kvDel(key) {
+  if (!storeReady()) return false;
+  try {
+    const res = await fetch(`${BASE}/del/${encodeURIComponent(key)}`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${TOKEN}` },
+    });
+    return res.ok;
+  } catch {
+    return false;
+  }
+}

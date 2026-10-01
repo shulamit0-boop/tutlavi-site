@@ -5,512 +5,1046 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ניהול האתר — סטודיו תות</title>
 <meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/favicon.png">
+<link rel="stylesheet" href="/fonts/web-fonts.css">
 <style>
+/* ============================================================
+   Admin panel — "soft" edition (October 2026)
+   Written for someone who is wary of computers: big targets,
+   plain words, one clear next step, everything can be undone.
+   ============================================================ */
 :root{
-  --bg:#fff; --ink:#17140f; --soft:#57524a; --line:rgba(25,22,17,.14);
-  --accent:#a91e1c; --open:#1e7a3c; --openbg:#e8f5ec; --lockbg:#fbeaea;
-  --sans: system-ui, -apple-system, 'Segoe UI', 'Helvetica Neue', Arial, sans-serif;
-  --display: 'Helvetica Neue', Arial, system-ui, sans-serif;
+  --paper:#f7f3ee; --card:#ffffff; --ink:#2b2724; --soft:#7a716a; --faint:#b3aaa2;
+  --line:#ebe4dc; --line2:#ddd4ca;
+  --berry:#d9363b; --berry-bg:#fdecec; --berry-ink:#a8262b;
+  --mint:#2f8a57; --mint-bg:#e7f5ec;
+  --honey:#b7790f; --honey-bg:#fdf3dc;
+  --sky:#3d6fb0; --sky-bg:#e8f0fa;
+  --stone-bg:#f0ebe5;
+  --r:18px; --r-sm:12px;
+  --shadow:0 1px 2px rgba(60,40,20,.05), 0 6px 20px rgba(60,40,20,.06);
+  --shadow-lift:0 10px 30px rgba(60,40,20,.18);
+  --font:'Heebo', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif;
 }
 *{ box-sizing:border-box; margin:0; padding:0; }
+html{ background:var(--paper); }
 body{
-  background:var(--bg); color:var(--ink);
-  font-family:var(--sans); font-weight:300; font-size:17px;
-  padding:2rem clamp(16px,4vw,48px); max-width:1080px; margin:0 auto;
+  background:var(--paper); color:var(--ink); font-family:var(--font);
+  font-size:17px; line-height:1.5; font-weight:400;
+  -webkit-font-smoothing:antialiased;
 }
-h1{ font-family:var(--display); font-weight:600; font-size:1.7rem; margin-bottom:.2rem; }
-.sub{ color:var(--soft); font-size:.95rem; margin-bottom:2rem; }
-.mono{ font-family:var(--sans); font-size:.8em; letter-spacing:.02em; }
+[hidden]{ display:none !important; }
+a{ color:inherit; }
+button, input, textarea, select{ font:inherit; color:inherit; }
+button{ cursor:pointer; }
+:focus-visible{ outline:3px solid rgba(217,54,59,.35); outline-offset:2px; border-radius:10px; }
 
-/* login */
-#login{ max-width:380px; margin:12vh auto; text-align:center; }
-#login input{
-  width:100%; border:1px solid var(--line); padding:.8rem 1rem;
-  font:inherit; margin:1rem 0; text-align:center;
+/* ---------- buttons ---------- */
+.btn{
+  display:inline-flex; align-items:center; justify-content:center; gap:.45rem;
+  border:1.5px solid transparent; border-radius:999px;
+  padding:.62rem 1.25rem; font-weight:500; font-size:.98rem;
+  background:var(--ink); color:#fff; transition:transform .12s, background .15s, box-shadow .15s;
+  white-space:nowrap; min-height:44px;
 }
-button{
-  font-family:var(--sans); font-weight:600; font-size:1rem;
-  background:var(--ink); color:#fff; border:1px solid var(--ink);
-  padding:.7rem 1.6rem; cursor:pointer;
+.btn:hover{ transform:translateY(-1px); box-shadow:0 4px 12px rgba(0,0,0,.1); }
+.btn:active{ transform:none; }
+.btn:disabled{ opacity:.45; cursor:default; transform:none; box-shadow:none; }
+.btn.berry{ background:var(--berry); }
+.btn.mint{ background:var(--mint); }
+.btn.soft{ background:var(--card); color:var(--ink); border-color:var(--line2); }
+.btn.soft:hover{ border-color:var(--ink); }
+.btn.quiet{ background:none; color:var(--soft); border-color:transparent; padding-inline:.8rem; }
+.btn.quiet:hover{ color:var(--ink); background:var(--stone-bg); box-shadow:none; }
+.btn.danger-soft{ background:var(--card); color:var(--berry-ink); border-color:#f1c9ca; }
+.btn.danger-soft:hover{ background:var(--berry-bg); }
+.btn.sm{ padding:.4rem .9rem; font-size:.9rem; min-height:36px; }
+.icon-btn{
+  width:40px; height:40px; border-radius:50%; border:none; background:none;
+  display:inline-grid; place-items:center; color:var(--soft); flex:none;
 }
-button:hover{ background:var(--accent); border-color:var(--accent); }
-button.ghost{ background:none; color:var(--ink); }
-button.ghost:hover{ color:var(--accent); border-color:var(--accent); background:none; }
-button.danger{ background:var(--accent); border-color:var(--accent); }
-#loginErr{ color:var(--accent); min-height:1.4em; font-size:.9rem; }
+.icon-btn:hover{ background:var(--stone-bg); color:var(--ink); }
+.icon-btn.del:hover{ background:var(--berry-bg); color:var(--berry); }
+svg.i{ width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; flex:none; }
 
-/* app bar + tabs */
-.bar{ display:flex; align-items:center; justify-content:space-between; gap:1rem; margin-bottom:1.6rem; flex-wrap:wrap; }
-.tabs{ display:flex; border:1px solid var(--ink); }
-.tabs button{ background:none; color:var(--ink); border:none; padding:.6rem 1.4rem; }
-.tabs button.active{ background:var(--ink); color:#fff; }
-.tabs button:hover{ background:var(--accent); color:#fff; }
-.bar-side{ display:flex; align-items:center; gap:1rem; }
-.bar-side a{ color:var(--soft); font-size:.9rem; text-decoration:none; }
-.bar-side a:hover{ color:var(--accent); }
-#saveState{ color:var(--soft); font-size:.85rem; min-width:90px; text-align:left; }
-#saveState.saving{ color:var(--accent); }
-#saveState.saved{ color:var(--open); }
-.month-nav{ display:flex; align-items:center; gap:.8rem; margin-bottom:1.2rem; }
-.month-nav b{ font-family:var(--display); font-weight:600; font-size:1.2rem; min-width:150px; text-align:center; }
-
-/* calendar */
-.cal{ display:grid; grid-template-columns:repeat(7,1fr); gap:6px; margin-bottom:2rem; }
-.dow{ text-align:center; color:var(--soft); font-size:.8rem; padding-bottom:.3rem; }
-.day{
-  min-height:86px; border:1px solid var(--line); padding:.4rem .5rem;
-  cursor:pointer; position:relative; background:#fff;
-  transition:border-color .2s;
+/* ---------- inputs ---------- */
+.field{ display:grid; gap:.35rem; }
+.field > span{ font-weight:500; font-size:.95rem; }
+.field small, .note{ color:var(--soft); font-size:.85rem; line-height:1.5; }
+.inp, .field input, .field textarea, .field select{
+  width:100%; background:#fff; border:1.5px solid var(--line2); border-radius:var(--r-sm);
+  padding:.7rem .9rem; min-height:46px; transition:border-color .15s, box-shadow .15s;
 }
-.day:hover{ border-color:var(--ink); }
-.day.out{ opacity:.32; }
-.day.today .num{ text-decoration:underline; }
-.day.selected{ border-color:var(--ink); border-width:2px; }
-.day.locked{ background:var(--lockbg); }
-.day.haswin{ background:var(--openbg); }
-.day.locked.haswin{ background:linear-gradient(135deg, var(--openbg) 50%, var(--lockbg) 50%); }
-.num{ font-weight:600; font-size:.95rem; }
-.tag{ display:block; font-size:.72rem; color:var(--open); margin-top:.2rem; font-weight:600; }
-.tag.lock{ color:var(--accent); }
-
-/* day panel */
-.panel{ border:1px solid var(--line); padding:1.4rem; }
-.panel h2{ font-family:var(--display); font-weight:600; font-size:1.15rem; margin-bottom:1rem; }
-.row{ display:flex; gap:.8rem; align-items:center; flex-wrap:wrap; margin-bottom:1rem; }
-.row input[type=time], .row input[type=text]{
-  border:1px solid var(--line); padding:.55rem .7rem; font:inherit;
+.inp:hover, .field input:hover, .field textarea:hover, .field select:hover{ border-color:#c7bcb0; }
+.inp:focus, .field input:focus, .field textarea:focus, .field select:focus{
+  outline:none; border-color:var(--berry); box-shadow:0 0 0 4px rgba(217,54,59,.12);
 }
-.winlist{ list-style:none; }
-.winlist li{
-  display:flex; align-items:center; gap:1rem; padding:.55rem 0;
-  border-bottom:1px solid var(--line); font-size:1rem;
-}
-.winlist .del{ background:none; border:none; color:var(--accent); cursor:pointer; font-size:1.1rem; padding:0 .4rem; }
-.hint{ color:var(--soft); font-size:.85rem; margin-top:.8rem; }
-.legend{ display:flex; gap:1.2rem; font-size:.82rem; color:var(--soft); margin-bottom:1rem; }
-.dotg,.dotr{ display:inline-block; width:10px; height:10px; margin-inline-start:.3rem; }
-.dotg{ background:var(--openbg); border:1px solid var(--open); }
-.dotr{ background:var(--lockbg); border:1px solid var(--accent); }
+.field textarea{ resize:vertical; min-height:5em; line-height:1.55; }
 
-/* content editor */
-.cgroup{ border:1px solid var(--line); padding:1.4rem; margin-bottom:1.6rem; }
-.cgroup > h2{ font-family:var(--display); font-weight:600; font-size:1.15rem; margin-bottom:1.1rem; }
-.cfield{ margin-bottom:1.1rem; }
-.cfield:last-child{ margin-bottom:0; }
-.cfield > label{ display:block; font-weight:600; font-size:.92rem; margin-bottom:.35rem; }
-.cfield input, .cfield textarea{
-  width:100%; border:1px solid var(--line); padding:.6rem .8rem; font:inherit; background:#fff;
+/* switch */
+.switch{ display:inline-flex; align-items:center; gap:.6rem; cursor:pointer; user-select:none; font-size:.95rem; }
+.switch input{ position:absolute; opacity:0; pointer-events:none; }
+.switch .track{
+  width:46px; height:28px; border-radius:999px; background:var(--line2); position:relative; transition:background .2s; flex:none;
 }
-.cfield textarea{ resize:vertical; min-height:4.2em; }
-.cfield .note{ color:var(--soft); font-size:.8rem; margin-top:.3rem; }
-
-.media-row{ display:flex; align-items:center; gap:1.1rem; flex-wrap:wrap; }
-.media-thumb{ width:150px; height:95px; object-fit:cover; border:1px solid var(--line); background:#f6f5f3; flex:none; }
-.media-side .ghost{ margin-bottom:.45rem; }
-.media-status{ min-height:1.2em; font-weight:600; }
-
-.ev-card{ border:1px solid var(--line); padding:1rem; margin-bottom:.9rem; }
-.ev-grid{ display:grid; grid-template-columns:130px 1fr 1fr; gap:.8rem; margin-bottom:.7rem; }
-.ev-grid label, .ev-actions > label{ display:block; font-size:.8rem; font-weight:600; color:var(--soft); }
-.ev-grid input{ width:100%; border:1px solid var(--line); padding:.45rem .6rem; font:inherit; margin-top:.25rem; }
-.ev-desc-wrap{ grid-column:1 / -1; }
-.ev-actions{ display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; }
-.ev-actions .ev-hot{ display:flex; align-items:center; gap:.4rem; font-size:.88rem; cursor:pointer; }
-.ev-actions .ev-badge{ margin-inline-end:auto; font-size:.72rem; font-weight:700; padding:.22rem .55rem; border-radius:3px; letter-spacing:.02em; white-space:nowrap; }
-.ev-badge.live{ background:#eafaef; color:#137a3a; }
-.ev-badge.draft{ background:#ececec; color:#555; }
-.ev-badge.past{ background:#fbeaea; color:#b3261e; }
-.ev-actions button{ padding:.3rem .7rem; font-size:.9rem; }
-.ev-actions .del{ color:var(--accent); border-color:var(--accent); background:none; }
-.ev-actions .del:hover{ background:var(--accent); color:#fff; }
-@media (max-width:640px){ .ev-grid{ grid-template-columns:1fr; } }
-/* per-event registration config */
-.ev-reg{ margin-top:.9rem; padding-top:.9rem; border-top:1px dashed var(--line);
-  display:flex; flex-wrap:wrap; gap:.7rem 1.1rem; align-items:flex-end; }
-.ev-reg label{ display:flex; flex-direction:column; gap:.25rem; font-size:.8rem; font-weight:600; color:var(--soft); }
-.ev-reg select, .ev-reg input{ border:1px solid var(--line); padding:.45rem .6rem; font:inherit; background:#fff; min-width:150px; }
-.ev-reg .ev-reg-full{ flex-basis:100%; }
-.ev-reg .ev-reg-full input{ width:100%; }
-.ev-reg-note{ flex-basis:100%; font-size:.74rem; color:var(--soft); margin:0; }
-/* registrations tab */
-.regs-head{ display:flex; align-items:center; gap:1rem; margin-bottom:1.2rem; }
-.regs-head .hint{ margin:0; }
-.regs-group{ border:1px solid var(--line); padding:1rem 1.2rem; margin-bottom:1rem; }
-.regs-group h3{ font-family:var(--display); font-weight:600; font-size:1.05rem; margin-bottom:.7rem; }
-.regs-row{ display:grid; grid-template-columns:1.2fr 1.6fr auto auto auto auto auto; gap:.6rem 1rem;
-  align-items:center; padding:.5rem 0; border-top:1px solid var(--line); font-size:.9rem; }
-.rg-del{ background:none; border:none; color:var(--accent); font-size:1.2rem; line-height:1; padding:0 .3rem; cursor:pointer; justify-self:end; }
-.rg-del:hover{ background:none; color:var(--ink); }
-.rg-contact{ color:var(--soft); font-size:.84rem; }
-.rg-status{ font-size:.76rem; font-weight:700; padding:.18rem .55rem; border-radius:3px; white-space:nowrap; justify-self:start; }
-.rg-status.paid{ background:var(--openbg); color:var(--open); }
-.rg-status.pending{ background:var(--lockbg); color:var(--accent); }
-.rg-status.free{ background:rgba(25,22,17,.06); color:var(--ink); }
-.rg-date{ color:var(--soft); font-size:.78rem; }
-@media (max-width:640px){ .regs-row{ grid-template-columns:1fr 1fr; } }
-#app{ display:none; }
-
-/* ---- rental booking cards ---- */
-.bk-card{
-  border:1px solid var(--line); border-inline-start:3px solid var(--line);
-  padding:1.1rem 1.3rem; margin-bottom:.9rem; background:#fff;
+.switch .track::after{
+  content:''; position:absolute; top:3px; inset-inline-start:3px; width:22px; height:22px; border-radius:50%;
+  background:#fff; box-shadow:0 1px 3px rgba(0,0,0,.2); transition:inset-inline-start .2s;
 }
-/* the two states that are waiting on the studio are the ones that stand out */
-.bk-requested{ border-inline-start-color:var(--accent); background:#fffaf9; }
-.bk-signed{ border-inline-start-color:var(--open); background:#f8fdf9; }
-.bk-confirmed{ border-inline-start-color:var(--open); }
-.bk-declined{ opacity:.6; }
-.bk-head{ display:flex; align-items:center; gap:.7rem; flex-wrap:wrap; margin-bottom:.4rem; }
-.bk-head b{ font-size:1.1rem; font-weight:600; }
-.bk-badge{
-  font-size:.74rem; font-weight:700; padding:.2rem .6rem; border-radius:3px;
-  white-space:nowrap; background:#ececec; color:#555;
+.switch input:checked + .track{ background:var(--mint); }
+.switch input:checked + .track::after{ inset-inline-start:21px; }
+.switch.berry input:checked + .track{ background:var(--berry); }
+.switch input:focus-visible + .track{ box-shadow:0 0 0 4px rgba(217,54,59,.2); }
+
+/* ---------- login ---------- */
+#login{ min-height:100vh; display:grid; place-items:center; padding:24px; }
+.login-card{
+  width:min(420px,100%); background:var(--card); border-radius:28px; padding:2.6rem 2rem 2.2rem;
+  box-shadow:var(--shadow); text-align:center;
 }
-.bk-badge-requested{ background:var(--lockbg); color:var(--accent); }
-.bk-badge-sent{ background:#fff4e0; color:#8a5a10; }
-.bk-badge-signed{ background:var(--openbg); color:var(--open); }
-.bk-badge-confirmed{ background:var(--open); color:#fff; }
-.bk-meta{ font-size:.92rem; color:var(--soft); margin-bottom:.25rem; }
-.bk-contact{ font-size:.85rem; }
+.logo-dot{ width:56px; height:56px; border-radius:50%; background:var(--berry); margin:0 auto 1.2rem;
+  display:grid; place-items:center; color:#fff; font-weight:700; font-size:1.4rem; }
+.login-card h1{ font-size:1.6rem; font-weight:600; margin-bottom:.3rem; }
+.login-card p{ color:var(--soft); margin-bottom:1.6rem; }
+.pass-wrap{ position:relative; margin-bottom:.6rem; }
+.pass-wrap .inp{ text-align:center; font-size:1.1rem; padding-inline:3rem; }
+.pass-wrap .icon-btn{ position:absolute; inset-inline-end:4px; top:3px; }
+#loginErr{ color:var(--berry-ink); min-height:1.5em; font-size:.92rem; margin-bottom:.6rem; }
+.login-card .btn{ width:100%; font-size:1.05rem; }
+
+/* ---------- app shell ---------- */
+#app{ display:none; max-width:1240px; margin:0 auto; padding:18px clamp(14px,3vw,36px) 120px; }
+.top{ display:flex; align-items:center; gap:1rem; flex-wrap:wrap; margin-bottom:1.1rem; }
+.brand{ display:flex; align-items:center; gap:.7rem; margin-inline-end:auto; }
+.brand .logo-dot{ width:40px; height:40px; font-size:1rem; margin:0; }
+.brand b{ font-size:1.15rem; font-weight:600; display:block; line-height:1.2; }
+.brand span{ color:var(--soft); font-size:.85rem; }
+.save-pill{
+  display:inline-flex; align-items:center; gap:.45rem; padding:.42rem .9rem; border-radius:999px;
+  background:var(--mint-bg); color:var(--mint); font-size:.9rem; font-weight:500; transition:background .2s, color .2s;
+}
+.save-pill::before{ content:''; width:8px; height:8px; border-radius:50%; background:currentColor; }
+.save-pill.saving{ background:var(--honey-bg); color:var(--honey); }
+.save-pill.saving::before{ animation:pulse 1s infinite; }
+.save-pill.error{ background:var(--berry-bg); color:var(--berry-ink); }
+@keyframes pulse{ 50%{ opacity:.25; } }
+
+.nav{
+  display:flex; gap:.4rem; overflow-x:auto; padding:.35rem; margin:0 0 1.6rem;
+  background:var(--card); border-radius:999px; box-shadow:var(--shadow); scrollbar-width:none;
+}
+.nav::-webkit-scrollbar{ display:none; }
+.nav button{
+  display:flex; align-items:center; gap:.5rem; border:none; background:none; white-space:nowrap;
+  padding:.62rem 1.1rem; border-radius:999px; font-weight:500; color:var(--soft); min-height:44px;
+  transition:background .15s, color .15s;
+}
+.nav button:hover{ color:var(--ink); background:var(--stone-bg); }
+.nav button.active{ background:var(--ink); color:#fff; }
+.nav .count{
+  min-width:22px; height:22px; padding:0 6px; border-radius:999px; background:var(--berry); color:#fff;
+  font-size:.78rem; font-weight:600; display:inline-grid; place-items:center;
+}
+
+.page-head{ display:flex; align-items:flex-end; justify-content:space-between; gap:1rem; flex-wrap:wrap; margin-bottom:1.2rem; }
+.page-head h1{ font-size:clamp(1.6rem,3vw,2.1rem); font-weight:600; line-height:1.15; }
+.page-head p{ color:var(--soft); margin-top:.25rem; max-width:62ch; }
+
+.card{ background:var(--card); border-radius:var(--r); box-shadow:var(--shadow); padding:1.4rem; }
+.card h2{ font-size:1.2rem; font-weight:600; margin-bottom:.8rem; }
+.stack{ display:grid; gap:1rem; }
+
+/* ---------- home ---------- */
+.tiles{ display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:1rem; margin-bottom:1.4rem; }
+.tile{
+  background:var(--card); border-radius:var(--r); box-shadow:var(--shadow); padding:1.3rem 1.4rem;
+  border:none; text-align:start; display:grid; gap:.3rem; transition:transform .15s, box-shadow .15s;
+}
+.tile:hover{ transform:translateY(-2px); box-shadow:var(--shadow-lift); }
+.tile .big{ font-size:2.4rem; font-weight:700; line-height:1; }
+.tile .lbl{ font-weight:500; font-size:1.02rem; }
+.tile .sub{ color:var(--soft); font-size:.88rem; }
+.tile.berry .big{ color:var(--berry); }
+.tile.mint .big{ color:var(--mint); }
+.tile.honey .big{ color:var(--honey); }
+.tile.calm{ background:var(--mint-bg); box-shadow:none; }
+.next-list{ list-style:none; display:grid; gap:.6rem; }
+.next-list li{ display:flex; gap:1rem; align-items:center; padding:.7rem .9rem; background:var(--paper); border-radius:var(--r-sm); }
+.next-list .when{ font-weight:600; min-width:9.5em; }
+.reassure{ display:flex; gap:.9rem; align-items:flex-start; background:var(--sky-bg); color:#2c4a70; border-radius:var(--r); padding:1.1rem 1.3rem; margin-top:1.4rem; }
+.reassure svg{ margin-top:2px; }
+
+/* ---------- requests board ---------- */
+.board{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:1rem; align-items:start; }
+@media (max-width:1100px){ .board{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
+@media (max-width:640px){ .board{ grid-template-columns:1fr; } }
+.col{
+  background:var(--stone-bg); border-radius:var(--r); padding:.8rem; min-height:180px;
+  border:2px dashed transparent; transition:background .15s, border-color .15s;
+}
+.col-head{ display:flex; align-items:center; gap:.55rem; padding:.2rem .4rem .7rem; }
+.col-head .dot{ width:12px; height:12px; border-radius:50%; flex:none; }
+.col-head b{ font-weight:600; }
+.col-head .n{ margin-inline-start:auto; font-size:.85rem; color:var(--soft); background:var(--card); border-radius:999px; padding:.05rem .6rem; }
+.col-hint{ color:var(--soft); font-size:.82rem; padding:0 .4rem .7rem; margin-top:-.5rem; }
+.col-empty{ color:var(--faint); font-size:.9rem; text-align:center; padding:1.6rem .5rem; }
+.col[data-k="requested"] .dot{ background:var(--berry); }
+.col[data-k="sent"] .dot{ background:var(--honey); }
+.col[data-k="signed"] .dot{ background:var(--sky); }
+.col[data-k="confirmed"] .dot{ background:var(--mint); }
+
+.bk{
+  background:var(--card); border-radius:14px; box-shadow:var(--shadow); padding:1rem 1rem .9rem;
+  margin-bottom:.7rem; position:relative; cursor:grab; user-select:none;
+  border-inline-start:4px solid var(--line2);
+}
+.bk:last-child{ margin-bottom:0; }
+.col[data-k="requested"] .bk{ border-inline-start-color:var(--berry); }
+.col[data-k="sent"] .bk{ border-inline-start-color:var(--honey); }
+.col[data-k="signed"] .bk{ border-inline-start-color:var(--sky); }
+.col[data-k="confirmed"] .bk{ border-inline-start-color:var(--mint); }
+.bk-top{ display:flex; align-items:flex-start; gap:.4rem; }
+.bk-name{ font-weight:600; font-size:1.08rem; line-height:1.3; flex:1; min-width:0; overflow-wrap:anywhere; }
+.grip{
+  width:32px; height:32px; margin:-4px -6px 0 0; border:none; background:none; color:var(--faint);
+  display:grid; place-items:center; border-radius:8px; touch-action:none; cursor:grab; flex:none;
+}
+.grip:hover{ background:var(--stone-bg); color:var(--soft); }
+.bk-when{ margin:.45rem 0 .1rem; font-weight:500; display:flex; flex-wrap:wrap; gap:.1rem .5rem; align-items:center; }
+.bk-when span{ white-space:nowrap; }
+.bk-when svg{ width:17px; height:17px; color:var(--soft); }
+.bk-got{ font-size:.84rem; color:var(--soft); display:flex; gap:.4rem; align-items:center; }
+.bk-got svg{ width:15px; height:15px; }
+.chips{ display:flex; flex-wrap:wrap; gap:.35rem; margin:.6rem 0 .2rem; }
+.chip{ background:var(--paper); border-radius:999px; padding:.15rem .65rem; font-size:.82rem; color:#5c544d; }
+.chip.money{ background:var(--mint-bg); color:var(--mint); font-weight:500; }
+.bk-contact{ display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.55rem; }
+.bk-contact a{
+  display:inline-flex; align-items:center; gap:.3rem; text-decoration:none; font-size:.84rem;
+  padding:.25rem .65rem; border-radius:999px; border:1px solid var(--line); color:var(--ink);
+}
+.bk-contact a:hover{ border-color:var(--ink); }
+.bk-contact svg{ width:15px; height:15px; }
 .bk-msg{
-  font-size:.9rem; line-height:1.55; margin:.6rem 0 .2rem;
-  padding:.6rem .8rem; background:#faf9f7; border:1px solid var(--line);
+  margin-top:.6rem; font-size:.9rem; line-height:1.55; background:var(--paper); border-radius:10px;
+  padding:.55rem .75rem; color:#4a433d; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; cursor:pointer;
 }
-.bk-actions{ display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; margin-top:.9rem; }
-.bk-actions button{ font-size:.9rem; padding:.5rem 1rem; }
+.bk-msg.open{ -webkit-line-clamp:unset; display:block; }
+.bk-hold{ margin-top:.5rem; font-size:.82rem; color:var(--honey); }
+.bk-id{ margin-top:.4rem; font-size:.82rem; color:var(--soft); }
+.bk-actions{ display:flex; flex-wrap:wrap; gap:.4rem; margin-top:.8rem; align-items:center; }
+.bk-actions .spacer{ flex:1; }
 
-/* the approval form, opened inside the card it belongs to */
-.bk-approve{
-  margin-top:.9rem; padding:.9rem 1rem; background:#faf9f7;
-  border:1px solid var(--line); display:grid; gap:.8rem;
-}
-.bk-approve label{ display:grid; gap:.3rem; font-size:.9rem; font-weight:600; }
-.bk-approve .hint{ font-weight:400; }
-.bk-approve input, .bk-approve textarea{
-  font:inherit; font-weight:400; padding:.5rem .6rem;
-  border:1px solid rgba(25,22,17,.3); background:#fff; width:100%;
-}
-.bk-approve textarea{ resize:vertical; line-height:1.5; }
-.bk-approve .ap-actions{ display:flex; gap:.6rem; flex-wrap:wrap; }
-.bk-link{ color:var(--soft); font-size:.88rem; text-decoration:none; margin-inline-start:auto; }
-.bk-link:hover{ color:var(--accent); }
+.declined-wrap{ margin-top:1.4rem; }
+.declined-wrap summary{ cursor:pointer; color:var(--soft); font-weight:500; padding:.4rem 0; list-style:none; display:flex; gap:.5rem; align-items:center; }
+.declined-wrap summary::-webkit-details-marker{ display:none; }
+.declined-wrap summary::before{ content:'›'; display:inline-block; transition:transform .2s; font-size:1.3rem; line-height:1; }
+.declined-wrap[open] summary::before{ transform:rotate(-90deg); }
+.declined-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:.7rem; margin-top:.6rem; }
+.declined-grid .bk{ opacity:.7; margin:0; border-inline-start-color:var(--faint); }
 
-/* ---- form fields: the 14%-alpha border all but disappeared against white,
-   and nothing at all marked the field you were typing in ---- */
-#login input,
-.cfield input, .cfield textarea,
-.ev-grid input, .ev-reg input, .ev-reg select,
-.row input[type=time], .row input[type=text]{
-  border-color:rgba(25,22,17,.3);
-  transition:border-color .18s ease, box-shadow .18s ease;
+/* drop zones shown only while dragging */
+.dropbar{
+  position:fixed; inset-inline:0; bottom:18px; display:flex; justify-content:center; gap:1rem; z-index:40;
+  pointer-events:none; opacity:0; transform:translateY(20px); transition:opacity .2s, transform .2s;
 }
-#login input:hover,
-.cfield input:hover, .cfield textarea:hover,
-.ev-grid input:hover, .ev-reg input:hover, .ev-reg select:hover,
-.row input[type=time]:hover, .row input[type=text]:hover{ border-color:rgba(25,22,17,.55); }
-#login input:focus,
-.cfield input:focus, .cfield textarea:focus,
-.ev-grid input:focus, .ev-reg input:focus, .ev-reg select:focus,
-.row input[type=time]:focus, .row input[type=text]:focus{
-  outline:none; border-color:var(--accent);
-  box-shadow:0 0 0 3px rgba(169,30,28,.14);
+body.bk-drag .dropbar{ opacity:1; transform:none; pointer-events:auto; }
+.dropzone{
+  display:flex; align-items:center; gap:.6rem; padding:1rem 1.6rem; border-radius:999px;
+  background:var(--card); box-shadow:var(--shadow-lift); font-weight:500; border:2px dashed var(--line2);
+  transition:transform .15s, background .15s, border-color .15s;
 }
-.cfield > label, .ev-grid label, .ev-actions > label, .ev-reg label{ color:var(--ink); }
-.ev-grid label, .ev-actions > label, .ev-reg label{ font-size:.85rem; }
-.ev-reg-note{ font-size:.8rem; }
-.cfield .note, .ev-reg-note, .hint{ line-height:1.55; }
+.dropzone.trash{ color:var(--berry-ink); }
+.dropzone.decline{ color:var(--soft); }
+.drop-over.dropzone{ transform:scale(1.08); }
+.drop-over.dropzone.trash{ background:var(--berry-bg); border-color:var(--berry); }
+.drop-over.dropzone.decline{ background:var(--stone-bg); border-color:var(--soft); }
+.drop-over.col{ background:#efe5d9; border-color:var(--soft); }
+.drag-ghost{
+  position:fixed; top:0; left:0; z-index:100; pointer-events:none; margin:0 !important;
+  box-shadow:var(--shadow-lift); opacity:.95; transition:none; cursor:grabbing;
+}
+.drag-src{ opacity:.3; }
+body.dragging, body.dragging *{ cursor:grabbing !important; user-select:none; }
+
+/* ---------- calendar ---------- */
+.cal-layout{ display:grid; grid-template-columns:minmax(0,1fr) 360px; gap:1.2rem; align-items:start; }
+@media (max-width:980px){ .cal-layout{ grid-template-columns:1fr; } }
+.stickers{ display:flex; flex-wrap:wrap; gap:.55rem; align-items:center; }
+.sticker{
+  display:inline-flex; align-items:center; gap:.45rem; padding:.55rem 1rem; border-radius:999px;
+  background:var(--mint-bg); color:var(--mint); font-weight:500; border:1.5px solid #c6e6d2;
+  cursor:grab; touch-action:none; user-select:none; min-height:44px; transition:transform .12s, box-shadow .12s;
+}
+.sticker:hover{ transform:translateY(-1px) rotate(-1deg); box-shadow:0 4px 12px rgba(0,0,0,.08); }
+.sticker small{ font-weight:400; opacity:.8; font-size:.8rem; }
+.sticker.lock{ background:var(--stone-bg); color:#5c544d; border-color:var(--line2); }
+.sticker-help{ color:var(--soft); font-size:.88rem; margin-top:.7rem; }
+.sticker-bar{ display:flex; gap:1rem; align-items:flex-end; justify-content:space-between; flex-wrap:wrap; }
+.price-mini{ display:flex; align-items:center; gap:.5rem; font-size:.9rem; color:var(--soft); }
+.price-mini .inp{ width:110px; min-height:40px; padding:.4rem .7rem; }
+
+.month-nav{ display:flex; align-items:center; gap:.6rem; margin-bottom:.9rem; }
+.month-nav b{ font-size:1.3rem; font-weight:600; flex:1; text-align:center; }
+.cal{ display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); gap:6px; }
+.dow{ text-align:center; color:var(--soft); font-size:.85rem; padding-bottom:.2rem; }
+.day{
+  min-height:96px; border-radius:12px; background:var(--card); border:2px solid transparent; padding:.4rem .45rem;
+  cursor:pointer; display:flex; flex-direction:column; gap:3px; transition:border-color .12s, transform .12s; min-width:0;
+}
+.day:hover{ border-color:var(--line2); }
+.day.out{ opacity:.35; }
+.day.past{ background:#faf8f5; }
+.day.past .num{ color:var(--faint); }
+.day.today .num{ background:var(--ink); color:#fff; border-radius:999px; padding:0 .45rem; }
+.day.selected{ border-color:var(--ink); }
+.day.locked{ background:repeating-linear-gradient(135deg,#f3eee8 0 8px,#ebe4dc 8px 16px); }
+.day .num{ font-weight:600; font-size:.95rem; align-self:flex-start; line-height:1.6; }
+.dchip{
+  font-size:.72rem; line-height:1.35; border-radius:6px; padding:1px 5px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  background:var(--mint-bg); color:var(--mint); font-weight:500;
+}
+.dchip.open{ cursor:grab; touch-action:none; }
+.dchip.pending{ background:var(--honey-bg); color:var(--honey); }
+.dchip.booked{ background:var(--berry-bg); color:var(--berry-ink); }
+.dchip.lock{ background:#e2dbd2; color:#5c544d; }
+.drop-over.day{ border-color:var(--mint); transform:scale(1.04); background:var(--mint-bg); }
+@media (max-width:640px){
+  .day{ min-height:62px; padding:.25rem; }
+  .dchip{ font-size:0; height:7px; padding:0; border-radius:4px; }
+}
+.legend{ display:flex; flex-wrap:wrap; gap:1rem; margin-top:.9rem; font-size:.85rem; color:var(--soft); }
+.legend span{ display:inline-flex; align-items:center; gap:.4rem; }
+.legend i{ width:14px; height:10px; border-radius:3px; display:inline-block; }
+
+.daypanel{ position:sticky; top:16px; }
+.daypanel h2{ font-size:1.25rem; }
+.daypanel .empty{ color:var(--soft); text-align:center; padding:2.2rem 1rem; }
+.daypanel .empty svg{ width:42px; height:42px; color:var(--faint); margin-bottom:.6rem; }
+.win{ display:grid; gap:.6rem; background:var(--paper); border-radius:14px; padding:.85rem .9rem; margin-bottom:.6rem; }
+.win-top{ display:flex; align-items:center; gap:.5rem; }
+.win-time{ font-weight:600; font-size:1.05rem; direction:ltr; }
+.win-row{ display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
+.win-row .inp{ min-height:40px; padding:.4rem .7rem; }
+.seg{ display:inline-flex; background:var(--card); border-radius:999px; padding:3px; border:1px solid var(--line); }
+.seg button{ border:none; background:none; border-radius:999px; padding:.3rem .85rem; font-size:.88rem; color:var(--soft); min-height:34px; }
+.seg button.on.free{ background:var(--mint); color:#fff; }
+.seg button.on.taken{ background:var(--berry); color:#fff; }
+.pending-note{ font-size:.86rem; color:var(--honey); background:var(--honey-bg); border-radius:999px; padding:.25rem .8rem; }
+.add-win{ border-top:1px dashed var(--line2); margin-top:1rem; padding-top:1rem; display:grid; gap:.7rem; }
+.add-win .times{ display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; }
+.add-win select{ width:auto; min-width:100px; }
+.lock-row{ display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:.7rem .9rem; border-radius:14px; background:var(--paper); margin-bottom:1rem; }
+
+/* ---------- events ---------- */
+.ev{ background:var(--card); border-radius:var(--r); box-shadow:var(--shadow); padding:1.1rem 1.2rem; margin-bottom:.9rem; position:relative; }
+.ev-top{ display:flex; align-items:center; gap:.6rem; margin-bottom:.9rem; }
+.ev-top .title{ font-weight:600; font-size:1.08rem; flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.badge{ font-size:.8rem; font-weight:500; padding:.2rem .7rem; border-radius:999px; white-space:nowrap; }
+.badge.live{ background:var(--mint-bg); color:var(--mint); }
+.badge.draft{ background:var(--stone-bg); color:var(--soft); }
+.badge.past{ background:var(--berry-bg); color:var(--berry-ink); }
+.ev-grid{ display:grid; grid-template-columns:160px 1fr 1fr; gap:.8rem; align-items:start; }
+.ev-grid .wide{ grid-column:1/-1; }
+@media (max-width:700px){ .ev-grid{ grid-template-columns:1fr; } }
+.ev-opts{ display:flex; flex-wrap:wrap; gap:1.2rem; margin-top:1rem; align-items:center; }
+.ev-reg{ margin-top:1rem; padding-top:1rem; border-top:1px dashed var(--line2); display:flex; flex-wrap:wrap; gap:.8rem; align-items:flex-end; }
+.ev-reg .field{ min-width:180px; }
+.ev-reg .field.wide{ flex-basis:100%; }
+.drop-over.ev{ outline:3px dashed var(--mint); outline-offset:3px; }
+
+/* ---------- registrations ---------- */
+.rg-group{ margin-bottom:1rem; }
+.rg-group h3{ font-size:1.08rem; font-weight:600; margin-bottom:.7rem; }
+.rg-row{
+  display:grid; grid-template-columns:1.2fr 1.6fr auto auto auto auto 40px; gap:.5rem 1rem; align-items:center;
+  padding:.6rem 0; border-top:1px solid var(--line); font-size:.92rem;
+}
+@media (max-width:760px){ .rg-row{ grid-template-columns:1fr auto; } }
+.rg-contact, .rg-date{ color:var(--soft); font-size:.86rem; }
+.pill{ font-size:.8rem; font-weight:500; padding:.18rem .65rem; border-radius:999px; white-space:nowrap; justify-self:start; }
+.pill.paid{ background:var(--mint-bg); color:var(--mint); }
+.pill.pending{ background:var(--honey-bg); color:var(--honey); }
+.pill.free{ background:var(--stone-bg); color:var(--ink); }
+
+/* ---------- content ---------- */
+.acc{ background:var(--card); border-radius:var(--r); box-shadow:var(--shadow); margin-bottom:.8rem; overflow:hidden; }
+.acc summary{
+  list-style:none; cursor:pointer; padding:1.1rem 1.3rem; font-weight:600; font-size:1.08rem;
+  display:flex; align-items:center; gap:.7rem;
+}
+.acc summary::-webkit-details-marker{ display:none; }
+.acc summary::after{ content:''; margin-inline-start:auto; width:10px; height:10px; border-inline-start:2px solid var(--soft); border-bottom:2px solid var(--soft); transform:rotate(-45deg); transition:transform .2s; }
+.acc[open] summary::after{ transform:rotate(135deg); }
+.acc summary small{ font-weight:400; color:var(--soft); font-size:.86rem; }
+.acc .acc-body{ padding:0 1.3rem 1.3rem; display:grid; gap:1rem; }
+.media-row{ display:flex; align-items:center; gap:1rem; flex-wrap:wrap; }
+.media-thumb{ width:180px; height:112px; object-fit:cover; border-radius:12px; background:var(--stone-bg); flex:none; }
+.media-status{ font-weight:500; min-height:1.3em; }
+
+/* ---------- dialog + toast ---------- */
+.veil{ position:fixed; inset:0; background:rgba(43,39,36,.35); display:grid; place-items:center; padding:18px; z-index:200; animation:fade .15s; }
+@keyframes fade{ from{ opacity:0; } }
+.dialog{
+  background:var(--card); border-radius:24px; width:min(480px,100%); max-height:calc(100vh - 36px); overflow:auto;
+  padding:1.7rem 1.6rem 1.4rem; box-shadow:0 20px 60px rgba(0,0,0,.25); animation:pop .18s ease-out;
+}
+@keyframes pop{ from{ transform:scale(.95); opacity:0; } }
+.dialog h3{ font-size:1.3rem; font-weight:600; margin-bottom:.5rem; }
+.dialog .body{ color:#4f4842; line-height:1.6; margin-bottom:1.3rem; }
+.dialog .body p + p{ margin-top:.5rem; }
+.dialog .form{ display:grid; gap:1rem; margin-bottom:1.3rem; }
+.dialog .acts{ display:flex; gap:.6rem; flex-wrap:wrap; justify-content:flex-start; }
+.toasts{ position:fixed; bottom:20px; inset-inline-start:50%; transform:translateX(50%); display:grid; gap:.5rem; z-index:300; width:max-content; max-width:calc(100vw - 24px); }
+.toast{
+  background:var(--ink); color:#fff; border-radius:999px; padding:.7rem .8rem .7rem 1.3rem; display:flex; align-items:center; gap:1rem;
+  box-shadow:var(--shadow-lift); animation:rise .2s ease-out; font-size:.96rem;
+}
+.toast.plain{ padding-inline-end:1.3rem; }
+.toast.warn{ background:#5a4636; }
+.toast button{ background:#fff; color:var(--ink); border:none; border-radius:999px; padding:.4rem 1rem; font-weight:600; min-height:36px; }
+@keyframes rise{ from{ transform:translateY(12px); opacity:0; } }
+body.bk-drag .toasts{ bottom:110px; }
+
+.loading{ color:var(--soft); padding:2rem; text-align:center; }
+@media (max-width:560px){
+  .brand > div:not(.logo-dot){ display:none; }
+  .top{ gap:.5rem; }
+  .top .btn.sm{ padding-inline:.7rem; }
+  .card{ padding:1.1rem; }
+}
+.sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
 </style>
 </head>
 <body>
 
+<!-- ============ LOGIN ============ -->
 <div id="login">
-  <h1>ניהול האתר · תות</h1>
-  <p class="sub">הזנת מפתח ניהול</p>
-  <input type="password" id="keyInput" placeholder="מפתח ניהול" autocomplete="current-password">
-  <p id="loginErr"></p>
-  <button id="loginBtn">כניסה</button>
+  <div class="login-card">
+    <div class="logo-dot">תות</div>
+    <h1>שלום, ברוכה הבאה</h1>
+    <p>כדי להיכנס לניהול האתר, הקלידי את מפתח הניהול.</p>
+    <div class="pass-wrap">
+      <input class="inp" type="password" id="keyInput" placeholder="מפתח ניהול" autocomplete="current-password" aria-label="מפתח ניהול">
+      <button class="icon-btn" id="peekBtn" type="button" aria-label="הצגת המפתח" title="הצגת המפתח">
+        <svg class="i" viewBox="0 0 24 24"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+    <p id="loginErr" role="alert"></p>
+    <button class="btn berry" id="loginBtn">כניסה</button>
+  </div>
 </div>
 
+<!-- ============ APP ============ -->
 <div id="app">
-  <h1>ניהול האתר</h1>
-  <p class="sub">יומן ההשכרות ותוכן האתר — כל שינוי נשמר אוטומטית ומופיע באתר תוך שניות.</p>
-
-  <div class="bar">
-    <div class="tabs">
-      <button id="tabCalBtn" class="active">יומן השכרות</button>
-      <button id="tabContentBtn">תוכן האתר</button>
-      <button id="tabBookBtn">בקשות השכרה</button>
-      <button id="tabEventsBtn">אירועים</button>
-      <button id="tabRegsBtn">הרשמות לאירועים</button>
+  <header class="top">
+    <div class="brand">
+      <div class="logo-dot">תות</div>
+      <div><b>ניהול האתר</b><span>סטודיו תות</span></div>
     </div>
-    <div class="bar-side">
-      <span id="saveState"></span>
-      <a href="/" target="_blank" rel="noopener">צפייה באתר ↗</a>
-      <button class="ghost" id="logoutBtn">יציאה</button>
-    </div>
-  </div>
+    <span class="save-pill" id="saveState" role="status">הכל שמור</span>
+    <a class="btn soft sm" href="/" target="_blank" rel="noopener">לאתר ↗</a>
+    <button class="btn quiet sm" id="logoutBtn">יציאה</button>
+  </header>
 
-  <!-- ============ TAB: CALENDAR ============ -->
-  <div id="tabCal">
-    <div class="month-nav">
-      <button class="ghost" id="prevM">‹ הקודם</button>
-      <b id="monthLabel"></b>
-      <button class="ghost" id="nextM">הבא ›</button>
-    </div>
+  <nav class="nav" aria-label="ניווט">
+    <button data-tab="home" class="active">
+      <svg class="i" viewBox="0 0 24 24"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg>בית
+    </button>
+    <button data-tab="book">
+      <svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M8 13h4"/></svg>בקשות השכרה<span class="count" id="navBookCount" hidden></span>
+    </button>
+    <button data-tab="cal">
+      <svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>יומן פנוי
+    </button>
+    <button data-tab="events">
+      <svg class="i" viewBox="0 0 24 24"><path d="M12 3l2.6 5.3 5.9.9-4.3 4.1 1 5.8L12 16.4 6.8 19.1l1-5.8L3.5 9.2l5.9-.9z"/></svg>אירועים
+    </button>
+    <button data-tab="regs">
+      <svg class="i" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 010 7M18 14.8c2 .7 3.2 2.5 3.6 5.2"/></svg>נרשמים
+    </button>
+    <button data-tab="content">
+      <svg class="i" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>טקסטים ותמונות
+    </button>
+  </nav>
 
-    <div class="legend">
-      <span>חלון פתוח<span class="dotg"></span></span>
-      <span>יום נעול<span class="dotr"></span></span>
-    </div>
-
-    <div class="cal" id="cal"></div>
-
-    <div class="panel" id="dayPanel" hidden>
-      <h2 id="panelTitle"></h2>
-      <div class="row">
-        <button id="lockBtn"></button>
+  <!-- ============ HOME ============ -->
+  <section id="tab-home">
+    <div class="page-head">
+      <div>
+        <h1 id="hello">שלום</h1>
+        <p>הנה מה שמחכה לך. לחיצה על כרטיס לוקחת ישר למקום.</p>
       </div>
-      <div class="row">
-        <label>מ־<input type="time" id="wStart" value="18:00"></label>
-        <label>עד <input type="time" id="wEnd" value="23:00"></label>
-        <label>מחיר ₪<input type="number" id="wPrice" min="0" step="50" placeholder="0" style="width:90px"></label>
-        <input type="text" id="wNote" placeholder="הערה (לא חובה)" size="18">
-        <button id="addWin">+ פתיחת חלון</button>
-      </div>
-      <ul class="winlist" id="winList"></ul>
-      <p class="hint">חלון פתוח = טווח שעות שמוצג למבקרים כזמין להשכרה באותו יום. יום נעול לא ניתן לבחירה כלל.</p>
     </div>
-  </div>
+    <div class="tiles" id="homeTiles"><p class="loading">רגע, טוען…</p></div>
+    <div class="card">
+      <h2>ההשכרות הקרובות</h2>
+      <ul class="next-list" id="homeNext"></ul>
+    </div>
+    <div class="reassure">
+      <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v5M12 16h.01"/></svg>
+      <div>
+        <b>אין פה שום דבר שאפשר לשבור.</b><br>
+        כל שינוי נשמר לבד (רואים את זה בירוק למעלה). אם משהו זז או נמחק בטעות, מופיעה הודעה למטה עם כפתור <b>ביטול</b> שמחזיר הכל אחורה.
+      </div>
+    </div>
+  </section>
 
-  <!-- ============ TAB: SITE CONTENT ============ -->
-  <div id="tabContent" hidden>
-    <div id="contentFields"></div>
+  <!-- ============ BOOKINGS ============ -->
+  <section id="tab-book" hidden>
+    <div class="page-head">
+      <div>
+        <h1>בקשות השכרה</h1>
+        <p>כל בקשה היא כרטיס. אפשר <b>לגרור</b> כרטיס לעמודה הבאה, או ללחוץ על הכפתור שבתוכו. גוררים לפח כדי למחוק.</p>
+      </div>
+      <button class="btn soft sm" id="bookRefresh">
+        <svg class="i" viewBox="0 0 24 24"><path d="M20 12a8 8 0 11-2.3-5.7M20 4v5h-5"/></svg>רענון
+      </button>
+    </div>
+    <div id="board" class="board"><p class="loading">רגע, טוען…</p></div>
+    <details class="declined-wrap" id="declinedWrap" hidden>
+      <summary id="declinedSum">נדחו או בוטלו</summary>
+      <div class="declined-grid" id="declinedList"></div>
+    </details>
+  </section>
 
-    <div class="cgroup">
-      <h2>מדיה — תמונה ווידאו</h2>
-      <div class="cfield">
-        <label>התמונה שנראית לפני שהווידאו עולה</label>
-        <div class="media-row">
-          <img id="heroPreview" class="media-thumb" alt="תצוגה מקדימה של תמונת הפתיחה">
-          <div class="media-side">
-            <button id="heroBtn" class="ghost">החלפת התמונה…</button>
-            <p class="note" id="heroCur"></p>
-            <p class="note media-status" id="heroStatus"></p>
-          </div>
-          <input type="file" id="heroFile" accept="image/*" hidden>
+  <!-- ============ CALENDAR ============ -->
+  <section id="tab-cal" hidden>
+    <div class="page-head">
+      <div>
+        <h1>יומן פנוי</h1>
+        <p>אלה השעות שהאתר מציג כפנויות להשכרה. <b>גררי מדבקה</b> אל יום ביומן כדי לפתוח אותו, או לחצי על יום כדי לראות ולשנות אותו.</p>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:1rem">
+      <div class="sticker-bar">
+        <div class="stickers" id="stickers"></div>
+        <label class="price-mini">מחיר לחלון חדש ₪
+          <input class="inp" type="number" id="presetPrice" min="0" step="50" placeholder="0" inputmode="numeric">
+        </label>
+      </div>
+      <p class="sticker-help">טיפ: אפשר גם לבחור יום, ואז ללחוץ על מדבקה. חלון ירוק שכבר ביומן אפשר לגרור ליום אחר כדי להזיז אותו.</p>
+    </div>
+
+    <div class="cal-layout">
+      <div class="card">
+        <div class="month-nav">
+          <button class="icon-btn" id="prevM" aria-label="החודש הקודם"><svg class="i" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+          <b id="monthLabel"></b>
+          <button class="icon-btn" id="nextM" aria-label="החודש הבא"><svg class="i" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+        </div>
+        <div class="cal" id="cal"></div>
+        <div class="legend">
+          <span><i style="background:var(--mint-bg);border:1px solid #bfe3cc"></i>פנוי להשכרה</span>
+          <span><i style="background:var(--honey-bg);border:1px solid #f0d9a6"></i>מישהו ביקש, בהמתנה</span>
+          <span><i style="background:var(--berry-bg);border:1px solid #f1c9ca"></i>תפוס</span>
+          <span><i style="background:#e2dbd2"></i>יום נעול</span>
         </div>
       </div>
-      <div class="cfield">
-        <label>הווידאו שרץ בפתיחת העמוד</label>
-        <div class="media-row">
-          <video id="videoPreview" class="media-thumb" muted playsinline loop autoplay></video>
-          <div class="media-side">
-            <button id="videoBtn" class="ghost">החלפת הווידאו…</button>
-            <p class="note" id="videoCur"></p>
-            <p class="note media-status" id="videoStatus"></p>
-          </div>
-          <input type="file" id="videoFile" accept="video/mp4,video/quicktime,video/webm" hidden>
+      <div class="card daypanel" id="dayPanel"></div>
+    </div>
+
+    <details class="acc" style="margin-top:1.2rem">
+      <summary>חיבור ליומן גוגל <small>כדי לראות את ההשכרות בטלפון</small></summary>
+      <div class="acc-body">
+        <p class="note" style="font-size:.95rem">יוצרים כתובת, מעתיקים אותה, ומוסיפים ביומן גוגל תחת <b>יומנים אחרים ← הרשמה ליומן ← מכתובת URL</b>. כל ההשכרות יופיעו כיומן נפרד.</p>
+        <div class="win-row">
+          <input class="inp" type="text" id="icsUrl" readonly style="flex:1;min-width:240px" dir="ltr" placeholder="לחצי על ״יצירת כתובת״">
+          <button class="btn soft sm" id="icsMake">יצירת כתובת</button>
+          <button class="btn sm" id="icsCopy" hidden>העתקה</button>
         </div>
+        <p class="note" id="icsMsg"></p>
+        <p class="note">הכתובת סודית: מי שמחזיק בה רואה את פרטי ההשכרות. אם היא דלפה, אפשר <button class="btn quiet sm" id="icsRotate" style="display:inline-flex;padding:.1rem .5rem;min-height:0">להחליף אותה</button>. גוגל מרענן יומנים כאלה בקצב שלו, לפעמים רק כל כמה שעות. כאן תמיד מעודכן.</p>
       </div>
-      <p class="hint">תמונה עד 20MB, וידאו עד 300MB. ההעלאה נשמרת אוטומטית ומופיעה באתר תוך שניות.</p>
-    </div>
-  </div>
+    </details>
+  </section>
 
-  <!-- ============ TAB: EVENTS ============ -->
-  <div id="tabEvents" hidden>
-    <div class="cgroup">
-      <h2>אירועי הלו"ז</h2>
-      <div id="eventsList"></div>
-      <button id="addEvent">+ אירוע חדש</button>
-      <p class="hint">האירועים מוצגים בסדר הזה בטבלת הלו"ז באתר. "הדגשה באדום" מסמנת את האירוע בנקודה אדומה וסטטוס אדום. לכל אירוע אפשר להגדיר הרשמה (קישור חיצוני / כניסה חינם / כרטיס בתשלום).</p>
+  <!-- ============ EVENTS ============ -->
+  <section id="tab-events" hidden>
+    <div class="page-head">
+      <div>
+        <h1>אירועים</h1>
+        <p>האירועים שמופיעים בלו"ז באתר. אפשר לגרור אירוע (מהידית <b>⋮⋮</b>) כדי לשנות את הסדר. אירוע שהתאריך שלו עבר יורד מהאתר לבד.</p>
+      </div>
+      <button class="btn berry" id="addEvent">+ אירוע חדש</button>
     </div>
-  </div>
+    <div id="eventsList"></div>
+  </section>
 
-  <!-- ============ TAB: EVENT REGISTRATIONS ============ -->
-  <div id="tabRegs" hidden>
-    <div class="regs-head">
-      <button class="ghost" id="regsRefresh">רענון</button>
-      <span class="hint" id="regsCount"></span>
+  <!-- ============ REGISTRATIONS ============ -->
+  <section id="tab-regs" hidden>
+    <div class="page-head">
+      <div>
+        <h1>נרשמים לאירועים</h1>
+        <p id="regsCount">מי נרשם לאיזה אירוע. "שולם" מתעדכן לבד אחרי תשלום.</p>
+      </div>
+      <button class="btn soft sm" id="regsRefresh">
+        <svg class="i" viewBox="0 0 24 24"><path d="M20 12a8 8 0 11-2.3-5.7M20 4v5h-5"/></svg>רענון
+      </button>
     </div>
     <div id="regsList"></div>
-    <p class="hint">רשימת הנרשמים לכל אירוע. "שולם" מתעדכן אוטומטית לאחר תשלום דרך חשבונית ירוקה; "ממתין לתשלום" = נרשם אך טרם שילם.</p>
-  </div>
+  </section>
 
-  <!-- ============ TAB: RENTAL BOOKINGS ============ -->
-  <div id="tabBook" hidden>
-    <div class="regs-head">
-      <button class="ghost" id="bookRefresh">רענון</button>
-      <span class="hint" id="bookCount"></span>
-    </div>
-
-    <div id="bookList"></div>
-
-    <div class="cgroup" style="margin-top:2rem">
-      <h2>יומן גוגל</h2>
-      <p class="hint" style="margin-top:0">
-        העתיקי את הכתובת הזו והוסיפי אותה ביומן גוגל תחת
-        <b>יומנים אחרים ← הרשמה ליומן ← מכתובת URL</b>.
-        כל ההשכרות יופיעו כיומן נפרד שאפשר לכבות ולהדליק.
-      </p>
-      <div class="row">
-        <input type="text" id="icsUrl" readonly style="flex:1; min-width:260px" dir="ltr" placeholder="לחצי על ״יצירת כתובת״">
-        <button class="ghost" id="icsMake">יצירת כתובת</button>
-        <button class="ghost" id="icsCopy" hidden>העתקה</button>
+  <!-- ============ CONTENT ============ -->
+  <section id="tab-content" hidden>
+    <div class="page-head">
+      <div>
+        <h1>טקסטים ותמונות</h1>
+        <p>פותחים חלק, מתקנים את הטקסט, וזהו. השינוי נשמר ומופיע באתר תוך כמה שניות. שדה שמרוקנים חוזר לטקסט המקורי.</p>
       </div>
-      <p class="hint" id="icsMsg"></p>
-      <p class="hint">
-        הכתובת סודית — מי שמחזיק בה רואה את פרטי ההשכרות. אם היא דלפה, לחצי
-        <button class="ghost" id="icsRotate" style="padding:.2rem .6rem; font-size:.85rem">החלפת כתובת</button>
-        והכתובת הישנה תפסיק לעבוד (אז יש להוסיף את החדשה ביומן מחדש).
-        <br>שימו לב: גוגל מרענן יומנים חיצוניים בקצב שלו, לפעמים רק כל כמה שעות. הפאנל הזה תמיד מעודכן.
-      </p>
     </div>
-  </div>
+    <details class="acc" open>
+      <summary>תמונה ווידאו בראש העמוד</summary>
+      <div class="acc-body">
+        <div class="field">
+          <span>התמונה שנראית לפני שהווידאו עולה</span>
+          <div class="media-row">
+            <img id="heroPreview" class="media-thumb" alt="תצוגה מקדימה של תמונת הפתיחה">
+            <div>
+              <button id="heroBtn" class="btn soft sm">בחירת תמונה חדשה…</button>
+              <p class="note" id="heroCur"></p>
+              <p class="note media-status" id="heroStatus"></p>
+            </div>
+            <input type="file" id="heroFile" accept="image/*" hidden>
+          </div>
+        </div>
+        <div class="field">
+          <span>הווידאו שרץ בפתיחת העמוד</span>
+          <div class="media-row">
+            <video id="videoPreview" class="media-thumb" muted playsinline loop autoplay></video>
+            <div>
+              <button id="videoBtn" class="btn soft sm">בחירת וידאו חדש…</button>
+              <p class="note" id="videoCur"></p>
+              <p class="note media-status" id="videoStatus"></p>
+            </div>
+            <input type="file" id="videoFile" accept="video/mp4,video/quicktime,video/webm" hidden>
+          </div>
+        </div>
+        <p class="note">תמונה עד 20MB, וידאו עד 300MB.</p>
+      </div>
+    </details>
+    <div id="contentFields"></div>
+  </section>
 </div>
 
+<div class="dropbar" id="dropbar" aria-hidden="true">
+  <div class="dropzone decline" data-drop="declined" id="dropDecline">
+    <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M6 6l12 12"/></svg>דחייה / ביטול
+  </div>
+  <div class="dropzone trash" data-drop="trash">
+    <svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 002 2h6a2 2 0 002-2l1-12M9 7V4h6v3"/></svg>מחיקה
+  </div>
+</div>
+<div class="toasts" id="toasts" aria-live="polite"></div>
+
 <script>
+'use strict';
 const API = '/api/availability';
 const CONTENT_API = '/api/content';
-let data = { locked: [], windows: [] };
-let view = new Date(); view.setDate(1);
-let selected = null;
-let saveTimer = null;
 
 const $ = (id) => document.getElementById(id);
 const pad = (n) => String(n).padStart(2, '0');
 const iso = (d) => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
 const MONTHS = ['ינואר','פברואר','מרץ','אפריל','מאי','יוני','יולי','אוגוסט','ספטמבר','אוקטובר','נובמבר','דצמבר'];
 const DOW = ['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'];
+const genId = () => Math.random().toString(36).slice(2, 10);
 
-function key() { return sessionStorage.getItem('tut-admin-key') || ''; }
+function key() { try { return sessionStorage.getItem('tut-admin-key') || ''; } catch { return ''; } }
 
-function setSaveState(txt, cls) { $('saveState').textContent = txt; $('saveState').className = cls; }
+/* small DOM helper: h('div', {class:'x', onclick:fn}, child, 'text') */
+function h(tag, attrs, ...kids) {
+  const el = document.createElement(tag);
+  for (const [k, v] of Object.entries(attrs || {})) {
+    if (v == null || v === false) continue;
+    if (k === 'class') el.className = v;
+    else if (k === 'text') el.textContent = v;
+    else if (k.startsWith('on')) el.addEventListener(k.slice(2), v);
+    else el.setAttribute(k, v === true ? '' : v);
+  }
+  for (const c of kids.flat()) if (c != null && c !== false) el.append(c);
+  return el;
+}
+const ICON = {
+  cal: '<path d="M8 3v4M16 3v4"/><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18"/>',
+  inbox: '<path d="M3 13l3-8h12l3 8v6H3z"/><path d="M3 13h5l1 2h6l1-2h5"/>',
+  phone: '<path d="M5 4h4l2 5-2.5 1.5a11 11 0 005 5L15 13l5 2v4a2 2 0 01-2 2A16 16 0 013 6a2 2 0 012-2z"/>',
+  chat: '<path d="M4 20l1.5-4A8 8 0 1112 20a8 8 0 01-4-1z"/>',
+  mail: '<rect x="3" y="5" width="18" height="14" rx="3"/><path d="M4 7l8 6 8-6"/>',
+  trash: '<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 002 2h6a2 2 0 002-2l1-12M9 7V4h6v3"/>',
+  grip: '<circle cx="9" cy="6" r="1.3"/><circle cx="15" cy="6" r="1.3"/><circle cx="9" cy="12" r="1.3"/><circle cx="15" cy="12" r="1.3"/><circle cx="9" cy="18" r="1.3"/><circle cx="15" cy="18" r="1.3"/>',
+  doc: '<path d="M7 3h7l5 5v13H7z"/><path d="M14 3v5h5M10 13h6M10 17h6"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+  moon: '<path d="M20 14.5A8 8 0 019.5 4a8 8 0 1010.5 10.5z"/>',
+  lock: '<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 018 0v3"/>',
+  camera: '<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+};
+function icon(name, extra) {
+  const s = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  s.setAttribute('viewBox', '0 0 24 24');
+  s.setAttribute('class', 'i' + (extra ? ' ' + extra : ''));
+  s.innerHTML = ICON[name] || '';
+  if (name === 'grip') { s.style.fill = 'currentColor'; s.style.stroke = 'none'; }
+  return s;
+}
+
+/* ================= SAVE STATE ================= */
+function setSaveState(txt, cls) {
+  const el = $('saveState');
+  el.textContent = txt;
+  el.className = 'save-pill' + (cls ? ' ' + cls : '');
+}
+const saving = () => setSaveState('שומר…', 'saving');
+const saved = () => setSaveState('הכל שמור', '');
+const saveFailed = (why) => setSaveState(why || 'לא נשמר — בדקי את האינטרנט', 'error');
+
+/* ================= DIALOG + TOASTS =================
+   Every question is a friendly card with two clear buttons instead of the
+   browser's grey confirm(); every destructive step offers "ביטול" after. */
+function ask({ title, text, ok = 'כן', cancel = 'לא, חזרה', tone = 'berry', form }) {
+  return new Promise((resolve) => {
+    const prevFocus = document.activeElement;
+    const close = (v) => { veil.remove(); document.removeEventListener('keydown', onKey); prevFocus?.focus?.(); resolve(v); };
+    const onKey = (e) => { if (e.key === 'Escape') close(false); };
+    const okBtn = h('button', { class: 'btn ' + tone, onclick: () => close(form ? form.collect() : true) }, ok);
+    const body = h('div', { class: 'body' });
+    (Array.isArray(text) ? text : [text]).filter(Boolean).forEach((t) => body.append(h('p', { text: t })));
+    const dlg = h('div', { class: 'dialog', role: 'dialog', 'aria-modal': 'true', 'aria-label': title },
+      h('h3', { text: title }), body, form ? form.el : null,
+      h('div', { class: 'acts' }, okBtn, h('button', { class: 'btn soft', onclick: () => close(false) }, cancel)));
+    const veil = h('div', { class: 'veil', onclick: (e) => { if (e.target === veil) close(false); } }, dlg);
+    document.body.append(veil);
+    document.addEventListener('keydown', onKey);
+    (form?.focus || okBtn).focus();
+  });
+}
+
+let live = [];
+function toast(msg, opts = {}) {
+  const wrap = $('toasts');
+  const t = h('div', { class: 'toast' + (opts.undo ? '' : ' plain') + (opts.warn ? ' warn' : '') }, h('span', { text: msg }));
+  let done = false;
+  const finish = (undone) => {
+    if (done) return; done = true; clearTimeout(timer); t.remove();
+    live = live.filter((x) => x.t !== t);
+    if (undone) opts.undo?.(); else opts.after?.();
+  };
+  if (opts.undo) t.append(h('button', { onclick: () => finish(true) }, 'ביטול'));
+  wrap.append(t);
+  live.push({ t, finish, undo: Boolean(opts.undo) });
+  while (live.length > 2) live.shift().finish(false);
+  const timer = setTimeout(() => finish(false), opts.ms || (opts.undo ? 8000 : 4000));
+  return { finish };
+}
+
+/* ================= DRAG ENGINE =================
+   Pointer-based so it works with a mouse, a finger and a pen alike.
+   With a mouse the whole item can be grabbed; on a touch screen only the
+   grip handle starts a drag, so that a finger can still scroll the page. */
+let suppressClick = false;
+document.addEventListener('click', (e) => {
+  if (suppressClick) { e.stopPropagation(); e.preventDefault(); suppressClick = false; }
+}, true);
+
+function draggable(el, { onDrop, canDrop, grip, whole = true, onStart }) {
+  el.addEventListener('pointerdown', (e) => {
+    if (e.button !== 0) return;
+    const onGrip = grip && grip.contains(e.target);
+    if (!onGrip) {
+      if (!whole || e.pointerType !== 'mouse') return;
+      if (e.target.closest('button, a, input, textarea, select, label, summary, .bk-msg')) return;
+    }
+    const sx = e.clientX, sy = e.clientY;
+    const r = el.getBoundingClientRect();
+    const ox = sx - r.left, oy = sy - r.top;
+    let ghost = null, over = null;
+
+    const move = (ev) => {
+      if (!ghost) {
+        if (Math.hypot(ev.clientX - sx, ev.clientY - sy) < 7) return;
+        ghost = el.cloneNode(true);
+        ghost.classList.add('drag-ghost');
+        ghost.style.width = r.width + 'px';
+        document.body.append(ghost);
+        el.classList.add('drag-src');
+        document.body.classList.add('dragging');
+        onStart?.();
+      }
+      ev.preventDefault();
+      ghost.style.transform = 'translate(' + (ev.clientX - ox) + 'px,' + (ev.clientY - oy) + 'px) rotate(-1.5deg)';
+      let t = document.elementFromPoint(ev.clientX, ev.clientY)?.closest('[data-drop]') || null;
+      if (t && canDrop && !canDrop(t)) t = null;
+      if (t !== over) { over?.classList.remove('drop-over'); over = t; over?.classList.add('drop-over'); }
+      // nudge the page when the pointer reaches the top or bottom edge
+      const edge = 70;
+      if (ev.clientY < edge) window.scrollBy(0, -12);
+      else if (ev.clientY > innerHeight - edge) window.scrollBy(0, 12);
+    };
+    const up = () => {
+      window.removeEventListener('pointermove', move);
+      window.removeEventListener('pointerup', up);
+      window.removeEventListener('pointercancel', cancel);
+      if (!ghost) return;
+      ghost.remove(); el.classList.remove('drag-src');
+      document.body.classList.remove('dragging', 'bk-drag');
+      suppressClick = true; setTimeout(() => { suppressClick = false; }, 0);
+      const target = over; over?.classList.remove('drop-over');
+      if (target) onDrop(target.dataset.drop, target);
+    };
+    const cancel = () => { over = null; up(); };
+    window.addEventListener('pointermove', move, { passive: false });
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', cancel);
+  });
+}
 
 /* ================= TABS ================= */
+const TABS = ['home', 'book', 'cal', 'events', 'regs', 'content'];
 function showTab(which) {
-  $('tabCal').hidden = which !== 'cal';
-  $('tabContent').hidden = which !== 'content';
-  $('tabEvents').hidden = which !== 'events';
-  $('tabRegs').hidden = which !== 'regs';
-  $('tabBook').hidden = which !== 'book';
-  $('tabCalBtn').classList.toggle('active', which === 'cal');
-  $('tabContentBtn').classList.toggle('active', which === 'content');
-  $('tabEventsBtn').classList.toggle('active', which === 'events');
-  $('tabRegsBtn').classList.toggle('active', which === 'regs');
-  $('tabBookBtn').classList.toggle('active', which === 'book');
+  live.filter((x) => !x.undo).forEach((x) => x.finish(false));
+  TABS.forEach((t) => { $('tab-' + t).hidden = t !== which; });
+  document.querySelectorAll('.nav button').forEach((b) => b.classList.toggle('active', b.dataset.tab === which));
   if (which === 'regs') loadRegs();
-  if (which === 'book') loadBookings();
+  if (which === 'book' || which === 'home') loadBookings();
+  try { sessionStorage.setItem('tut-admin-tab', which); } catch {}
+  window.scrollTo({ top: 0 });
 }
-$('tabCalBtn').addEventListener('click', () => showTab('cal'));
-$('tabContentBtn').addEventListener('click', () => showTab('content'));
-$('tabEventsBtn').addEventListener('click', () => showTab('events'));
-$('tabRegsBtn').addEventListener('click', () => showTab('regs'));
-$('tabBookBtn').addEventListener('click', () => showTab('book'));
+document.querySelectorAll('.nav button').forEach((b) => b.addEventListener('click', () => showTab(b.dataset.tab)));
+
+/* ================= DATES ================= */
+const heDate = (d) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d || '')) return d || '';
+  return new Date(d + 'T00:00').toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+};
+const heShort = (d) => {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(d || '')) return d || '';
+  return new Date(d + 'T00:00').toLocaleDateString('he-IL', { weekday: 'short', day: 'numeric', month: 'long' });
+};
+/* "28 בספטמבר, 14:32 · לפני 3 ימים" — when a request arrived */
+function received(isoStr) {
+  if (!isoStr) return 'מועד הקבלה לא נשמר (בקשה ישנה)';
+  const d = new Date(isoStr);
+  if (isNaN(d)) return '';
+  const when = d.toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: d.getFullYear() === new Date().getFullYear() ? undefined : 'numeric' }) +
+    ', ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+  const t0 = new Date(); t0.setHours(0, 0, 0, 0);
+  const d0 = new Date(d); d0.setHours(0, 0, 0, 0);
+  const days = Math.round((t0 - d0) / 86400000);
+  const rel = days <= 0 ? 'היום' : days === 1 ? 'אתמול' : days === 2 ? 'שלשום' : 'לפני ' + days + ' ימים';
+  return 'התקבלה ' + rel + ' · ' + when;
+}
 
 /* ================= CALENDAR (availability) ================= */
+let data = { locked: [], windows: [] };
+let view = new Date(); view.setDate(1);
+let selected = null;
+let saveTimer = null;
+
+const PRESETS = [
+  { id: 'eve',   label: 'ערב',        start: '18:00', end: '23:00', icon: 'moon' },
+  { id: 'shoot', label: 'יום צילום',  start: '09:00', end: '17:00', icon: 'camera' },
+  { id: 'morn',  label: 'בוקר',       start: '09:00', end: '13:00', icon: 'sun' },
+  { id: 'noon',  label: 'אחה״צ',      start: '13:00', end: '18:00', icon: 'sun' },
+  { id: 'lock',  label: 'נעילת יום',  lock: true, icon: 'lock' },
+];
+
 async function load() {
-  const res = await fetch(API);
-  data = await res.json();
-  render();
+  try {
+    const res = await fetch(API, { cache: 'no-store' });
+    data = await res.json();
+  } catch { toast('לא הצלחתי לטעון את היומן. נסי לרענן את הדף.', { warn: true }); }
+  data.locked = Array.isArray(data.locked) ? data.locked : [];
+  data.windows = Array.isArray(data.windows) ? data.windows : [];
+  render(); renderHome();
 }
 
+/* the server drops `pending` (it only reports it); strip it before saving */
 function queueSave() {
-  setSaveState('שומר…', 'saving');
+  saving();
   clearTimeout(saveTimer);
   saveTimer = setTimeout(async () => {
-    const res = await fetch(API, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json', 'x-admin-key': key() },
-      body: JSON.stringify(data),
-    });
-    if (res.ok) setSaveState('✓ נשמר', 'saved');
-    else setSaveState('שגיאת שמירה!', 'saving');
+    try {
+      const body = { locked: data.locked, windows: data.windows.map(({ pending, ...w }) => w) };
+      const res = await fetch(API, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': key() },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) saved(); else saveFailed(res.status === 401 ? 'צריך להתחבר מחדש' : 'השמירה נכשלה');
+    } catch { saveFailed(); }
   }, 500);
+}
+
+/* every calendar change goes through here, so each one can be undone */
+function calChange(msg, fn) {
+  const before = JSON.stringify(data);
+  fn();
+  queueSave(); render();
+  toast(msg, { undo: () => { data = JSON.parse(before); queueSave(); render(); toast('בוטל, הכל חזר כמו שהיה'); } });
+}
+
+const winState = (w) => w.booked ? 'booked' : w.pending ? 'pending' : 'open';
+const todayIso = () => iso(new Date());
+const presetPrice = () => Math.max(0, Math.round(+$('presetPrice').value || 0));
+
+function applyPreset(p, dIso) {
+  if (dIso < todayIso()) { toast('זה יום שכבר עבר', { warn: true }); return; }
+  if (p.lock) {
+    if (data.locked.includes(dIso)) { toast('היום הזה כבר נעול'); return; }
+    calChange('נעלתי את ' + heShort(dIso), () => { data.locked.push(dIso); });
+    return;
+  }
+  const clash = data.windows.some((w) => w.date === dIso && w.start < p.end && p.start < w.end);
+  if (clash) { toast('ביום הזה כבר יש חלון בשעות האלה', { warn: true }); return; }
+  calChange('פתחתי ' + p.label + ' ב' + heShort(dIso), () => {
+    data.windows.push({ id: Date.now().toString(36), date: dIso, start: p.start, end: p.end, note: '', price: presetPrice() });
+    selected = dIso;
+  });
+}
+
+function renderStickers() {
+  const wrap = $('stickers');
+  wrap.innerHTML = '';
+  PRESETS.forEach((p) => {
+    const s = h('div', { class: 'sticker' + (p.lock ? ' lock' : ''), role: 'button', tabindex: '0',
+      title: 'גררי ליום ביומן, או בחרי יום ולחצי' },
+      icon(p.icon), p.label, p.lock ? null : h('small', { dir: 'ltr', text: p.start + '–' + p.end }));
+    const tap = () => {
+      if (!selected) { toast('קודם בוחרים יום ביומן, או גוררים את המדבקה אליו'); return; }
+      applyPreset(p, selected);
+    };
+    s.addEventListener('click', tap);
+    s.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); tap(); } });
+    draggable(s, {
+      grip: s,
+      canDrop: (t) => t.classList.contains('day'),
+      onDrop: (dIso) => applyPreset(p, dIso),
+    });
+    wrap.append(s);
+  });
+  try { $('presetPrice').value = localStorage.getItem('tut-preset-price') || ''; } catch {}
+  $('presetPrice').addEventListener('input', () => { try { localStorage.setItem('tut-preset-price', $('presetPrice').value); } catch {} });
 }
 
 function render() {
   $('monthLabel').textContent = MONTHS[view.getMonth()] + ' ' + view.getFullYear();
   const cal = $('cal');
   cal.innerHTML = '';
-  DOW.forEach((d) => { const el = document.createElement('div'); el.className = 'dow'; el.textContent = d; cal.appendChild(el); });
+  DOW.forEach((d) => cal.append(h('div', { class: 'dow', text: d })));
 
-  const first = new Date(view);
-  const startOffset = first.getDay(); // Sunday-first
-  const gridStart = new Date(first); gridStart.setDate(1 - startOffset);
-  const todayIso = iso(new Date());
-
+  const gridStart = new Date(view); gridStart.setDate(1 - view.getDay());
+  const tIso = todayIso();
   for (let i = 0; i < 42; i++) {
     const d = new Date(gridStart); d.setDate(gridStart.getDate() + i);
     const dIso = iso(d);
-    const el = document.createElement('div');
-    el.className = 'day';
-    if (d.getMonth() !== view.getMonth()) el.classList.add('out');
-    if (dIso === todayIso) el.classList.add('today');
-    if (selected === dIso) el.classList.add('selected');
-    const wins = data.windows.filter((w) => w.date === dIso);
+    const wins = data.windows.filter((w) => w.date === dIso).sort((a, b) => a.start < b.start ? -1 : 1);
     const isLocked = data.locked.includes(dIso);
-    if (isLocked) el.classList.add('locked');
-    if (wins.length) el.classList.add('haswin');
-    const openN = wins.filter(w => !w.booked).length;
-    const bookedN = wins.length - openN;
-    el.innerHTML = '<span class="num">' + d.getDate() + '</span>' +
-      (openN ? '<span class="tag">' + (openN === 1 ? 'חלון פנוי' : openN + ' פנויים') + '</span>' : '') +
-      (bookedN ? '<span class="tag lock">' + (bookedN === 1 ? 'תפוס' : bookedN + ' תפוסים') + '</span>' : '') +
-      (isLocked ? '<span class="tag lock">נעול</span>' : '');
-    el.addEventListener('click', () => { selected = dIso; render(); });
-    cal.appendChild(el);
+    const el = h('div', {
+      class: 'day' + (d.getMonth() !== view.getMonth() ? ' out' : '') + (dIso === tIso ? ' today' : '') +
+        (dIso < tIso ? ' past' : '') + (selected === dIso ? ' selected' : '') + (isLocked ? ' locked' : ''),
+      'data-drop': dIso, role: 'button', tabindex: '0', 'aria-label': heDate(dIso),
+    }, h('span', { class: 'num', text: d.getDate() }));
+    if (isLocked) el.append(h('span', { class: 'dchip lock', text: 'נעול' }));
+    wins.forEach((w) => {
+      const st = winState(w);
+      const chip = h('span', { class: 'dchip ' + st, dir: 'ltr',
+        title: st === 'open' ? 'פנוי · אפשר לגרור ליום אחר' : st === 'pending' ? 'מישהו ביקש את החלון הזה' : 'תפוס',
+        text: w.start + '–' + w.end });
+      if (st === 'open') {
+        draggable(chip, {
+          grip: chip,
+          canDrop: (t) => t.classList.contains('day') && t.dataset.drop !== dIso,
+          onDrop: (to) => {
+            if (to < tIso) { toast('אי אפשר להזיז ליום שעבר', { warn: true }); return; }
+            calChange('הזזתי את החלון ל' + heShort(to), () => { w.date = to; selected = to; });
+          },
+        });
+      }
+      el.append(chip);
+    });
+    const pick = () => { selected = dIso; render(); if (innerWidth < 980) $('dayPanel').scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+    el.addEventListener('click', pick);
+    el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
+    cal.append(el);
   }
   renderPanel();
 }
 
+const TIMES = [];
+for (let m = 6 * 60; m < 24 * 60; m += 30) TIMES.push(pad(Math.floor(m / 60)) + ':' + pad(m % 60));
+TIMES.push('23:59');
+const timeSelect = (val) => {
+  const s = h('select', { class: 'inp', 'aria-label': 'שעה' });
+  TIMES.forEach((t) => s.append(h('option', { value: t, text: t, selected: t === val })));
+  return s;
+};
+
 function renderPanel() {
   const p = $('dayPanel');
-  if (!selected) { p.hidden = true; return; }
-  p.hidden = false;
-  const d = new Date(selected + 'T00:00');
-  $('panelTitle').textContent = d.toLocaleDateString('he-IL', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+  p.innerHTML = '';
+  if (!selected) {
+    p.append(h('div', { class: 'empty' }, icon('cal'), h('p', { text: 'לחצי על יום ביומן כדי לראות מה פתוח בו ולשנות.' })));
+    return;
+  }
+  const isPast = selected < todayIso();
   const isLocked = data.locked.includes(selected);
-  $('lockBtn').textContent = isLocked ? 'ביטול נעילה ליום זה' : 'נעילת היום (לא ניתן להשתבץ)';
-  $('lockBtn').className = isLocked ? 'ghost' : 'danger';
-  const list = $('winList');
-  list.innerHTML = '';
-  data.windows.filter((w) => w.date === selected).sort((a,b)=>a.start<b.start?-1:1).forEach((w) => {
-    const li = document.createElement('li');
-    li.innerHTML = '<span class="mono">' + w.start + '–' + w.end + '</span>' +
-      '<span style="font-weight:600">' + (w.price ? '₪' + w.price.toLocaleString() : 'ללא מחיר') + '</span>' +
-      '<span>' + (w.note || '') + '</span>' +
-      (w.booked ? '<span style="color:var(--accent);font-weight:600">תפוס</span>' : '<span style="color:var(--open)">פנוי</span>');
-    const toggle = document.createElement('button');
-    toggle.className = 'del'; toggle.style.color = w.booked ? 'var(--open)' : 'var(--soft)';
-    toggle.textContent = w.booked ? '↺' : '✔';
-    toggle.title = w.booked ? 'שחרור החלון (הפיכה לפנוי)' : 'סימון כתפוס';
-    toggle.addEventListener('click', () => { w.booked = !w.booked; queueSave(); render(); });
-    li.appendChild(toggle);
-    const del = document.createElement('button');
-    del.className = 'del'; del.textContent = '×'; del.title = 'מחיקת חלון';
-    del.addEventListener('click', () => { data.windows = data.windows.filter((x) => x.id !== w.id); queueSave(); render(); });
-    li.appendChild(del);
-    list.appendChild(li);
+  p.append(h('h2', { text: heDate(selected) }));
+
+  const lockInput = h('input', { type: 'checkbox', checked: isLocked, disabled: isPast });
+  lockInput.addEventListener('change', () => {
+    const on = lockInput.checked;
+    calChange(on ? 'היום נעול. אף אחד לא יוכל לבחור אותו' : 'הנעילה הוסרה', () => {
+      data.locked = on ? data.locked.concat(selected) : data.locked.filter((d) => d !== selected);
+    });
   });
+  p.append(h('div', { class: 'lock-row' },
+    h('div', {}, h('b', { text: 'נעילת היום' }), h('div', { class: 'note', text: 'יום נעול לא מוצג כפנוי באתר בכלל' })),
+    h('label', { class: 'switch berry' }, lockInput, h('span', { class: 'track' }), h('span', { class: 'sr', text: 'נעילת היום' }))));
+
+  const wins = data.windows.filter((w) => w.date === selected).sort((a, b) => a.start < b.start ? -1 : 1);
+  if (!wins.length) p.append(h('p', { class: 'note', style: 'margin-bottom:.4rem', text: 'אין חלונות פתוחים ביום הזה עדיין.' }));
+  wins.forEach((w) => {
+    const st = winState(w);
+    const price = h('input', { class: 'inp', type: 'number', min: '0', step: '50', inputmode: 'numeric', value: w.price || '', placeholder: '0', style: 'width:100px', 'aria-label': 'מחיר' });
+    price.addEventListener('input', () => { w.price = Math.max(0, Math.round(+price.value || 0)); queueSave(); });
+    const note = h('input', { class: 'inp', type: 'text', value: w.note || '', placeholder: 'הערה (לא חובה)', style: 'flex:1;min-width:120px', 'aria-label': 'הערה' });
+    note.addEventListener('input', () => { w.note = note.value.slice(0, 120); queueSave(); });
+
+    let status;
+    if (st === 'pending') status = h('span', { class: 'pending-note', text: 'מישהו ביקש את החלון הזה' });
+    else {
+      const seg = h('div', { class: 'seg', role: 'group', 'aria-label': 'מצב החלון' });
+      const mk = (label, cls, val) => seg.append(h('button', {
+        class: cls + (Boolean(w.booked) === val ? ' on' : ''), type: 'button',
+        onclick: () => { if (Boolean(w.booked) === val) return; calChange(val ? 'סימנתי את החלון כתפוס' : 'החלון פנוי שוב', () => { w.booked = val; }); },
+      }, label));
+      mk('פנוי', 'free', false); mk('תפוס', 'taken', true);
+      status = seg;
+    }
+    const del = h('button', { class: 'icon-btn del', title: 'מחיקת החלון', 'aria-label': 'מחיקת החלון',
+      onclick: () => calChange('החלון נמחק', () => { data.windows = data.windows.filter((x) => x !== w); }) }, icon('trash'));
+
+    p.append(h('div', { class: 'win' },
+      h('div', { class: 'win-top' }, h('span', { class: 'win-time', text: w.start + '–' + w.end }), h('span', { style: 'flex:1' }), del),
+      h('div', { class: 'win-row' }, status),
+      h('div', { class: 'win-row' }, h('span', { class: 'note', text: '₪' }), price, note)));
+  });
+
+  if (!isPast) {
+    const s = timeSelect('18:00'), e = timeSelect('23:00');
+    const pr = h('input', { class: 'inp', type: 'number', min: '0', step: '50', inputmode: 'numeric', placeholder: 'מחיר ₪', style: 'width:110px', value: $('presetPrice').value });
+    p.append(h('div', { class: 'add-win' },
+      h('b', { text: 'הוספת חלון בשעות אחרות' }),
+      h('div', { class: 'times' }, h('span', { text: 'מ־' }), s, h('span', { text: 'עד' }), e),
+      h('div', { class: 'times' }, pr, h('button', { class: 'btn mint sm', onclick: () => {
+        if (e.value <= s.value) { toast('שעת הסיום צריכה להיות אחרי שעת ההתחלה', { warn: true }); return; }
+        if (data.windows.some((w) => w.date === selected && w.start < e.value && s.value < w.end)) { toast('יש כבר חלון בשעות האלה', { warn: true }); return; }
+        calChange('נפתח חלון ' + s.value + '–' + e.value, () => {
+          data.windows.push({ id: Date.now().toString(36), date: selected, start: s.value, end: e.value, note: '', price: Math.max(0, Math.round(+pr.value || 0)) });
+        });
+      } }, '+ פתיחת החלון'))));
+  }
 }
-
-$('lockBtn').addEventListener('click', () => {
-  if (data.locked.includes(selected)) data.locked = data.locked.filter((d) => d !== selected);
-  else data.locked.push(selected);
-  queueSave(); render();
-});
-
-$('addWin').addEventListener('click', () => {
-  const s = $('wStart').value, e = $('wEnd').value;
-  if (!s || !e || e <= s) { alert('טווח שעות לא תקין'); return; }
-  data.windows.push({
-    id: Date.now().toString(36), date: selected, start: s, end: e,
-    note: $('wNote').value.trim(),
-    price: Math.max(0, Math.round(+$('wPrice').value || 0)),
-  });
-  $('wNote').value = ''; $('wPrice').value = '';
-  queueSave(); render();
-});
 
 $('prevM').addEventListener('click', () => { view.setMonth(view.getMonth() - 1); render(); });
 $('nextM').addEventListener('click', () => { view.setMonth(view.getMonth() + 1); render(); });
@@ -582,25 +1116,23 @@ let contentTimer = null;
 
 async function loadContent() {
   try {
-    const res = await fetch(CONTENT_API);
+    const res = await fetch(CONTENT_API, { cache: 'no-store' });
     const c = await res.json();
     if (c && typeof c === 'object') content = c;
   } catch { /* keep empty */ }
   content.texts = content.texts && typeof content.texts === 'object' ? content.texts : {};
-  if (!Array.isArray(content.events)) content.events = DEFAULT_EVENTS.map(e => ({ ...e }));
+  if (!Array.isArray(content.events)) content.events = DEFAULT_EVENTS.map((e) => ({ ...e }));
   // every event needs a stable id so registrations can attach to it
   let backfilled = false;
-  content.events.forEach(e => { if (!e.id) { e.id = genId(); backfilled = true; } });
+  content.events.forEach((e) => { if (!e.id) { e.id = genId(); backfilled = true; } });
   if (backfilled) queueContentSave();
   renderContentForm();
   renderEvents();
   window.renderMediaUI?.();
 }
 
-const genId = () => Math.random().toString(36).slice(2, 10);
-
 function queueContentSave() {
-  setSaveState('שומר…', 'saving');
+  saving();
   clearTimeout(contentTimer);
   contentTimer = setTimeout(async () => {
     try {
@@ -609,168 +1141,114 @@ function queueContentSave() {
         headers: { 'Content-Type': 'application/json', 'x-admin-key': key() },
         body: JSON.stringify({ texts: content.texts, events: content.events }),
       });
-      if (res.ok) setSaveState('✓ נשמר', 'saved');
-      else if (res.status === 401) setSaveState('מפתח ניהול שגוי — התחברו מחדש', 'saving');
-      else setSaveState('שגיאת שמירה!', 'saving');
-    } catch {
-      setSaveState('שגיאת שמירה — אין חיבור לרשת', 'saving');
-    }
+      if (res.ok) saved();
+      else saveFailed(res.status === 401 ? 'צריך להתחבר מחדש' : 'השמירה נכשלה');
+    } catch { saveFailed(); }
   }, 700);
 }
 
 function renderContentForm() {
   const wrap = $('contentFields');
   wrap.innerHTML = '';
-  let group = null;
+  let body = null;
   FIELDS.forEach((f) => {
     if (f.sec) {
-      group = document.createElement('div');
-      group.className = 'cgroup';
-      const h = document.createElement('h2');
-      h.textContent = f.sec;
-      group.appendChild(h);
-      wrap.appendChild(group);
+      body = h('div', { class: 'acc-body' });
+      wrap.append(h('details', { class: 'acc' }, h('summary', { text: f.sec }), body));
       return;
     }
-    const field = document.createElement('div');
-    field.className = 'cfield';
-    const label = document.createElement('label');
-    label.textContent = f.label;
-    field.appendChild(label);
-    const input = document.createElement(f.multi ? 'textarea' : 'input');
-    if (f.dir) input.dir = f.dir;
-    input.value = (typeof content.texts[f.key] === 'string' && content.texts[f.key].trim() !== '')
-      ? content.texts[f.key]
-      : f.def;
-    input.addEventListener('input', () => {
-      content.texts[f.key] = input.value;
-      queueContentSave();
-    });
-    field.appendChild(input);
-    if (f.note) {
-      const n = document.createElement('p');
-      n.className = 'note';
-      n.textContent = f.note;
-      field.appendChild(n);
-    }
-    group.appendChild(field);
+    const input = h(f.multi ? 'textarea' : 'input', { dir: f.dir || null, rows: f.multi ? '3' : null });
+    input.value = (typeof content.texts[f.key] === 'string' && content.texts[f.key].trim() !== '') ? content.texts[f.key] : f.def;
+    input.addEventListener('input', () => { content.texts[f.key] = input.value; queueContentSave(); });
+    body.append(h('label', { class: 'field' }, h('span', { text: f.label }), input, f.note ? h('small', { text: f.note }) : null));
   });
+}
+
+/* ================= EVENTS ================= */
+function isPastDate(d) {
+  const m = /^\s*(\d{1,2})\.(\d{1,2})\.(\d{4})\s*$/.exec(d || '');
+  if (!m) return false;
+  const dt = new Date(+m[3], +m[2] - 1, +m[1]);
+  const today = new Date(); today.setHours(0, 0, 0, 0);
+  return dt < today;
+}
+
+function eventsChange(msg, fn) {
+  const before = JSON.stringify(content.events);
+  fn();
+  queueContentSave(); renderEvents();
+  toast(msg, { undo: () => { content.events = JSON.parse(before); queueContentSave(); renderEvents(); toast('בוטל, הכל חזר כמו שהיה'); } });
 }
 
 function renderEvents() {
   const wrap = $('eventsList');
   wrap.innerHTML = '';
+  if (!content.events.length) {
+    wrap.append(h('div', { class: 'card', style: 'text-align:center;color:var(--soft)' }, 'אין אירועים כרגע, ולכן הלו"ז לא מוצג באתר. לחצי "+ אירוע חדש" כדי להוסיף.'));
+  }
   content.events.forEach((ev, i) => {
-    const card = document.createElement('div');
-    card.className = 'ev-card';
+    const grip = h('button', { class: 'grip', title: 'גררי כדי לשנות את הסדר', 'aria-label': 'גרירה לשינוי הסדר', type: 'button' }, icon('grip'));
+    const title = h('span', { class: 'title', text: ev.name || 'אירוע חדש' });
+    const badge = ev.hidden === true ? h('span', { class: 'badge draft', text: 'טיוטה, לא מוצג' })
+      : isPastDate(ev.date) ? h('span', { class: 'badge past', text: 'עבר, ירד מהאתר' })
+      : h('span', { class: 'badge live', text: 'מוצג באתר' });
+    const del = h('button', { class: 'icon-btn del', title: 'מחיקת האירוע', 'aria-label': 'מחיקת האירוע',
+      onclick: () => eventsChange('האירוע "' + (ev.name || 'ללא שם') + '" נמחק', () => { content.events.splice(i, 1); }) }, icon('trash'));
 
-    const grid = document.createElement('div');
-    grid.className = 'ev-grid';
-    const mk = (labelTxt, prop, dir, full) => {
-      const l = document.createElement('label');
-      if (full) l.className = 'ev-desc-wrap';
-      l.textContent = labelTxt;
-      const inp = document.createElement('input');
-      if (dir) inp.dir = dir;
+    const grid = h('div', { class: 'ev-grid' });
+    const mk = (labelTxt, prop, opts = {}) => {
+      const inp = h('input', { dir: opts.dir || null, placeholder: opts.ph || null });
       inp.value = ev[prop] || '';
-      inp.addEventListener('input', () => { ev[prop] = inp.value; queueContentSave(); });
-      l.appendChild(inp);
-      grid.appendChild(l);
+      inp.addEventListener('input', () => {
+        ev[prop] = inp.value; queueContentSave();
+        if (prop === 'name') title.textContent = inp.value || 'אירוע חדש';
+      });
+      grid.append(h('label', { class: 'field' + (opts.wide ? ' wide' : '') }, h('span', { text: labelTxt }), inp, opts.note ? h('small', { text: opts.note }) : null));
     };
-    mk('תאריך', 'date', 'ltr');
+    mk('תאריך', 'date', { dir: 'ltr', ph: '24.10.2026', note: 'יום.חודש.שנה' });
     mk('שם האירוע', 'name');
-    mk('קטגוריה', 'cat');
-    mk('תיאור', 'desc', null, true);
-    mk('סטטוס (למשל: בקרוב / פתוח להרשמה)', 'status', null, true);
-    card.appendChild(grid);
+    mk('קטגוריה', 'cat', { ph: 'סדנה / מוזיקה / פופ-אפ' });
+    mk('תיאור קצר', 'desc', { wide: true });
+    mk('מה כתוב ליד האירוע', 'status', { wide: true, ph: 'בקרוב / פתוח להרשמה' });
 
-    const actions = document.createElement('div');
-    actions.className = 'ev-actions';
-
-    // status badge: draft (hidden) or past-date events won't show on the public site
-    const isPastDate = (d) => {
-      const m = /^\s*(\d{1,2})\.(\d{1,2})\.(\d{4})\s*$/.exec(d || '');
-      if (!m) return false;
-      const dt = new Date(+m[3], +m[2] - 1, +m[1]);
-      const today = new Date(); today.setHours(0, 0, 0, 0);
-      return dt < today;
+    const sw = (label, checked, onChange, tone) => {
+      const inp = h('input', { type: 'checkbox', checked });
+      inp.addEventListener('change', () => onChange(inp.checked));
+      return h('label', { class: 'switch' + (tone ? ' ' + tone : '') }, inp, h('span', { class: 'track' }), label);
     };
-    const badge = document.createElement('span');
-    badge.className = 'ev-badge';
-    if (ev.hidden === true) { badge.textContent = 'טיוטה — לא מוצג'; badge.classList.add('draft'); }
-    else if (isPastDate(ev.date)) { badge.textContent = 'עבר — הוסתר אוטומטית'; badge.classList.add('past'); }
-    else { badge.textContent = 'מוצג באתר'; badge.classList.add('live'); }
-    actions.appendChild(badge);
+    const opts = h('div', { class: 'ev-opts' },
+      sw('הדגשה באדום', ev.hot === true, (v) => { ev.hot = v; queueContentSave(); }, 'berry'),
+      sw('להסתיר מהאתר (טיוטה)', ev.hidden === true, (v) => { ev.hidden = v; queueContentSave(); renderEvents(); }));
 
-    const hot = document.createElement('label');
-    hot.className = 'ev-hot';
-    const cb = document.createElement('input');
-    cb.type = 'checkbox';
-    cb.checked = ev.hot === true;
-    cb.addEventListener('change', () => { ev.hot = cb.checked; queueContentSave(); });
-    hot.appendChild(cb);
-    hot.appendChild(document.createTextNode('הדגשה באדום'));
-    actions.appendChild(hot);
-
-    const draft = document.createElement('label');
-    draft.className = 'ev-hot';
-    const dcb = document.createElement('input');
-    dcb.type = 'checkbox';
-    dcb.checked = ev.hidden === true;
-    dcb.addEventListener('change', () => { ev.hidden = dcb.checked; queueContentSave(); renderEvents(); });
-    draft.appendChild(dcb);
-    draft.appendChild(document.createTextNode('לא מוצג (טיוטה)'));
-    actions.appendChild(draft);
-
-    const mkBtn = (txt, title, cls, fn) => {
-      const b = document.createElement('button');
-      b.textContent = txt; b.title = title; b.className = cls;
-      b.addEventListener('click', fn);
-      actions.appendChild(b);
-    };
-    mkBtn('↑', 'הזזה למעלה', 'ghost', () => {
-      if (i === 0) return;
-      [content.events[i - 1], content.events[i]] = [content.events[i], content.events[i - 1]];
-      queueContentSave(); renderEvents();
-    });
-    mkBtn('↓', 'הזזה למטה', 'ghost', () => {
-      if (i === content.events.length - 1) return;
-      [content.events[i + 1], content.events[i]] = [content.events[i], content.events[i + 1]];
-      queueContentSave(); renderEvents();
-    });
-    mkBtn('× מחיקה', 'מחיקת האירוע', 'del', () => {
-      if (!confirm('למחוק את "' + (ev.name || 'האירוע') + '"?')) return;
-      content.events.splice(i, 1);
-      queueContentSave(); renderEvents();
-    });
-    card.appendChild(actions);
+    const card = h('div', { class: 'ev', 'data-drop': String(i) },
+      h('div', { class: 'ev-top' }, grip, title, badge, del), grid, opts);
     renderRegBox(ev, card);
-    wrap.appendChild(card);
+    draggable(card, {
+      grip, whole: false,
+      canDrop: (t) => t.classList.contains('ev') && t !== card,
+      onDrop: (to) => {
+        const j = +to;
+        eventsChange('הסדר השתנה', () => {
+          const [moved] = content.events.splice(i, 1);
+          content.events.splice(j, 0, moved);
+        });
+      },
+    });
+    wrap.append(card);
   });
 }
 
 /* per-event registration config (external link / on-site free / on-site paid) */
 function renderRegBox(ev, card) {
-  const box = document.createElement('div');
-  box.className = 'ev-reg';
-
+  const box = h('div', { class: 'ev-reg' });
   const mkSelect = (labelTxt, options, current, onChange) => {
-    const l = document.createElement('label');
-    l.appendChild(document.createTextNode(labelTxt));
-    const s = document.createElement('select');
-    options.forEach(([v, t]) => {
-      const o = document.createElement('option');
-      o.value = v; o.textContent = t; if (current === v) o.selected = true;
-      s.appendChild(o);
-    });
+    const s = h('select', {});
+    options.forEach(([v, t]) => s.append(h('option', { value: v, text: t, selected: current === v })));
     s.addEventListener('change', onChange);
-    l.appendChild(s);
-    box.appendChild(l);
-    return s;
+    box.append(h('label', { class: 'field' }, h('span', { text: labelTxt }), s));
   };
-
   mkSelect('הרשמה לאירוע', [
-    ['none', 'ללא הרשמה'],
+    ['none', 'בלי הרשמה'],
     ['external', 'קישור חיצוני (מארגן אחר)'],
     ['internal', 'הרשמה באתר'],
   ], ev.reg || 'none', (e) => {
@@ -778,62 +1256,42 @@ function renderRegBox(ev, card) {
     if (ev.reg !== 'external') ev.regUrl = '';
     queueContentSave(); renderEvents();
   });
-
   if (ev.reg === 'external') {
-    const l = document.createElement('label');
-    l.className = 'ev-reg-full';
-    l.appendChild(document.createTextNode('קישור ההרשמה של המארגן'));
-    const inp = document.createElement('input');
-    inp.dir = 'ltr'; inp.placeholder = 'https://...'; inp.value = ev.regUrl || '';
+    const inp = h('input', { dir: 'ltr', placeholder: 'https://...' });
+    inp.value = ev.regUrl || '';
     inp.addEventListener('input', () => { ev.regUrl = inp.value; queueContentSave(); });
-    l.appendChild(inp);
-    box.appendChild(l);
+    box.append(h('label', { class: 'field wide' }, h('span', { text: 'הקישור להרשמה אצל המארגן' }), inp));
   }
-
   if (ev.reg === 'internal') {
-    mkSelect('סוג הרשמה', [
-      ['free', 'כניסה חינם'],
-      ['paid', 'כרטיס בתשלום'],
-    ], ev.regMode || 'free', (e) => {
+    mkSelect('סוג הרשמה', [['free', 'כניסה חינם'], ['paid', 'כרטיס בתשלום']], ev.regMode || 'free', (e) => {
       ev.regMode = e.target.value; queueContentSave(); renderEvents();
     });
-
     if (ev.regMode === 'paid') {
-      const l = document.createElement('label');
-      l.appendChild(document.createTextNode('מחיר לכרטיס (₪)'));
-      const inp = document.createElement('input');
-      inp.type = 'number'; inp.min = '0'; inp.step = '10'; inp.dir = 'ltr';
+      const inp = h('input', { type: 'number', min: '0', step: '10', dir: 'ltr', inputmode: 'numeric' });
       inp.value = ev.price || '';
       inp.addEventListener('input', () => { ev.price = parseInt(inp.value, 10) || 0; queueContentSave(); });
-      l.appendChild(inp);
-      box.appendChild(l);
-
-      const note = document.createElement('p');
-      note.className = 'ev-reg-note';
-      note.textContent = 'התשלום נגבה בכרטיס אשראי דרך חשבונית ירוקה (Morning). דורש הגדרת GI_API_ID ו-GI_API_SECRET ב-Vercel; עד אז יוצג "בהקמה".';
-      box.appendChild(note);
+      box.append(h('label', { class: 'field' }, h('span', { text: 'מחיר לכרטיס ₪' }), inp));
+      box.append(h('small', { class: 'note', style: 'flex-basis:100%', text: 'התשלום נגבה בכרטיס אשראי דרך חשבונית ירוקה (Morning). עד שהחיבור מוגדר ב-Vercel, באתר יופיע "בהקמה".' }));
     }
   }
-
-  card.appendChild(box);
+  card.append(box);
 }
 
 $('addEvent').addEventListener('click', () => {
   content.events.push({ id: genId(), date: '', name: '', desc: '', cat: '', status: 'בקרוב', hot: false, hidden: false, reg: 'none', regUrl: '', regMode: 'free', price: 0 });
   queueContentSave();
   renderEvents();
-  const cards = $('eventsList').querySelectorAll('.ev-card');
-  cards[cards.length - 1]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  const cards = $('eventsList').querySelectorAll('.ev');
+  const last = cards[cards.length - 1];
+  last?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  last?.querySelector('input')?.focus({ preventScroll: true });
 });
 
 /* ================= EVENT REGISTRATIONS ================= */
 async function loadRegs() {
   const wrap = $('regsList');
   wrap.innerHTML = '';
-  const loading = document.createElement('p');
-  loading.className = 'hint'; loading.textContent = 'טוען…';
-  wrap.appendChild(loading);
-
+  wrap.append(h('p', { class: 'loading', text: 'רגע, טוען…' }));
   let list = [];
   try {
     const res = await fetch('/api/register', { headers: { 'x-admin-key': key() } });
@@ -842,57 +1300,34 @@ async function loadRegs() {
     list = Array.isArray(j.registrations) ? j.registrations : [];
   } catch {
     wrap.innerHTML = '';
-    const p = document.createElement('p'); p.className = 'hint';
-    p.textContent = 'שגיאה בטעינת ההרשמות.'; wrap.appendChild(p);
-    $('regsCount').textContent = '';
+    wrap.append(h('div', { class: 'card', text: 'לא הצלחתי לטעון את הנרשמים. נסי "רענון" עוד רגע.' }));
     return;
   }
-
   wrap.innerHTML = '';
   if (!list.length) {
-    const p = document.createElement('p'); p.className = 'hint';
-    p.textContent = 'אין עדיין הרשמות.'; wrap.appendChild(p);
-    $('regsCount').textContent = '';
+    wrap.append(h('div', { class: 'card', style: 'text-align:center;color:var(--soft)', text: 'עוד אין נרשמים. כשמישהו יירשם לאירוע, הוא יופיע כאן.' }));
+    $('regsCount').textContent = 'מי נרשם לאיזה אירוע.';
     return;
   }
-
   const groups = new Map();
-  list.forEach(r => {
+  list.forEach((r) => {
     const gk = r.eventId || r.eventName || '—';
     if (!groups.has(gk)) groups.set(gk, { name: r.eventName || 'ללא שם', date: r.eventDate || '', items: [] });
     groups.get(gk).items.push(r);
   });
-  $('regsCount').textContent = list.length + ' הרשמות · ' + groups.size + ' אירועים';
+  $('regsCount').textContent = list.length + ' נרשמים ל-' + groups.size + ' אירועים. "שולם" מתעדכן לבד אחרי תשלום.';
+  const fmt = (isoStr) => { const d = new Date(isoStr); return isNaN(d) ? '' : pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()); };
 
-  const fmt = (isoStr) => {
-    try { const d = new Date(isoStr); return pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes()); }
-    catch { return ''; }
-  };
-
-  groups.forEach(g => {
-    const card = document.createElement('div'); card.className = 'regs-group';
-    const paid = g.items.filter(r => r.status === 'שולם').length;
-    const h = document.createElement('h3');
-    h.textContent = g.name + (g.date ? ' · ' + g.date : '') + ' (' + g.items.length + (paid ? ' · ' + paid + ' שולמו' : '') + ')';
-    card.appendChild(h);
-
-    g.items.slice().reverse().forEach(r => {
-      const row = document.createElement('div'); row.className = 'regs-row';
-      const mk = (cls, txt, ltr) => {
-        const s = document.createElement('span'); s.className = cls;
-        if (ltr) s.dir = 'ltr'; s.textContent = txt; row.appendChild(s);
-      };
+  groups.forEach((g) => {
+    const paid = g.items.filter((r) => r.status === 'שולם').length;
+    const card = h('div', { class: 'card rg-group' },
+      h('h3', { text: g.name + (g.date ? ' · ' + g.date : '') + ' · ' + g.items.length + ' נרשמים' + (paid ? ', ' + paid + ' שילמו' : '') }));
+    g.items.slice().reverse().forEach((r) => {
       const st = r.status || 'רשום';
-      mk('rg-name', r.name || '');
-      mk('rg-contact', (r.email || '') + (r.phone ? ' · ' + r.phone : ''), true);
-      mk('rg-qty', '×' + (r.qty || 1));
-      mk('rg-amount', r.amount ? '₪' + r.amount : '—', true);
-      mk('rg-status ' + (st === 'שולם' ? 'paid' : st === 'ממתין לתשלום' ? 'pending' : 'free'), st);
-      mk('rg-date', fmt(r.at), true);
-      const del = document.createElement('button');
-      del.className = 'rg-del'; del.textContent = '×'; del.title = 'מחיקת ההרשמה';
+      const del = h('button', { class: 'icon-btn del', title: 'מחיקת ההרשמה', 'aria-label': 'מחיקת ההרשמה' }, icon('trash'));
       del.addEventListener('click', async () => {
-        if (!confirm('למחוק את ההרשמה של "' + (r.name || '') + '"?')) return;
+        const ok = await ask({ title: 'למחוק את ההרשמה?', text: 'ההרשמה של ' + (r.name || 'הנרשם/ת') + ' תימחק מהרשימה. את זה אי אפשר להחזיר.', ok: 'כן, למחוק' });
+        if (!ok) return;
         del.disabled = true;
         try {
           const res = await fetch('/api/register', {
@@ -900,13 +1335,19 @@ async function loadRegs() {
             headers: { 'Content-Type': 'application/json', 'x-admin-key': key() },
             body: JSON.stringify({ action: 'delete', id: r.id }),
           });
-          if (res.ok) loadRegs(); else { del.disabled = false; alert('מחיקה נכשלה'); }
-        } catch { del.disabled = false; alert('מחיקה נכשלה'); }
+          if (res.ok) { toast('ההרשמה נמחקה'); loadRegs(); } else { del.disabled = false; toast('המחיקה לא הצליחה, נסי שוב', { warn: true }); }
+        } catch { del.disabled = false; toast('המחיקה לא הצליחה, בדקי את האינטרנט', { warn: true }); }
       });
-      row.appendChild(del);
-      card.appendChild(row);
+      card.append(h('div', { class: 'rg-row' },
+        h('b', { text: r.name || '' }),
+        h('span', { class: 'rg-contact', dir: 'ltr', text: (r.email || '') + (r.phone ? ' · ' + r.phone : '') }),
+        h('span', { text: '×' + (r.qty || 1) }),
+        h('span', { dir: 'ltr', text: r.amount ? '₪' + r.amount : '—' }),
+        h('span', { class: 'pill ' + (st === 'שולם' ? 'paid' : st === 'ממתין לתשלום' ? 'pending' : 'free'), text: st }),
+        h('span', { class: 'rg-date', dir: 'ltr', text: fmt(r.at) }),
+        del));
     });
-    wrap.appendChild(card);
+    wrap.append(card);
   });
 }
 $('regsRefresh').addEventListener('click', loadRegs);
@@ -914,28 +1355,23 @@ $('regsRefresh').addEventListener('click', loadRegs);
 /* ================= RENTAL BOOKINGS =================
    The lifecycle mirrors api/booking.mjs:
      requested → (approve) sent → (renter signs) signed → (countersign) confirmed
-   Only the last step marks the day as taken in the availability calendar. */
+   Only the last step marks the day as taken in the availability calendar.
+   The board shows each state as a column; dragging a card to the next column
+   performs exactly the step its button would. */
 
-/* true once the site can send mail on its own (RESEND_API_KEY on the server);
-   until then the panel hands over a ready-made mailto: draft instead */
 let mailOn = false;
+let bookings = [];
+const pendingDelete = new Set();   // ids hidden while their "ביטול" toast is up
 
-const BOOK_LABEL = {
-  requested: 'בקשה חדשה',
-  sent:      'נשלח לחתימה',
-  signed:    'נחתם — ממתין לך',
-  confirmed: 'סגור ומאושר',
-  declined:  'נדחה',
-};
+const COLS = [
+  { k: 'requested', title: 'בקשות חדשות',  hint: 'מחכות לתשובה שלך' },
+  { k: 'sent',      title: 'נשלח לחתימה',  hint: 'מחכים שהלקוח יחתום' },
+  { k: 'signed',    title: 'הלקוח חתם',    hint: 'נשאר רק לחתום ולסגור' },
+  { k: 'confirmed', title: 'סגור ומאושר',   hint: 'התאריך תפוס ביומן' },
+];
 
-const heDate = (d) => {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(d || '')) return d || '';
-  return new Date(d + 'T00:00').toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' });
-};
-
-async function bookAction(action, id, btn, extra) {
-  const prev = btn.textContent;
-  btn.disabled = true; btn.textContent = '…';
+async function bookAction(action, id, extra) {
+  saving();
   try {
     const res = await fetch('/api/booking', {
       method: 'POST',
@@ -943,221 +1379,227 @@ async function bookAction(action, id, btn, extra) {
       body: JSON.stringify({ action, id, ...extra }),
     });
     const j = await res.json().catch(() => ({}));
-    if (!res.ok || !j.ok) { alert(j.error === 'not signed by renter yet' ? 'השוכר עדיין לא חתם.' : 'הפעולה נכשלה.'); btn.disabled = false; btn.textContent = prev; return null; }
+    if (!res.ok || !j.ok) {
+      saveFailed('הפעולה לא הצליחה');
+      toast(j.error === 'not signed by renter yet' ? 'הלקוח עדיין לא חתם, אז אי אפשר לסגור.' : 'הפעולה לא הצליחה. נסי שוב עוד רגע.', { warn: true });
+      await loadBookings();
+      return null;
+    }
+    saved();
     await loadBookings();
-    // the object carries `mailed`, so the caller knows whether the mail with
-    // the signing link already went out or still has to be handed over
+    load();   // the calendar changes with every booking step
     return j;
   } catch {
-    alert('שגיאת רשת.'); btn.disabled = false; btn.textContent = prev;
+    saveFailed();
+    toast('אין חיבור לאינטרנט כרגע. שום דבר לא השתנה.', { warn: true });
     return null;
   }
 }
 
 async function loadBookings() {
-  const wrap = $('bookList');
-  wrap.innerHTML = '<p class="hint">טוען…</p>';
-  let list = [];
   try {
-    const res = await fetch('/api/booking?list=1', { headers: { 'x-admin-key': key() } });
+    const res = await fetch('/api/booking?list=1', { headers: { 'x-admin-key': key() }, cache: 'no-store' });
     if (!res.ok) throw new Error();
     const j = await res.json();
-    list = Array.isArray(j.bookings) ? j.bookings : [];
+    bookings = Array.isArray(j.bookings) ? j.bookings : [];
     mailOn = Boolean(j.mail);
   } catch {
-    wrap.innerHTML = '<p class="hint">שגיאה בטעינת הבקשות.</p>';
-    $('bookCount').textContent = '';
+    $('board').innerHTML = '';
+    $('board').append(h('div', { class: 'card', text: 'לא הצלחתי לטעון את הבקשות. נסי "רענון" עוד רגע.' }));
     return;
   }
-
-  wrap.innerHTML = '';
-  if (!list.length) {
-    wrap.innerHTML = '<p class="hint">אין עדיין בקשות השכרה.</p>';
-    $('bookCount').textContent = '';
-    return;
-  }
-
-  const needsMe = list.filter(b => b.status === 'requested' || b.status === 'signed').length;
-  $('bookCount').textContent = list.length + ' בקשות' + (needsMe ? ' · ' + needsMe + ' ממתינות לך' : '');
-
-  list.forEach(b => {
-    const card = document.createElement('div');
-    card.className = 'bk-card bk-' + b.status;
-
-    const head = document.createElement('div');
-    head.className = 'bk-head';
-    const title = document.createElement('b');
-    title.textContent = b.name || 'ללא שם';
-    const badge = document.createElement('span');
-    badge.className = 'bk-badge bk-badge-' + b.status;
-    badge.textContent = BOOK_LABEL[b.status] || b.status;
-    head.append(title, badge);
-    card.appendChild(head);
-
-    const meta = document.createElement('p');
-    meta.className = 'bk-meta';
-    meta.textContent = [
-      heDate(b.date),
-      (b.start && b.end) ? b.start + '–' + b.end : '',
-      b.purpose, b.participants ? b.participants + ' משתתפים' : '', b.price,
-    ].filter(Boolean).join(' · ');
-    card.appendChild(meta);
-
-    const contact = document.createElement('p');
-    contact.className = 'bk-meta bk-contact';
-    contact.dir = 'ltr';
-    contact.textContent = [b.email, b.phone, b.idnum].filter(Boolean).join(' · ');
-    card.appendChild(contact);
-
-    if (b.message) {
-      const msg = document.createElement('p');
-      msg.className = 'bk-msg';
-      msg.textContent = b.message;
-      card.appendChild(msg);
-    }
-
-    const link = location.origin + '/contract?bid=' + b.id;
-    const actions = document.createElement('div');
-    actions.className = 'bk-actions';
-
-    const mkBtn = (label, cls, fn) => {
-      const el = document.createElement('button');
-      el.textContent = label;
-      if (cls) el.className = cls;
-      el.addEventListener('click', () => fn(el));
-      actions.appendChild(el);
-      return el;
-    };
-
-    if (b.status === 'requested') {
-      mkBtn('אישור ושליחת חוזה', '', (el) => openApprovePanel(card, b, link, el));
-      mkBtn('דחייה', 'danger', async (el) => {
-        if (!confirm('לדחות את הבקשה? התאריך ישוחרר ויחזור להיות פנוי.')) return;
-        bookAction('decline', b.id, el);
-      });
-    }
-
-    if (b.status === 'sent') {
-      // same form, so a price or a wording can still be corrected and re-sent
-      mkBtn('שליחה שוב / עריכה', 'ghost', (el) => openApprovePanel(card, b, link, el));
-      mkBtn('ביטול', 'danger', async (el) => {
-        if (!confirm('לבטל את הבקשה? התאריך ישוחרר ויחזור להיות פנוי.')) return;
-        bookAction('decline', b.id, el);
-      });
-    }
-
-    if (b.status === 'signed') {
-      mkBtn('חתימת סטודיו — סגירת התאריך', '', async (el) => {
-        if (!confirm('לחתום ולסגור את התאריך?\n\nהיום ייתפס ביומן ויופיע ביומן גוגל.')) return;
-        bookAction('studio-sign', b.id, el);
-      });
-      /* Changing the price or the terms now would change what the renter
-         already put their name to, so this does not edit in place: it voids
-         their signature and sends the contract back out to be signed again. */
-      mkBtn('תיקון תנאים ← לחתימה מחדש', 'ghost', (el) => openApprovePanel(card, b, link, el));
-      mkBtn('ביטול', 'danger', async (el) => {
-        if (!confirm('לבטל את ההזמנה? התאריך ישוחרר.')) return;
-        bookAction('decline', b.id, el);
-      });
-    }
-
-    if (b.status === 'confirmed') {
-      mkBtn('ביטול ההזמנה', 'danger', async (el) => {
-        if (!confirm('לבטל הזמנה שכבר אושרה?\n\nההסכם יסומן כמבוטל. שימו לב: התאריך יישאר תפוס ביומן — לשחרור צריך לפתוח אותו ידנית בטאב "יומן השכרות".')) return;
-        bookAction('decline', b.id, el);
-      });
-    }
-
-    const open = document.createElement('a');
-    open.href = link; open.target = '_blank'; open.rel = 'noopener';
-    open.className = 'bk-link'; open.textContent = 'פתיחת ההסכם ↗';
-    actions.appendChild(open);
-
-    card.appendChild(actions);
-
-    if (b.status === 'sent' && b.holdUntil) {
-      const hold = document.createElement('p');
-      hold.className = 'hint';
-      hold.textContent = 'התאריך מוחזק עד ' + heDate(b.holdUntil.slice(0, 10)) +
-        ' — אם לא ייחתם עד אז, הוא ישתחרר לבד.';
-      card.appendChild(hold);
-    }
-
-    wrap.appendChild(card);
-  });
+  renderBoard();
+  renderHome();
 }
 
-/* Approving is where the price is actually settled and where whatever was
-   agreed on the phone gets written down, so the button opens a small form in
-   the card instead of firing immediately. Both fields go into the contract
-   itself — not only into the covering email — and can be edited and re-sent
-   while the booking is still waiting for a signature. */
-function openApprovePanel(card, b, link, trigger) {
-  const existing = card.querySelector('.bk-approve');
-  if (existing) { existing.remove(); trigger.disabled = false; return; }
-  trigger.disabled = true;
+function renderBoard() {
+  const board = $('board');
+  board.innerHTML = '';
+  const visible = bookings.filter((b) => !pendingDelete.has(b.id));
+  COLS.forEach((c) => {
+    const items = visible.filter((b) => b.status === c.k);
+    const col = h('div', { class: 'col', 'data-k': c.k, 'data-drop': c.k },
+      h('div', { class: 'col-head' }, h('span', { class: 'dot' }), h('b', { text: c.title }), h('span', { class: 'n', text: items.length })),
+      h('div', { class: 'col-hint', text: c.hint }));
+    if (!items.length) col.append(h('div', { class: 'col-empty', text: 'אין כאן כלום כרגע' }));
+    items.forEach((b) => col.append(bookingCard(b)));
+    board.append(col);
+  });
 
-  const box = document.createElement('div');
-  box.className = 'bk-approve';
+  const declined = visible.filter((b) => b.status === 'declined');
+  $('declinedWrap').hidden = !declined.length;
+  $('declinedSum').textContent = 'נדחו או בוטלו (' + declined.length + ')';
+  const dl = $('declinedList');
+  dl.innerHTML = '';
+  declined.forEach((b) => dl.append(bookingCard(b)));
 
-  const priceLabel = document.createElement('label');
-  priceLabel.textContent = 'מחיר סופי';
-  const price = document.createElement('input');
-  price.type = 'text';
-  price.placeholder = 'למשל ₪2,500';
-  price.value = b.price || '';
-  priceLabel.appendChild(price);
+  const waiting = visible.filter((b) => b.status === 'requested' || b.status === 'signed').length;
+  $('navBookCount').hidden = !waiting;
+  $('navBookCount').textContent = waiting;
+}
 
-  const noteLabel = document.createElement('label');
-  noteLabel.textContent = 'סיכומים נוספים ';
-  const noteHint = document.createElement('span');
-  noteHint.className = 'hint';
-  noteHint.textContent = '(נכנס להסכם עצמו ולמייל ללקוח — אפשר להשאיר ריק)';
-  const note = document.createElement('textarea');
-  note.rows = 3;
-  note.placeholder = 'למשל: המחיר כולל שימוש בבר. הגעה לפריקה מ-17:00.';
-  note.value = b.studioNote || '';
-  noteLabel.append(noteHint, note);
+function bookingCard(b) {
+  const link = location.origin + '/contract?bid=' + b.id;
+  const grip = h('button', { class: 'grip', type: 'button', title: 'גררי את הכרטיס', 'aria-label': 'גרירת הכרטיס' }, icon('grip'));
+  const card = h('div', { class: 'bk' },
+    h('div', { class: 'bk-top' }, h('div', { class: 'bk-name', text: b.name || 'ללא שם' }), grip));
 
-  const actions = document.createElement('div');
-  actions.className = 'ap-actions';
+  card.append(h('div', { class: 'bk-when' }, icon('cal'),
+    h('span', { text: heShort(b.date) }),
+    b.start && b.end ? h('span', { dir: 'ltr', text: b.start + '–' + b.end }) : null));
+  card.append(h('div', { class: 'bk-got', title: 'מתי הבקשה הגיעה' }, icon('inbox'), h('span', { text: received(b.requestedAt) })));
 
+  const chips = h('div', { class: 'chips' });
+  if (b.purpose) chips.append(h('span', { class: 'chip', text: b.purpose }));
+  if (b.participants) chips.append(h('span', { class: 'chip', text: b.participants + ' משתתפים' }));
+  if (b.price) chips.append(h('span', { class: 'chip money', text: b.price }));
+  if (chips.childNodes.length) card.append(chips);
+
+  const contact = h('div', { class: 'bk-contact' });
+  if (b.phone) {
+    const digits = String(b.phone).replace(/\D/g, '');
+    const intl = digits.startsWith('0') ? '972' + digits.slice(1) : digits;
+    contact.append(h('a', { href: 'tel:' + digits, dir: 'ltr' }, icon('phone'), b.phone));
+    contact.append(h('a', { href: 'https://wa.me/' + intl, target: '_blank', rel: 'noopener' }, icon('chat'), 'וואטסאפ'));
+  }
+  if (b.email) contact.append(h('a', { href: 'mailto:' + b.email, dir: 'ltr' }, icon('mail'), b.email));
+  if (contact.childNodes.length) card.append(contact);
+
+  if (b.message) {
+    const msg = h('div', { class: 'bk-msg', title: 'לחיצה לפתיחה', text: b.message });
+    msg.addEventListener('click', () => msg.classList.toggle('open'));
+    card.append(msg);
+  }
+  if (b.idnum && (b.status === 'signed' || b.status === 'confirmed')) card.append(h('div', { class: 'bk-id', dir: 'rtl', text: 'ת.ז / ח.פ: ' + b.idnum }));
+  if (b.status === 'sent' && b.holdUntil) card.append(h('div', { class: 'bk-hold', text: 'התאריך שמור עד ' + heShort(b.holdUntil.slice(0, 10)) + '. אם לא ייחתם עד אז, הוא ישתחרר לבד.' }));
+
+  const acts = h('div', { class: 'bk-actions' });
+  const btn = (label, cls, fn) => acts.append(h('button', { class: 'btn sm ' + cls, onclick: fn }, label));
+  if (b.status === 'requested') {
+    btn('אישור ושליחת חוזה', 'mint', () => approveFlow(b));
+    btn('דחייה', 'danger-soft', () => declineFlow(b));
+  } else if (b.status === 'sent') {
+    btn('עריכה ושליחה שוב', 'soft', () => approveFlow(b));
+  } else if (b.status === 'signed') {
+    btn('חתימה וסגירת התאריך', 'mint', () => signFlow(b));
+    btn('תיקון תנאים', 'soft', () => approveFlow(b));
+  }
+  acts.append(h('span', { class: 'spacer' }));
+  acts.append(h('a', { class: 'icon-btn', href: link, target: '_blank', rel: 'noopener', title: 'פתיחת ההסכם', 'aria-label': 'פתיחת ההסכם' }, icon('doc')));
+  acts.append(h('button', { class: 'icon-btn del', title: 'מחיקת הבקשה', 'aria-label': 'מחיקת הבקשה', onclick: () => deleteFlow(b) }, icon('trash')));
+  card.append(acts);
+
+  draggable(card, {
+    grip,
+    onStart: () => { $('dropDecline').hidden = b.status === 'declined'; document.body.classList.add('bk-drag'); },
+    canDrop: (t) => t.dataset.drop !== b.status,
+    onDrop: (to) => dropBooking(b, to),
+  });
+  return card;
+}
+
+/* What each drop means. A drop that skips a step explains, kindly, what has
+   to happen first instead of doing something surprising. */
+function dropBooking(b, to) {
+  if (to === 'trash') return deleteFlow(b);
+  if (b.status === 'declined') { toast('בקשה שנדחתה אפשר רק למחוק. אם הלקוח עדיין רוצה, אפשר לבקש ממנו לשלוח בקשה חדשה.', { ms: 7000 }); return; }
+  if (to === 'declined') return declineFlow(b);
+  if (to === 'sent') {
+    if (b.status === 'requested' || b.status === 'signed') return approveFlow(b);
+    toast('ההזמנה כבר סגורה. אם צריך לשנות משהו, אפשר לבטל אותה ולבקש מהלקוח בקשה חדשה.', { ms: 7000 }); return;
+  }
+  if (to === 'signed') { toast('את השלב הזה הלקוח עושה בעצמו: הוא חותם בקישור שנשלח אליו, והכרטיס יעבור לכאן לבד.', { ms: 7000 }); return; }
+  if (to === 'confirmed') {
+    if (b.status === 'signed') return signFlow(b);
+    toast(b.status === 'requested' ? 'קודם מאשרים ושולחים חוזה, ואחרי שהלקוח חותם אפשר לסגור.' : 'עוד רגע: קודם הלקוח צריך לחתום על החוזה.', { ms: 6000 }); return;
+  }
+  if (to === 'requested') { toast('אי אפשר להחזיר בקשה לשלב הראשון. אפשר לדחות או לשלוח מחדש.', { ms: 6000 }); }
+}
+
+async function approveFlow(b) {
   const resigning = Boolean(b.signature) || b.status === 'signed';
-  if (resigning) {
-    const warn = document.createElement('p');
-    warn.className = 'hint';
-    warn.textContent = 'השוכר כבר חתם. שליחה מחדש מבטלת את חתימתו והוא יתבקש לחתום שוב על התנאים המעודכנים.';
-    box.appendChild(warn);
-  }
-
-  const send = document.createElement('button');
-  send.textContent = resigning
-    ? 'שליחה לחתימה מחדש'
-    : (mailOn ? 'אישור ושליחת החוזה ללקוח' : 'אישור ופתיחת מייל');
-  send.addEventListener('click', async () => {
-    if (resigning && !confirm('לשלוח את ההסכם לחתימה מחדש?\n\nהחתימה הקיימת של השוכר תבוטל.')) return;
-    const data = { price: price.value.trim(), note: note.value.trim() };
-    const r = await bookAction('approve', b.id, send, data);
-    if (!r) return;
-    if (r.mailed) alert('החוזה נשלח ל' + (b.email || 'לקוח') + '.');
-    else openSendMail({ ...b, price: data.price, studioNote: data.note }, link);
-  });
-
-  const cancel = document.createElement('button');
-  cancel.className = 'ghost';
-  cancel.textContent = 'ביטול';
-  cancel.addEventListener('click', () => { box.remove(); trigger.disabled = false; });
-
-  actions.append(send, cancel);
-  box.append(priceLabel, noteLabel, actions);
-  card.appendChild(box);
-  price.focus();
+  const price = h('input', { type: 'text', placeholder: 'למשל ₪2,500', value: b.price || '' });
+  const note = h('textarea', { rows: '3', placeholder: 'למשל: המחיר כולל שימוש בבר. הגעה לפריקה מ-17:00.' });
+  note.value = b.studioNote || '';
+  const form = {
+    el: h('div', { class: 'form' },
+      h('label', { class: 'field' }, h('span', { text: 'מחיר סופי' }), price),
+      h('label', { class: 'field' }, h('span', { text: 'דברים שסיכמתם (לא חובה)' }), note, h('small', { text: 'נכנס לחוזה עצמו ולמייל ללקוח' }))),
+    collect: () => ({ price: price.value.trim(), note: note.value.trim() }),
+    focus: price,
+  };
+  const text = resigning
+    ? ['הלקוח כבר חתם. אם שולחים שוב, החתימה שלו מתבטלת והוא יתבקש לחתום על התנאים המעודכנים.']
+    : [b.name + ' · ' + heDate(b.date), mailOn ? 'החוזה יישלח ללקוח במייל עם קישור לחתימה.' : 'אחרי האישור ייפתח מייל מוכן עם הקישור לחתימה, ורק צריך ללחוץ "שליחה".'];
+  const r = await ask({ title: resigning ? 'שליחה לחתימה מחדש' : 'אישור הבקשה ושליחת חוזה', text, form, tone: 'mint',
+    ok: resigning ? 'כן, לשלוח מחדש' : 'אישור ושליחה', cancel: 'עוד לא' });
+  if (!r) return;
+  const j = await bookAction('approve', b.id, r);
+  if (!j) return;
+  if (j.mailed) toast('החוזה נשלח ל' + (b.email || 'לקוח') + ' ✓', { ms: 5000 });
+  else { toast('מעולה. נפתח עכשיו מייל מוכן ללקוח, רק לשלוח.', { ms: 5000 }); openSendMail({ ...b, price: r.price, studioNote: r.note }, location.origin + '/contract?bid=' + b.id); }
 }
+
+async function signFlow(b) {
+  const ok = await ask({ title: 'לחתום ולסגור את התאריך?', tone: 'mint', ok: 'כן, לסגור',
+    text: [b.name + ' · ' + heDate(b.date), 'היום יסומן כתפוס ביומן ויופיע ביומן גוגל.' + (mailOn ? ' הלקוח יקבל מייל אישור.' : '')] });
+  if (!ok) return;
+  const j = await bookAction('studio-sign', b.id);
+  if (j) toast('נסגר! ' + heShort(b.date) + ' תפוס ביומן ✓', { ms: 5000 });
+}
+
+async function declineFlow(b) {
+  const confirmed = b.status === 'confirmed';
+  const ok = await ask({
+    title: confirmed ? 'לבטל הזמנה שכבר נסגרה?' : 'לדחות את הבקשה?',
+    text: confirmed
+      ? ['ההסכם יסומן כמבוטל.', 'שימי לב: היום יישאר תפוס ביומן. כדי לפנות אותו, פותחים את היום ב"יומן פנוי" ומסמנים את החלון כפנוי.']
+      : ['הבקשה של ' + (b.name || 'הלקוח') + ' תעבור ל"נדחו", והתאריך יחזור להיות פנוי באתר.', 'הלקוח לא מקבל על זה הודעה אוטומטית.'],
+    ok: confirmed ? 'כן, לבטל' : 'כן, לדחות',
+  });
+  if (!ok) return;
+  const j = await bookAction('decline', b.id);
+  if (j) toast(confirmed ? 'ההזמנה בוטלה' : 'הבקשה נדחתה והתאריך פנוי שוב');
+}
+
+/* Deleting waits behind an undo toast; only when it times out (or the page is
+   being left) does the request actually go to the server. */
+async function deleteFlow(b) {
+  if (b.status === 'confirmed' && b.date >= todayIso()) {
+    const ok = await ask({ title: 'למחוק הזמנה סגורה?', text: ['זו הזמנה מאושרת לתאריך שעוד לא הגיע.', 'הכרטיס יימחק, אבל היום יישאר תפוס ביומן. כדי לפנות אותו, מסמנים את החלון כפנוי ב"יומן פנוי".'], ok: 'כן, למחוק' });
+    if (!ok) return;
+  }
+  pendingDelete.add(b.id);
+  renderBoard(); renderHome();
+  toast('הבקשה של ' + (b.name || 'ללא שם') + ' נמחקה', {
+    undo: () => { pendingDelete.delete(b.id); renderBoard(); renderHome(); },
+    after: () => commitDelete(b.id),
+  });
+}
+async function commitDelete(id, keepalive) {
+  if (!pendingDelete.has(id)) return;
+  try {
+    const res = await fetch('/api/booking', {
+      method: 'POST', keepalive: Boolean(keepalive),
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': key() },
+      body: JSON.stringify({ action: 'delete', id }),
+    });
+    if (keepalive) return;
+    if (!res.ok) throw new Error();
+    pendingDelete.delete(id);
+    bookings = bookings.filter((b) => b.id !== id);
+    load();
+  } catch {
+    if (keepalive) return;
+    pendingDelete.delete(id);
+    renderBoard(); renderHome();
+    toast('המחיקה לא הצליחה, הבקשה חזרה למקומה', { warn: true });
+  }
+}
+addEventListener('pagehide', () => { pendingDelete.forEach((id) => commitDelete(id, true)); });
 
 /* Opens a ready-to-send email to the renter with their personal signing link.
-   Only used while the site cannot send mail itself (no RESEND_API_KEY): rather
-   than pretend to send it, hand the studio a filled-in draft in their own mail
-   client. Once mailOn is true the server sends this same letter, designed. */
+   Only used while the site cannot send mail itself (no RESEND_API_KEY). */
 function openSendMail(b, link) {
   const subject = 'הסכם השכרת חלל — סטודיו תות';
   const body =
@@ -1171,76 +1613,99 @@ function openSendMail(b, link) {
     'בקישור תתבקשו למלא ת.ז / ח.פ ולחתום. לאחר מכן נחתום גם אנחנו והתאריך ייסגר סופית.\n' +
     'התשלום מתבצע בהעברה בנקאית — פרטי החשבון יישלחו עם אישור ההזמנה.\n\n' +
     'סטודיו תות · מגן אברהם 6, תל אביב · 054-312-9933';
-  const url = 'mailto:' + encodeURIComponent(b.email || '') +
-    '?subject=' + encodeURIComponent(subject) +
-    '&body=' + encodeURIComponent(body);
-  window.location.href = url;
+  window.location.href = 'mailto:' + encodeURIComponent(b.email || '') +
+    '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
 }
 
 $('bookRefresh').addEventListener('click', loadBookings);
 
+/* ================= HOME ================= */
+function renderHome() {
+  const hr = new Date().getHours();
+  $('hello').textContent = hr < 5 ? 'לילה טוב' : hr < 12 ? 'בוקר טוב' : hr < 17 ? 'צהריים טובים' : hr < 21 ? 'ערב טוב' : 'לילה טוב';
+  const vis = bookings.filter((b) => !pendingDelete.has(b.id));
+  const n = (s) => vis.filter((b) => b.status === s).length;
+  const tIso = todayIso();
+  const openSoon = data.windows.filter((w) => w.date >= tIso && !w.booked && !w.pending).length;
+  const tiles = $('homeTiles');
+  tiles.innerHTML = '';
+  const tile = (cls, big, lbl, sub, go) => tiles.append(h('button', { class: 'tile ' + cls, onclick: () => showTab(go) },
+    h('span', { class: 'big', text: big }), h('span', { class: 'lbl', text: lbl }), h('span', { class: 'sub', text: sub })));
+  const req = n('requested'), sig = n('signed');
+  if (!req && !sig) tile('calm', '✓', 'אין משהו שמחכה לך', 'כל הבקשות מטופלות. אפשר לנשום.', 'book');
+  if (req) tile('berry', req, req === 1 ? 'בקשה חדשה מחכה לך' : 'בקשות חדשות מחכות לך', 'לאשר ולשלוח חוזה, או לדחות', 'book');
+  if (sig) tile('mint', sig, sig === 1 ? 'לקוח חתם, נשאר לסגור' : 'לקוחות חתמו, נשאר לסגור', 'לחתום ולסגור את התאריך', 'book');
+  tile('honey', n('sent'), 'מחכים לחתימת הלקוח', 'אין מה לעשות, רק לחכות', 'book');
+  tile('', openSoon, 'חלונות פנויים באתר', 'לחיצה לפתיחת עוד ימים ביומן', 'cal');
+
+  const next = vis.filter((b) => b.status === 'confirmed' && b.date >= tIso).sort((a, b) => a.date < b.date ? -1 : 1).slice(0, 4);
+  const ul = $('homeNext');
+  ul.innerHTML = '';
+  if (!next.length) ul.append(h('li', { style: 'color:var(--soft)', text: 'אין עדיין השכרות סגורות בתאריכים הקרובים.' }));
+  next.forEach((b) => ul.append(h('li', {},
+    h('span', { class: 'when', text: heShort(b.date) }),
+    h('span', { dir: 'ltr', style: 'color:var(--soft)', text: b.start && b.end ? b.start + '–' + b.end : '' }),
+    h('span', { text: b.name || '' }))));
+}
+
 /* ---- ICS subscribe URL ---- */
 async function mintIcs(rotate) {
-  $('icsMsg').textContent = 'יוצר…';
+  $('icsMsg').textContent = 'רגע…';
   try {
-    const res = await fetch('/api/calendar' + (rotate ? '?rotate=1' : ''), {
-      method: 'POST',
-      headers: { 'x-admin-key': key() },
-    });
+    const res = await fetch('/api/calendar' + (rotate ? '?rotate=1' : ''), { method: 'POST', headers: { 'x-admin-key': key() } });
     const j = await res.json().catch(() => ({}));
-    if (!res.ok || !j.token) { $('icsMsg').textContent = 'שגיאה ביצירת הכתובת.'; return; }
+    if (!res.ok || !j.token) { $('icsMsg').textContent = 'משהו השתבש. נסי שוב.'; return; }
     $('icsUrl').value = location.origin + '/calendar.ics?k=' + j.token;
     $('icsCopy').hidden = false;
     $('icsMsg').textContent = rotate
-      ? 'נוצרה כתובת חדשה. הכתובת הישנה כבר לא עובדת — הוסיפי את החדשה ביומן גוגל.'
-      : 'מוכן. העתיקי את הכתובת והוסיפי אותה ביומן גוגל.';
-  } catch {
-    $('icsMsg').textContent = 'שגיאת רשת.';
-  }
+      ? 'נוצרה כתובת חדשה. הישנה כבר לא עובדת, אז צריך להוסיף את החדשה ביומן גוגל.'
+      : 'מוכן. לחצי "העתקה" והדביקי ביומן גוגל.';
+  } catch { $('icsMsg').textContent = 'אין חיבור לאינטרנט כרגע.'; }
 }
 $('icsMake').addEventListener('click', () => mintIcs(false));
-$('icsRotate').addEventListener('click', () => {
-  if (confirm('להחליף את הכתובת? הכתובת הנוכחית תפסיק לעבוד ותצטרכי להוסיף את החדשה ביומן גוגל.')) mintIcs(true);
+$('icsRotate').addEventListener('click', async () => {
+  const ok = await ask({ title: 'להחליף את הכתובת?', text: 'הכתובת הנוכחית תפסיק לעבוד, ותצטרכי להוסיף את החדשה ביומן גוגל.', ok: 'כן, להחליף' });
+  if (ok) mintIcs(true);
 });
 $('icsCopy').addEventListener('click', async () => {
-  try {
-    await navigator.clipboard.writeText($('icsUrl').value);
-    $('icsMsg').textContent = 'הועתק!';
-  } catch {
-    $('icsUrl').select();
-    $('icsMsg').textContent = 'לחצי Ctrl+C כדי להעתיק.';
-  }
+  try { await navigator.clipboard.writeText($('icsUrl').value); toast('הכתובת הועתקה ✓'); }
+  catch { $('icsUrl').select(); $('icsMsg').textContent = 'לחצי Ctrl+C כדי להעתיק.'; }
 });
 
 /* ================= LOGIN ================= */
-$('logoutBtn').addEventListener('click', () => { sessionStorage.removeItem('tut-admin-key'); location.reload(); });
+$('logoutBtn').addEventListener('click', () => { try { sessionStorage.removeItem('tut-admin-key'); } catch {} location.reload(); });
 $('loginBtn').addEventListener('click', doLogin);
 $('keyInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
+$('peekBtn').addEventListener('click', () => { const i = $('keyInput'); i.type = i.type === 'password' ? 'text' : 'password'; i.focus(); });
 
+/* checked with a read-only call, so logging in never writes anything */
 async function doLogin() {
   const k = $('keyInput').value.trim();
-  if (!k) return;
-  // verify the key with a no-op save of current data
-  const res = await fetch(API);
-  const current = await res.json();
-  const test = await fetch(API, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json', 'x-admin-key': k },
-    body: JSON.stringify(current),
-  });
-  if (test.ok) {
-    sessionStorage.setItem('tut-admin-key', k);
-    start();
-  } else {
-    $('loginErr').textContent = 'מפתח שגוי';
-  }
+  if (!k) { $('loginErr').textContent = 'צריך להקליד את המפתח'; return; }
+  $('loginBtn').disabled = true; $('loginErr').textContent = '';
+  try {
+    const res = await fetch('/api/booking?list=1', { headers: { 'x-admin-key': k }, cache: 'no-store' });
+    if (res.ok) {
+      try { sessionStorage.setItem('tut-admin-key', k); } catch {}
+      start();
+    } else if (res.status === 429) {
+      $('loginErr').textContent = 'יותר מדי ניסיונות. כדאי לחכות רבע שעה ולנסות שוב.';
+    } else {
+      $('loginErr').textContent = 'המפתח לא נכון. אפשר ללחוץ על העין כדי לראות מה הוקלד.';
+    }
+  } catch { $('loginErr').textContent = 'אין חיבור לאינטרנט כרגע.'; }
+  $('loginBtn').disabled = false;
 }
 
 function start() {
   $('login').style.display = 'none';
   $('app').style.display = 'block';
+  renderStickers();
   load();
   loadContent();
+  let tab = 'home';
+  try { tab = sessionStorage.getItem('tut-admin-tab') || 'home'; } catch {}
+  showTab(TABS.includes(tab) ? tab : 'home');
 }
 
 if (key()) start();
@@ -1248,7 +1713,7 @@ if (key()) start();
 
 <script type="module">
 /* Media uploads via Vercel Blob direct client upload. Kept in a module so a
-   CDN failure here can never break the rest of the panel. Reads the shared
+   failure here can never break the rest of the panel. Reads the shared
    globals (content / queueContentSave / key) from the main script. */
 import { upload } from '/vendor/vercel-blob-client.js';
 
@@ -1261,10 +1726,10 @@ window.renderMediaUI = () => {
   const vidUrl = typeof t.splitVideo === 'string' && t.splitVideo.trim() ? t.splitVideo.trim() : '';
   const img = document.getElementById('heroPreview');
   if (img.getAttribute('src') !== (heroUrl || DEFAULT_HERO)) img.src = heroUrl || DEFAULT_HERO;
-  document.getElementById('heroCur').textContent = heroUrl ? 'תמונה שהעליתם' : 'תמונת ברירת המחדל';
+  document.getElementById('heroCur').textContent = heroUrl ? 'תמונה שהעלית' : 'התמונה המקורית';
   const vid = document.getElementById('videoPreview');
   if (vid.getAttribute('src') !== (vidUrl || DEFAULT_VIDEO)) vid.src = vidUrl || DEFAULT_VIDEO;
-  document.getElementById('videoCur').textContent = vidUrl ? 'וידאו שהעליתם' : 'הווידאו הנוכחי';
+  document.getElementById('videoCur').textContent = vidUrl ? 'וידאו שהעלית' : 'הווידאו המקורי';
 };
 
 const MEDIA = [
@@ -1282,14 +1747,13 @@ MEDIA.forEach((m) => {
     fileInput.value = '';
     if (!f) return;
     if (m.isVideo ? !f.type.startsWith('video/') : !f.type.startsWith('image/')) {
-      status.textContent = 'סוג הקובץ לא מתאים'; return;
+      status.textContent = m.isVideo ? 'זה לא קובץ וידאו' : 'זה לא קובץ תמונה'; return;
     }
     if (f.size > m.max) { status.textContent = 'הקובץ גדול מדי (עד ' + m.maxLabel + ')'; return; }
     btn.disabled = true;
     status.textContent = 'מעלה… 0%';
     try {
-      const ext = ((f.name.split('.').pop() || '').toLowerCase().replace(/[^a-z0-9]/g, '')) ||
-        (m.isVideo ? 'mp4' : 'jpg');
+      const ext = ((f.name.split('.').pop() || '').toLowerCase().replace(/[^a-z0-9]/g, '')) || (m.isVideo ? 'mp4' : 'jpg');
       const blob = await upload(m.prefix + '-' + Date.now() + '.' + ext, f, {
         access: 'public',
         handleUploadUrl: '/api/upload',
@@ -1307,15 +1771,15 @@ MEDIA.forEach((m) => {
           body: JSON.stringify({ type: 'delete', url: old }),
         }).catch(() => {});
       }
-      status.textContent = '✓ הועלה ונשמר — רעננו את האתר לצפייה';
+      status.textContent = '✓ עלה ונשמר. רענני את האתר כדי לראות';
       renderMediaUI();
     } catch (err) {
       const msg = String((err && err.message) || err);
       status.textContent = /unauthorized/i.test(msg)
-        ? 'שגיאת הרשאה — צאו והתחברו מחדש'
+        ? 'צריך לצאת ולהיכנס מחדש'
         : /not configured|503/i.test(msg)
-          ? 'אחסון המדיה עדיין לא הופעל ב-Vercel — צרו Blob Store בלוח הבקרה'
-          : 'שגיאה בהעלאה: ' + msg;
+          ? 'אחסון המדיה עוד לא הופעל ב-Vercel'
+          : 'ההעלאה לא הצליחה: ' + msg;
     } finally {
       btn.disabled = false;
     }

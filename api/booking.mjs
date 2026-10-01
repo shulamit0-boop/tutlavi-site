@@ -1,4 +1,4 @@
-import { kvGet, kvSet, storeReady } from './_store.mjs';
+import { kvGet, kvSet, kvDel, storeReady } from './_store.mjs';
 import { isAdmin, limitPublic, requireAdmin } from './_guard.mjs';
 import {
   HOLD_DAYS, holdExpiry, placeHold, releaseHold, commitHold,
@@ -332,6 +332,21 @@ export default async function handler(req) {
       return Response.json({ error: 'store write failed' }, { status: 500 });
     }
     return Response.json({ ok: true, status: b.status });
+  }
+
+  /* ---- 6. studio deletes a request for good ----
+     Whatever slot it was still holding goes back on the market. A day that was
+     already confirmed stays booked: it is a real date in the studio's diary,
+     and the panel says so and points at the calendar to free it by hand. */
+  if (body.action === 'delete') {
+    const avail = await readAvail();
+    if (releaseHold(avail, id)) await kvSet(AVAIL_KEY, avail);
+    if (!(await kvDel('booking:' + id))) {
+      return Response.json({ error: 'store write failed' }, { status: 500 });
+    }
+    const idx = (await kvGet(INDEX_KEY)) || [];
+    await kvSet(INDEX_KEY, idx.filter((x) => x !== id));
+    return Response.json({ ok: true, deleted: id });
   }
 
   return Response.json({ error: 'bad request' }, { status: 400 });
