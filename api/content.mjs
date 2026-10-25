@@ -42,6 +42,7 @@ const sanitize = (body) => {
             status: String(e.status || '').slice(0, 60),
             hot: e.hot === true,
             hidden: e.hidden === true,
+            vivian: e.vivian === true,
             reg,
             regUrl: reg === 'external' ? safeUrl(e.regUrl) : '',
             regMode: reg === 'internal' ? regMode : 'free',

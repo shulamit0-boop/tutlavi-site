@@ -1218,6 +1218,7 @@ function renderEvents() {
     };
     const opts = h('div', { class: 'ev-opts' },
       sw('הדגשה באדום', ev.hot === true, (v) => { ev.hot = v; queueContentSave(); }, 'berry'),
+      sw('להציג גם בעמוד ויויאן', ev.vivian === true, (v) => { ev.vivian = v; queueContentSave(); }, 'berry'),
       sw('להסתיר מהאתר (טיוטה)', ev.hidden === true, (v) => { ev.hidden = v; queueContentSave(); renderEvents(); }));
 
     const card = h('div', { class: 'ev', 'data-drop': String(i) },
