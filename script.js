@@ -206,6 +206,7 @@ function applySiteContent(c) {
     if (!visible.length) {
       if (section) section.style.display = 'none';
     } else if (list) {
+      if (section) section.style.display = '';
       list.innerHTML = visible.map(ev => {
         const hot = ev.hot ? ' on' : '';
         const action = regAction(ev);
