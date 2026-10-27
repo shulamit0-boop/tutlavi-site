@@ -16,6 +16,10 @@
     {
       "source": "/vivian",
       "destination": "/vivian.html"
+    },
+    {
+      "source": "/bocharim",
+      "destination": "/bocharim.html"
     }
   ],
   "redirects": [

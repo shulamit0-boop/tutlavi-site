@@ -19,7 +19,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
-const PAGES = ['index.html', 'vivian.html', 'admin.html', 'contract.html'];
+const PAGES = ['index.html', 'vivian.html', 'bocharim.html', 'admin.html', 'contract.html'];
 const work = mkdtempSync(join(tmpdir(), 'tut-pages-'));
 
 const blocks = (html) => {
@@ -37,7 +37,7 @@ const check = (file) => execFileSync(process.execPath, ['--check', file], { stdi
 
 // the two public pages keep their code in script.js / vivian.js
 test('the standalone scripts parse', () => {
-  for (const f of ['script.js', 'vivian.js']) {
+  for (const f of ['script.js', 'vivian.js', 'bocharim.js']) {
     try {
       check(join(root, f));
     } catch (e) {

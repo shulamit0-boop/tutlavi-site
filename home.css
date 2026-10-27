@@ -541,3 +541,40 @@ body.menu-open .sticker{ opacity:0; visibility:hidden; }
 .viv-back{ margin-top:24px; font-size:14px; }
 .viv-back a{ transition:color .2s ease; }
 .viv-back a:hover{ color:var(--accent); }
+
+/* ============ BOCHARIM BETOV BANNER (links to /bocharim) ============ */
+.bocharim-sec{ padding-bottom:0; }
+.bocharim{
+  display:flex; flex-direction:column; align-items:center; gap:22px;
+  padding:24px; color:var(--ink); text-decoration:none; background:#fff;
+  border:2px solid #0038b8; position:relative;
+}
+.bocharim::before,.bocharim::after{
+  content:""; position:absolute; left:0; right:0; height:6px; background:#0038b8;
+}
+.bocharim::before{ top:8px; } .bocharim::after{ bottom:8px; }
+@media (min-width:640px){ .bocharim{ flex-direction:row; gap:40px; padding:44px 40px; } }
+.bocharim-box{
+  width:84px; height:88px; flex:none; position:relative;
+  background:linear-gradient(160deg,#1f55d0,#0038b8 55%,#002a8a);
+}
+.bocharim-box::before{
+  content:""; position:absolute; top:12px; left:16px; right:16px; height:7px;
+  border-radius:4px; background:#001a57;
+}
+.bocharim-box i{
+  position:absolute; left:14px; right:14px; bottom:14px; height:26px;
+  background:#fff; outline:1px solid #0038b8; outline-offset:-4px;
+}
+.bocharim-text{ flex:1; text-align:center; }
+@media (min-width:640px){ .bocharim-text{ text-align:start; } }
+.bocharim-eyebrow{ font-size:12px; font-weight:500; color:#0038b8; }
+.bocharim-text h3{ margin-top:6px; font-size:30px; font-weight:700; line-height:1.1; letter-spacing:-.01em; }
+@media (min-width:640px){ .bocharim-text h3{ font-size:38px; } }
+.bocharim-text p{ margin-top:8px; font-size:15px; line-height:1.6; color:rgba(27,28,29,.75); }
+.bocharim-arrow{
+  flex:none; width:48px; height:48px; border-radius:50%;
+  border:1px solid #0038b8; color:#0038b8; display:grid; place-items:center;
+  transition:background .2s, color .2s;
+}
+.bocharim:hover .bocharim-arrow{ background:#0038b8; color:#fff; }

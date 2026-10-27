@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-6 -6 624 227" role="img" aria-label="תות">
+  <g fill="#1b1c1d">
+    <path d="M0 0H245V215H185V70H95V215H0V145H30V70H0Z"/>
+    <rect x="273" y="0" width="69" height="215"/>
+    <path transform="translate(365 0)" d="M0 0H245V215H185V70H95V215H0V145H30V70H0Z"/>
+  </g>
+  <ellipse cx="275" cy="108" rx="21" ry="23" fill="#d9262c"/>
+</svg>
