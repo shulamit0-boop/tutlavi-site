@@ -921,3 +921,7 @@ if (eventModal) {
   setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 400); }, 6000);
   history.replaceState(null, '', location.pathname);
 })();
+
+// tutlavi.com/rent is the link to share for renting the space: same page, with
+// the rental form already open (the rewrite lives in vercel.json)
+if (location.pathname.replace(/\/+$/, '') === '/rent') openInquiry('rental');

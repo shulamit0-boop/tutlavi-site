@@ -16,6 +16,10 @@
     {
       "source": "/vivian",
       "destination": "/vivian.html"
+    },
+    {
+      "source": "/rent",
+      "destination": "/index.html"
     }
   ],
   "redirects": [
