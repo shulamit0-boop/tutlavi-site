@@ -497,9 +497,12 @@ body.bk-drag .toasts{ bottom:110px; }
         <h1>בקשות השכרה</h1>
         <p>כל בקשה היא כרטיס. אפשר <b>לגרור</b> כרטיס לעמודה הבאה, או ללחוץ על הכפתור שבתוכו. גוררים לפח כדי למחוק.</p>
       </div>
-      <button class="btn soft sm" id="bookRefresh">
-        <svg class="i" viewBox="0 0 24 24"><path d="M20 12a8 8 0 11-2.3-5.7M20 4v5h-5"/></svg>רענון
-      </button>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+        <button class="btn mint sm" id="bookNew">+ חוזה חדש</button>
+        <button class="btn soft sm" id="bookRefresh">
+          <svg class="i" viewBox="0 0 24 24"><path d="M20 12a8 8 0 11-2.3-5.7M20 4v5h-5"/></svg>רענון
+        </button>
+      </div>
     </div>
     <div id="board" class="board"><p class="loading">רגע, טוען…</p></div>
     <details class="declined-wrap" id="declinedWrap" hidden>
@@ -1459,9 +1462,8 @@ function bookingCard(b) {
   const contact = h('div', { class: 'bk-contact' });
   if (b.phone) {
     const digits = String(b.phone).replace(/\D/g, '');
-    const intl = digits.startsWith('0') ? '972' + digits.slice(1) : digits;
     contact.append(h('a', { href: 'tel:' + digits, dir: 'ltr' }, icon('phone'), b.phone));
-    contact.append(h('a', { href: 'https://wa.me/' + intl, target: '_blank', rel: 'noopener' }, icon('chat'), 'וואטסאפ'));
+    contact.append(h('a', { href: 'https://wa.me/' + waNumber(b.phone), target: '_blank', rel: 'noopener' }, icon('chat'), 'וואטסאפ'));
   }
   if (b.email) contact.append(h('a', { href: 'mailto:' + b.email, dir: 'ltr' }, icon('mail'), b.email));
   if (contact.childNodes.length) card.append(contact);
@@ -1480,6 +1482,7 @@ function bookingCard(b) {
     btn('אישור ושליחת חוזה', 'mint', () => approveFlow(b));
     btn('דחייה', 'danger-soft', () => declineFlow(b));
   } else if (b.status === 'sent') {
+    if (b.phone) btn('שליחת החוזה בוואטסאפ', 'mint', () => sendWhatsApp(b, link));
     btn('עריכה ושליחה שוב', 'soft', () => approveFlow(b));
   } else if (b.status === 'signed') {
     btn('חתימה וסגירת התאריך', 'mint', () => signFlow(b));
@@ -1519,7 +1522,7 @@ function dropBooking(b, to) {
 
 async function approveFlow(b) {
   const resigning = Boolean(b.signature) || b.status === 'signed';
-  const price = h('input', { type: 'text', placeholder: 'למשל ₪2,500', value: b.price || '' });
+  const price = h('input', { type: 'text', placeholder: 'למשל ₪2,500', value: b.price || BASE_PRICE });
   const note = h('textarea', { rows: '3', placeholder: 'למשל: המחיר כולל שימוש בבר. הגעה לפריקה מ-17:00.' });
   note.value = b.studioNote || '';
   const form = {
@@ -1537,8 +1540,95 @@ async function approveFlow(b) {
   if (!r) return;
   const j = await bookAction('approve', b.id, r);
   if (!j) return;
-  if (j.mailed) toast('החוזה נשלח ל' + (b.email || 'לקוח') + ' ✓', { ms: 5000 });
-  else { toast('מעולה. נפתח עכשיו מייל מוכן ללקוח, רק לשלוח.', { ms: 5000 }); openSendMail({ ...b, price: r.price, studioNote: r.note }, location.origin + '/contract?bid=' + b.id); }
+  deliverContract({ ...b, price: r.price, studioNote: r.note }, location.origin + '/contract?bid=' + b.id, j.mailed);
+}
+
+/* After a contract is open for signing: WhatsApp when there is a phone,
+   otherwise (or if she prefers) the ready-made email. */
+async function deliverContract(b, link, mailed) {
+  if (mailed && !b.phone) { toast('החוזה נשלח ל' + (b.email || 'לקוח') + ' ✓', { ms: 5000 }); return; }
+  if (!b.phone) { toast('מעולה. נפתח עכשיו מייל מוכן ללקוח, רק לשלוח.', { ms: 5000 }); openSendMail(b, link); return; }
+  const wa = await ask({
+    title: mailed ? 'החוזה נשלח במייל ✓' : 'איך לשלוח את החוזה?', tone: 'mint',
+    text: mailed ? 'לשלוח ל' + b.name + ' את הקישור גם בוואטסאפ?' : 'אפשר לשלוח ל' + b.name + ' את הקישור לחתימה בוואטסאפ, או במייל.',
+    ok: 'בוואטסאפ', cancel: mailed ? 'לא צריך' : (b.email ? 'במייל' : 'אחר כך'),
+  });
+  if (wa) sendWhatsApp(b, link);
+  else if (!mailed && b.email) openSendMail(b, link);
+  else if (!mailed) toast('אפשר לשלוח מתי שתרצי: בכרטיס יש כפתור "שליחת החוזה בוואטסאפ".', { ms: 6000 });
+}
+
+const BASE_PRICE = '₪2,500';
+
+// 054-312-9933 → 972543129933, the form wa.me wants
+function waNumber(phone) {
+  const digits = String(phone || '').replace(/\D/g, '');
+  return digits.startsWith('0') ? '972' + digits.slice(1) : digits;
+}
+
+function contractText(b, link) {
+  return 'שלום ' + (b.name || '') + ',\n\n' +
+    'שמחנו לקבל את בקשתכם, והתאריך שמור עבורכם:\n' +
+    heDate(b.date) + (b.start && b.end ? ', ' + b.start + '–' + b.end : '') + '\n' +
+    (b.price ? 'עלות ההשכרה: ' + b.price + '\n' : '') +
+    (b.studioNote ? '\nסיכומים נוספים:\n' + b.studioNote + '\n' : '') +
+    '\nלהשלמת ההזמנה נותר רק לחתום על ההסכם בקישור הבא:\n' +
+    link + '\n\n' +
+    'בקישור תתבקשו למלא ת.ז / ח.פ ולחתום. לאחר מכן נחתום גם אנחנו והתאריך ייסגר סופית.\n' +
+    'התשלום מתבצע בהעברה בנקאית — פרטי החשבון יישלחו עם אישור ההזמנה.\n\n' +
+    'סטודיו תות · מגן אברהם 6, תל אביב · 054-312-9933';
+}
+
+function sendWhatsApp(b, link) {
+  const url = 'https://wa.me/' + waNumber(b.phone) + '?text=' + encodeURIComponent(contractText(b, link));
+  const w = window.open(url, '_blank');
+  if (w) w.opener = null; else location.href = url;
+}
+
+/* A contract for someone who never used the form (phoned, wrote on WhatsApp).
+   Goes straight to "sent"; the calendar is not touched. */
+async function newContractFlow() {
+  const f = (label, el, hint) => h('label', { class: 'field' }, h('span', { text: label }), el, hint ? h('small', { text: hint }) : null);
+  const name = h('input', { type: 'text', autocomplete: 'off' });
+  const phone = h('input', { type: 'tel', dir: 'ltr', inputmode: 'tel', placeholder: '050-000-0000' });
+  const email = h('input', { type: 'email', dir: 'ltr' });
+  const date = h('input', { type: 'date', dir: 'ltr' });
+  const start = h('input', { type: 'time', dir: 'ltr', value: '19:00' });
+  const end = h('input', { type: 'time', dir: 'ltr', value: '23:00' });
+  const purpose = h('select', {}, ['ארוחה או ערב', 'סדנה', 'יום צילום', 'אירוע חברה', 'משהו אחר'].map((v) => h('option', { value: v, text: v })));
+  const participants = h('input', { type: 'text', inputmode: 'numeric', placeholder: 'למשל 30' });
+  const price = h('input', { type: 'text', value: BASE_PRICE });
+  const note = h('textarea', { rows: '3', placeholder: 'למשל: המחיר כולל שימוש בבר. הגעה לפריקה מ-17:00.' });
+  const form = {
+    el: h('div', { class: 'form' },
+      f('שם הלקוח', name),
+      f('טלפון', phone, 'לשליחה בוואטסאפ'),
+      f('מייל (לא חובה)', email),
+      f('תאריך', date),
+      h('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:.8rem' }, f('משעה', start), f('עד שעה', end)),
+      f('סוג האירוע', purpose),
+      f('כמה משתתפים (לא חובה)', participants),
+      f('מחיר', price),
+      f('דברים שסיכמתם (לא חובה)', note, 'נכנס לחוזה עצמו')),
+    collect: () => ({
+      name: name.value.trim(), phone: phone.value.trim(), email: email.value.trim(),
+      date: date.value, start: start.value, end: end.value, purpose: purpose.value,
+      participants: participants.value.trim(), price: price.value.trim(), note: note.value.trim(),
+    }),
+    focus: name,
+  };
+  for (;;) {
+    const d = await ask({ title: 'חוזה חדש', tone: 'mint', form, ok: 'יצירת החוזה', cancel: 'עוד לא',
+      text: 'ללקוח שפנה בטלפון או בוואטסאפ. החוזה נפתח לחתימה מיד. היומן באתר לא משתנה, אז אם צריך, נועלים את היום בטאב היומן.' });
+    if (!d) return;
+    const missing = !d.name ? 'חסר שם הלקוח' : !d.date ? 'חסר תאריך' : !d.phone && !d.email ? 'צריך טלפון או מייל, כדי שיהיה לאן לשלוח' : '';
+    if (!missing) {
+      const j = await bookAction('create', '', { data: d });
+      if (!j) return;
+      return deliverContract({ ...d, studioNote: d.note }, location.origin + '/contract?bid=' + j.id, j.mailed);
+    }
+    toast(missing, { warn: true });
+  }
 }
 
 async function signFlow(b) {
@@ -1603,22 +1693,13 @@ addEventListener('pagehide', () => { pendingDelete.forEach((id) => commitDelete(
    Only used while the site cannot send mail itself (no RESEND_API_KEY). */
 function openSendMail(b, link) {
   const subject = 'הסכם השכרת חלל — סטודיו תות';
-  const body =
-    'שלום ' + (b.name || '') + ',\n\n' +
-    'שמחנו לקבל את בקשתכם, והתאריך שמור עבורכם:\n' +
-    heDate(b.date) + (b.start && b.end ? ', ' + b.start + '–' + b.end : '') + '\n' +
-    (b.price ? 'עלות ההשכרה: ' + b.price + '\n' : '') +
-    (b.studioNote ? '\nסיכומים נוספים:\n' + b.studioNote + '\n' : '') +
-    '\nלהשלמת ההזמנה נותר רק לחתום על ההסכם בקישור הבא:\n' +
-    link + '\n\n' +
-    'בקישור תתבקשו למלא ת.ז / ח.פ ולחתום. לאחר מכן נחתום גם אנחנו והתאריך ייסגר סופית.\n' +
-    'התשלום מתבצע בהעברה בנקאית — פרטי החשבון יישלחו עם אישור ההזמנה.\n\n' +
-    'סטודיו תות · מגן אברהם 6, תל אביב · 054-312-9933';
+  const body = contractText(b, link);
   window.location.href = 'mailto:' + encodeURIComponent(b.email || '') +
     '?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
 }
 
 $('bookRefresh').addEventListener('click', loadBookings);
+$('bookNew').addEventListener('click', newContractFlow);
 
 /* ================= HOME ================= */
 function renderHome() {

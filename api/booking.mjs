@@ -260,6 +260,46 @@ export default async function handler(req) {
   const denied = await requireAdmin(req);
   if (denied) return denied;
 
+  /* ---- 0. studio opens a contract itself, for someone who called or wrote
+     on WhatsApp instead of using the form. It skips the request step and is
+     open for signing straight away. No calendar window is held: the panel
+     says so, and the day is locked by hand in the calendar tab if needed. ---- */
+  if (body.action === 'create') {
+    const d = body.data || {};
+    const b = {
+      status: 'sent',
+      name: str(d.name, 120),
+      email: str(d.email, 160),
+      phone: str(d.phone, 30),
+      date: isDate(d.date) ? d.date : '',
+      start: isTime(d.start) ? d.start : '',
+      end: isTime(d.end) ? d.end : '',
+      purpose: str(d.purpose, 160),
+      participants: str(d.participants, 30),
+      price: str(d.price, 30),
+      message: '',
+      studioNote: multiline(d.note, 1500),
+      windowId: '',
+      idnum: '',
+      signature: null,
+      requestedAt: new Date().toISOString(),
+      sentAt: new Date().toISOString(),
+      signedAt: null,
+      studioSigned: false,
+      studioSignedAt: null,
+      holdUntil: null,
+      manual: true,
+    };
+    if (!b.name || !b.date) return Response.json({ error: 'missing fields' }, { status: 400 });
+    const id = rid();
+    if (!(await kvSet('booking:' + id, b))) {
+      return Response.json({ error: 'store write failed' }, { status: 500 });
+    }
+    await pushIndex(id);
+    const mailed = mailReady() && b.email ? await contractToClient(b, id) : false;
+    return Response.json({ ok: true, id, status: b.status, mailed });
+  }
+
   const id = str(body.id, 40);
   if (!/^[a-z0-9]{6,40}$/.test(id)) return Response.json({ error: 'bad id' }, { status: 400 });
   const b = await kvGet('booking:' + id);
