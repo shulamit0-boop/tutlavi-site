@@ -1562,8 +1562,8 @@ async function approveFlow(b) {
     ? ['הלקוח כבר חתם. אם שולחים שוב, החתימה שלו מתבטלת והוא יתבקש לחתום על התנאים המעודכנים.']
     : [b.name + ' · ' + heDate(b.date), mailOn ? 'החוזה יישלח ללקוח במייל עם קישור לחתימה.' : 'אחרי האישור ייפתח מייל מוכן עם הקישור לחתימה, ורק צריך ללחוץ "שליחה".'];
   for (;;) {
-    const r = await ask({ title: resigning ? 'שליחה לחתימה מחדש' : 'אישור הבקשה ושליחת חוזה', text, form, tone: 'mint',
-      ok: resigning ? 'כן, לשלוח מחדש' : 'אישור ושליחה', cancel: 'עוד לא' });
+    const r = await ask({ title: resigning ? 'שליחה לחתימה מחדש' : b.status === 'sent' ? 'עריכת החוזה ושליחה שוב' : 'אישור הבקשה ושליחת חוזה', text, form, tone: 'mint',
+      ok: resigning ? 'כן, לשלוח מחדש' : b.status === 'sent' ? 'שמירה ושליחה' : 'אישור ושליחה', cancel: 'עוד לא' });
     if (!r) return;
     const d = r.details;
     const missing = !d.name ? 'חסר שם הלקוח' : !d.date ? 'חסר תאריך' : (d.start && d.end && d.end <= d.start) ? 'שעת הסיום צריכה להיות אחרי שעת ההתחלה' : '';
