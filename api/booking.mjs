@@ -313,6 +313,28 @@ export default async function handler(req) {
        the contract itself, not only in the covering email. */
     if (typeof body.price === 'string') b.price = str(body.price, 30);
     if (typeof body.note === 'string') b.studioNote = multiline(body.note, 1500);
+    /* Full edit: the studio may also fix the renter's details and the slot.
+       Moving the date or hours frees the calendar window this request was
+       holding, because the hold belongs to the old slot. The panel tells her
+       to lock the new day by hand. */
+    const e = body.details && typeof body.details === 'object' ? body.details : null;
+    if (e) {
+      const slotBefore = b.date + '|' + b.start + '|' + b.end;
+      if (typeof e.name === 'string' && str(e.name, 120)) b.name = str(e.name, 120);
+      if (typeof e.phone === 'string') b.phone = str(e.phone, 30);
+      if (typeof e.email === 'string') b.email = str(e.email, 160);
+      if (isDate(e.date)) b.date = e.date;
+      if (isTime(e.start)) b.start = e.start;
+      if (isTime(e.end)) b.end = e.end;
+      if (typeof e.purpose === 'string') b.purpose = str(e.purpose, 160);
+      if (typeof e.participants === 'string') b.participants = str(e.participants, 30);
+      if (b.date + '|' + b.start + '|' + b.end !== slotBefore && b.windowId) {
+        const avail = await readAvail();
+        if (releaseHold(avail, id)) await kvSet(AVAIL_KEY, avail);
+        b.windowId = '';
+        b.holdUntil = null;
+      }
+    }
     /* Re-approving something already signed re-issues it for signature: the
        renter signed the previous terms, and that signature cannot be carried
        over onto new ones. It is voided here and asked for again. */

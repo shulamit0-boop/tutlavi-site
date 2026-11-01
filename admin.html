@@ -1522,25 +1522,56 @@ function dropBooking(b, to) {
 
 async function approveFlow(b) {
   const resigning = Boolean(b.signature) || b.status === 'signed';
+  const f = (label, el, hint) => h('label', { class: 'field' }, h('span', { text: label }), el, hint ? h('small', { text: hint }) : null);
+  const name = h('input', { type: 'text', autocomplete: 'off', value: b.name || '' });
+  const phone = h('input', { type: 'tel', dir: 'ltr', inputmode: 'tel', value: b.phone || '' });
+  const email = h('input', { type: 'email', dir: 'ltr', value: b.email || '' });
+  const date = h('input', { type: 'date', dir: 'ltr', value: b.date || '' });
+  const start = h('input', { type: 'time', dir: 'ltr', value: b.start || '' });
+  const end = h('input', { type: 'time', dir: 'ltr', value: b.end || '' });
+  const purposes = ['ארוחה או ערב', 'סדנה', 'יום צילום', 'אירוע חברה', 'משהו אחר'];
+  if (b.purpose && !purposes.includes(b.purpose)) purposes.unshift(b.purpose);
+  const purpose = h('select', {}, purposes.map((v) => h('option', { value: v, text: v })));
+  purpose.value = b.purpose || purposes[0];
+  const participants = h('input', { type: 'text', inputmode: 'numeric', value: b.participants || '' });
   const price = h('input', { type: 'text', placeholder: 'למשל ₪2,500', value: b.price || BASE_PRICE });
   const note = h('textarea', { rows: '3', placeholder: 'למשל: המחיר כולל שימוש בבר. הגעה לפריקה מ-17:00.' });
   note.value = b.studioNote || '';
   const form = {
     el: h('div', { class: 'form' },
-      h('label', { class: 'field' }, h('span', { text: 'מחיר סופי' }), price),
-      h('label', { class: 'field' }, h('span', { text: 'דברים שסיכמתם (לא חובה)' }), note, h('small', { text: 'נכנס לחוזה עצמו ולמייל ללקוח' }))),
-    collect: () => ({ price: price.value.trim(), note: note.value.trim() }),
+      f('שם הלקוח', name),
+      f('טלפון', phone),
+      f('מייל (לא חובה)', email),
+      f('תאריך', date, 'אם משנים תאריך או שעות, החלון שנשמר ביומן משתחרר. את היום החדש צריך לנעול בטאב היומן.'),
+      h('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:.8rem' }, f('משעה', start), f('עד שעה', end)),
+      f('סוג האירוע', purpose),
+      f('כמה משתתפים (לא חובה)', participants),
+      f('מחיר סופי', price),
+      f('דברים שסיכמתם (לא חובה)', note, 'נכנס לחוזה עצמו ולמייל ללקוח')),
+    collect: () => ({
+      price: price.value.trim(), note: note.value.trim(),
+      details: {
+        name: name.value.trim(), phone: phone.value.trim(), email: email.value.trim(),
+        date: date.value, start: start.value, end: end.value,
+        purpose: purpose.value, participants: participants.value.trim(),
+      },
+    }),
     focus: price,
   };
   const text = resigning
     ? ['הלקוח כבר חתם. אם שולחים שוב, החתימה שלו מתבטלת והוא יתבקש לחתום על התנאים המעודכנים.']
     : [b.name + ' · ' + heDate(b.date), mailOn ? 'החוזה יישלח ללקוח במייל עם קישור לחתימה.' : 'אחרי האישור ייפתח מייל מוכן עם הקישור לחתימה, ורק צריך ללחוץ "שליחה".'];
-  const r = await ask({ title: resigning ? 'שליחה לחתימה מחדש' : 'אישור הבקשה ושליחת חוזה', text, form, tone: 'mint',
-    ok: resigning ? 'כן, לשלוח מחדש' : 'אישור ושליחה', cancel: 'עוד לא' });
-  if (!r) return;
-  const j = await bookAction('approve', b.id, r);
-  if (!j) return;
-  deliverContract({ ...b, price: r.price, studioNote: r.note }, location.origin + '/contract?bid=' + b.id, j.mailed);
+  for (;;) {
+    const r = await ask({ title: resigning ? 'שליחה לחתימה מחדש' : 'אישור הבקשה ושליחת חוזה', text, form, tone: 'mint',
+      ok: resigning ? 'כן, לשלוח מחדש' : 'אישור ושליחה', cancel: 'עוד לא' });
+    if (!r) return;
+    const d = r.details;
+    const missing = !d.name ? 'חסר שם הלקוח' : !d.date ? 'חסר תאריך' : (d.start && d.end && d.end <= d.start) ? 'שעת הסיום צריכה להיות אחרי שעת ההתחלה' : '';
+    if (missing) { toast(missing, { warn: true }); continue; }
+    const j = await bookAction('approve', b.id, r);
+    if (!j) return;
+    return deliverContract({ ...b, ...d, price: r.price, studioNote: r.note }, location.origin + '/contract?bid=' + b.id, j.mailed);
+  }
 }
 
 /* After a contract is open for signing: WhatsApp when there is a phone,
