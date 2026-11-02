@@ -1260,6 +1260,12 @@ function renderRegBox(ev, card) {
     if (ev.reg !== 'external') ev.regUrl = '';
     queueContentSave(); renderEvents();
   });
+  {
+    const img = h('input', { dir: 'ltr', placeholder: '/media/events/flyer.jpg' });
+    img.value = ev.img || '';
+    img.addEventListener('input', () => { ev.img = img.value.trim(); queueContentSave(); });
+    box.append(h('label', { class: 'field wide' }, h('span', { text: 'תמונת פלייר (מוצגת בטופס ההרשמה)' }), img));
+  }
   if (ev.reg === 'external') {
     const inp = h('input', { dir: 'ltr', placeholder: 'https://...' });
     inp.value = ev.regUrl || '';

@@ -65,7 +65,7 @@ function regAction(ev) {
     return '<button type="button" class="sched-reg' + (paid ? ' paid' : '') + '" ' +
       'data-ev-reg="1" data-ev-id="' + escAttr(ev.id) + '" data-ev-name="' + escAttr(ev.name) + '" ' +
       'data-ev-date="' + escAttr(ev.date) + '" data-ev-mode="' + (paid ? 'paid' : 'free') + '" ' +
-      'data-ev-price="' + (paid ? ev.price : 0) + '">' + escHtml(label) + '</button>';
+      'data-ev-price="' + (paid ? ev.price : 0) + '" data-ev-img="' + escAttr(ev.img || '') + '">' + escHtml(label) + '</button>';
   }
   return '';
 }
@@ -820,6 +820,11 @@ if (eventModal) {
     evStatus.className = 'form-status';
     document.getElementById('eventModalSub').textContent =
       ev.name + (ev.date ? ' · ' + ev.date : '');
+    const flyer = document.getElementById('evFlyer');
+    if (flyer) {
+      if (ev.img) { flyer.src = ev.img; flyer.alt = ev.name || ''; flyer.hidden = false; }
+      else { flyer.hidden = true; flyer.removeAttribute('src'); }
+    }
     const paid = ev.mode === 'paid' && ev.price > 0;
     document.getElementById('ev-qty-label').textContent = paid ? 'כמות כרטיסים' : 'מספר משתתפים';
     evSubmit.textContent = paid ? 'מעבר לתשלום · ₪' + ev.price : 'אישור הרשמה';
@@ -846,6 +851,7 @@ if (eventModal) {
       date: btn.dataset.evDate,
       mode: btn.dataset.evMode,
       price: parseInt(btn.dataset.evPrice, 10) || 0,
+      img: btn.dataset.evImg || '',
     });
   });
   document.querySelectorAll('[data-close-event]').forEach(el => el.addEventListener('click', closeEvent));

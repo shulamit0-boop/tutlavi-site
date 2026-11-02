@@ -456,3 +456,7 @@
   .paper-form .modal-submit{ justify-content:center; width:100%; }
   .pf-hint{ text-align:center; }
 }
+
+/* event flyer at the top of the registration form (2026-11-02) */
+.event-flyer{ display:block; width:100%; max-height:46vh; object-fit:contain; margin:0 auto 1.4rem; }
+.event-flyer[hidden]{ display:none; }

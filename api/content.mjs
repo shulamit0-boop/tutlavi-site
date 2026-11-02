@@ -8,6 +8,14 @@ const KEY = 'content';
 //         []   = explicitly cleared by the admin (site hides the schedule)
 const EMPTY = { texts: {}, events: null };
 
+/* event flyer image: a path on this site or a Vercel Blob URL (the CSP
+   only allows those as image sources anyway) */
+const safeImg = (v) => {
+  const s = String(v || '').trim().slice(0, 500);
+  if (/^\/media\/[\w./-]+\.(jpe?g|png|webp|gif)$/i.test(s) && !s.includes('..')) return s;
+  return /^https:\/\/[\w-]+\.public\.blob\.vercel-storage\.com\//i.test(s) ? s : '';
+};
+
 /* The registration link is rendered straight into an href. Without a scheme
    check a "javascript:" URL saved in the panel would run on the public site. */
 const safeUrl = (v) => {
@@ -43,6 +51,7 @@ const sanitize = (body) => {
             hot: e.hot === true,
             hidden: e.hidden === true,
             vivian: e.vivian === true,
+            img: safeImg(e.img),
             reg,
             regUrl: reg === 'external' ? safeUrl(e.regUrl) : '',
             regMode: reg === 'internal' ? regMode : 'free',
