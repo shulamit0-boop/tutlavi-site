@@ -75,6 +75,13 @@ fetch('/api/content')
   .catch(() => null)
   .then(c => {
     try { applySiteContent(c); } catch { /* never break the page */ }
+    // direct registration link: tutlavi.com/?reg=<event id> opens that event's
+    // registration form right away (added 2026-11-02)
+    try {
+      const regId = new URLSearchParams(location.search).get('reg');
+      const btn = regId && [...document.querySelectorAll('[data-ev-reg]')].find(b => b.dataset.evId === regId);
+      if (btn) { btn.scrollIntoView({ block: 'center' }); btn.click(); }
+    } catch { /* never break the page */ }
     try { initSplitHeadlineFX(); } catch { /* animation is optional */ }
     const t = (c && c.texts) || {};
     const vid = typeof t.splitVideo === 'string' && t.splitVideo.trim() ? t.splitVideo.trim() : null;
