@@ -52,7 +52,8 @@ export function parsePrice(v) {
 const heDate = (iso) => (isDate(iso) ? iso.split('-').reverse().join('.') : '');
 
 const describe = (b) =>
-  ['השכרת חלל סטודיו תות', heDate(b.date), [b.start, b.end].filter(Boolean).join('–'), b.purpose]
+  // "08:30 עד 13:30": a dash between two times is flipped by the PDF's RTL layout
+  ['השכרת חלל סטודיו תות', heDate(b.date), b.start && b.end ? b.start + ' עד ' + b.end : b.start, b.purpose]
     .filter(Boolean).join(' · ').slice(0, 250);
 
 /* `incl`: the amount already includes VAT (what the renter actually paid).
@@ -142,7 +143,7 @@ export default async function handler(req) {
     lang: 'he',
     currency: 'ILS',
     vatType: 0,
-    description: d.description,
+    description: 'השכרת חלל סטודיו תות',   // document title; the full line is in the income row
     remarks: text(body.remarks, 300),
     client: {
       name: d.client.name,
