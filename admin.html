@@ -174,92 +174,67 @@ svg.i{ width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:1.8
 .reassure{ display:flex; gap:.9rem; align-items:flex-start; background:var(--sky-bg); color:#2c4a70; border-radius:var(--r); padding:1.1rem 1.3rem; margin-top:1.4rem; }
 .reassure svg{ margin-top:2px; }
 
-/* ---------- requests board ---------- */
-.board{ display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:1rem; align-items:start; }
-@media (max-width:1100px){ .board{ grid-template-columns:repeat(2,minmax(0,1fr)); } }
-@media (max-width:640px){ .board{ grid-template-columns:1fr; } }
-.col{
-  background:var(--stone-bg); border-radius:var(--r); padding:.8rem; min-height:180px;
-  border:2px dashed transparent; transition:background .15s, border-color .15s;
-}
-.col-head{ display:flex; align-items:center; gap:.55rem; padding:.2rem .4rem .7rem; }
-.col-head .dot{ width:12px; height:12px; border-radius:50%; flex:none; }
-.col-head b{ font-weight:600; }
-.col-head .n{ margin-inline-start:auto; font-size:.85rem; color:var(--soft); background:var(--card); border-radius:999px; padding:.05rem .6rem; }
-.col-hint{ color:var(--soft); font-size:.82rem; padding:0 .4rem .7rem; margin-top:-.5rem; }
-.col-empty{ color:var(--faint); font-size:.9rem; text-align:center; padding:1.6rem .5rem; }
-.col[data-k="requested"] .dot{ background:var(--berry); }
-.col[data-k="sent"] .dot{ background:var(--honey); }
-.col[data-k="signed"] .dot{ background:var(--sky); }
-.col[data-k="confirmed"] .dot{ background:var(--mint); }
-
-.bk{
-  background:var(--card); border-radius:14px; box-shadow:var(--shadow); padding:1rem 1rem .9rem;
-  margin-bottom:.7rem; position:relative; cursor:grab; user-select:none;
-  border-inline-start:4px solid var(--line2);
-}
-.bk:last-child{ margin-bottom:0; }
-.col[data-k="requested"] .bk{ border-inline-start-color:var(--berry); }
-.col[data-k="sent"] .bk{ border-inline-start-color:var(--honey); }
-.col[data-k="signed"] .bk{ border-inline-start-color:var(--sky); }
-.col[data-k="confirmed"] .bk{ border-inline-start-color:var(--mint); }
-.bk-top{ display:flex; align-items:flex-start; gap:.4rem; }
-.bk-name{ font-weight:600; font-size:1.08rem; line-height:1.3; flex:1; min-width:0; overflow-wrap:anywhere; }
-.grip{
-  width:32px; height:32px; margin:-4px -6px 0 0; border:none; background:none; color:var(--faint);
-  display:grid; place-items:center; border-radius:8px; touch-action:none; cursor:grab; flex:none;
-}
-.grip:hover{ background:var(--stone-bg); color:var(--soft); }
-.bk-when{ margin:.45rem 0 .1rem; font-weight:500; display:flex; flex-wrap:wrap; gap:.1rem .5rem; align-items:center; }
-.bk-when span{ white-space:nowrap; }
-.bk-when svg{ width:17px; height:17px; color:var(--soft); }
-.bk-got{ font-size:.84rem; color:var(--soft); display:flex; gap:.4rem; align-items:center; }
-.bk-got svg{ width:15px; height:15px; }
-.chips{ display:flex; flex-wrap:wrap; gap:.35rem; margin:.6rem 0 .2rem; }
-.chip{ background:var(--paper); border-radius:999px; padding:.15rem .65rem; font-size:.82rem; color:#5c544d; }
+/* ---------- requests table ---------- */
+.chips{ display:flex; flex-wrap:wrap; gap:.35rem; }
+.chip{ background:var(--paper); border-radius:999px; padding:.15rem .65rem; font-size:.82rem; color:#5c544d; white-space:nowrap; }
 .chip.money{ background:var(--mint-bg); color:var(--mint); font-weight:500; }
-.bk-contact{ display:flex; flex-wrap:wrap; gap:.35rem; margin-top:.55rem; }
-.bk-contact a{
-  display:inline-flex; align-items:center; gap:.3rem; text-decoration:none; font-size:.84rem;
-  padding:.25rem .65rem; border-radius:999px; border:1px solid var(--line); color:var(--ink);
+.table-card{ padding:0; overflow:hidden; }
+.table-wrap{ overflow-x:auto; -webkit-overflow-scrolling:touch; }
+.tbl{ width:100%; border-collapse:collapse; font-size:.93rem; min-width:760px; }
+.tbl th{ text-align:start; font-weight:500; color:var(--soft); font-size:.82rem; padding:.8rem .65rem .6rem; border-bottom:1px solid var(--line); white-space:nowrap; background:#fcfaf7; }
+.tbl td{ padding:.7rem .65rem; border-bottom:1px solid var(--line); vertical-align:top; }
+.tbl tr:last-child td{ border-bottom:none; }
+.tbl tr:hover td{ background:#fcfaf7; }
+.tbl tr.past td{ color:var(--soft); }
+.tbl tr.declined td{ opacity:.6; }
+.tbl .nm{ font-weight:600; font-size:1rem; }
+.tbl .sub{ display:block; color:var(--soft); font-size:.82rem; margin-top:.2rem; max-width:28ch; }
+.tbl .sub.msg{ cursor:pointer; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; }
+.tbl .sub.msg.open{ display:block; -webkit-line-clamp:unset; }
+.tbl .sub.hold{ color:var(--honey); }
+.tbl .when{ white-space:nowrap; font-weight:500; }
+.tbl .hrs{ display:block; white-space:nowrap; color:var(--soft); font-weight:400; font-size:.86rem; margin-top:.15rem; text-align:end; }
+.tbl .got{ white-space:nowrap; color:var(--soft); font-size:.84rem; }
+.tbl .contact{ display:flex; flex-direction:column; gap:.2rem; align-items:flex-start; }
+.tbl .chips{ max-width:12rem; }
+.tbl .acts .btn.sm{ padding:.3rem .7rem; min-height:32px; font-size:.86rem; }
+.tbl .contact a{ display:inline-flex; align-items:center; gap:.3rem; color:var(--ink); text-decoration:none; white-space:nowrap; font-size:.88rem; }
+.tbl .contact a:hover{ text-decoration:underline; }
+.tbl .contact svg{ width:14px; height:14px; color:var(--soft); }
+.tbl td.who{ min-width:11rem; }
+.tbl td.acts-cell{ min-width:15.5rem; }
+.tbl .acts{ display:flex; flex-wrap:wrap; gap:.35rem; align-items:center; }
+.tbl .acts .icon-btn{ flex:none; }
+.tbl .acts .btn.sm{ padding:.3rem .8rem; min-height:32px; }
+.tbl .empty{ color:var(--faint); text-align:center; padding:2.2rem 1rem; }
+.status{ display:inline-flex; align-items:center; gap:.4rem; border-radius:999px; padding:.2rem .7rem .2rem .55rem; font-size:.82rem; font-weight:500; white-space:nowrap; }
+.status::before{ content:''; width:8px; height:8px; border-radius:50%; background:currentColor; }
+.status.st-requested{ background:var(--berry-bg); color:var(--berry-ink); }
+.status.st-sent{ background:var(--honey-bg); color:var(--honey); }
+.status.st-signed{ background:var(--sky-bg); color:var(--sky); }
+.status.st-confirmed{ background:var(--mint-bg); color:var(--mint); }
+.status.st-declined{ background:#e2dbd2; color:#5c544d; }
+/* on a phone each row becomes a small card: the columns stack */
+@media (max-width:700px){
+  .tbl{ min-width:0; }
+  .tbl thead{ display:none; }
+  .tbl, .tbl tbody, .tbl tr, .tbl td{ display:block; }
+  .tbl tr{ padding:.85rem 1rem; border-bottom:1px solid var(--line); }
+  .tbl tr:last-child{ border-bottom:none; }
+  .tbl td{ padding:.15rem 0; border:none; }
+  .tbl tr:hover td{ background:transparent; }
+  .tbl td.who{ min-width:0; margin-top:.35rem; }
+  .tbl .sub{ max-width:none; }
+  .tbl td.when{ display:flex; gap:.5rem; align-items:baseline; flex-wrap:wrap; }
+  .tbl .hrs{ display:inline; margin:0; }
+  .tbl .chips{ max-width:none; margin-top:.3rem; }
+  .tbl .contact{ flex-direction:row; flex-wrap:wrap; gap:.3rem .9rem; margin-top:.3rem; }
+  .tbl .got{ margin-top:.2rem; }
+  .tbl td.acts-cell{ min-width:0; margin-top:.6rem; }
 }
-.bk-contact a:hover{ border-color:var(--ink); }
-.bk-contact svg{ width:15px; height:15px; }
-.bk-msg{
-  margin-top:.6rem; font-size:.9rem; line-height:1.55; background:var(--paper); border-radius:10px;
-  padding:.55rem .75rem; color:#4a433d; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden; cursor:pointer;
-}
-.bk-msg.open{ -webkit-line-clamp:unset; display:block; }
-.bk-hold{ margin-top:.5rem; font-size:.82rem; color:var(--honey); }
-.bk-id{ margin-top:.4rem; font-size:.82rem; color:var(--soft); }
-.bk-actions{ display:flex; flex-wrap:wrap; gap:.4rem; margin-top:.8rem; align-items:center; }
-.bk-actions .spacer{ flex:1; }
-
-.declined-wrap{ margin-top:1.4rem; }
-.declined-wrap summary{ cursor:pointer; color:var(--soft); font-weight:500; padding:.4rem 0; list-style:none; display:flex; gap:.5rem; align-items:center; }
-.declined-wrap summary::-webkit-details-marker{ display:none; }
-.declined-wrap summary::before{ content:'›'; display:inline-block; transition:transform .2s; font-size:1.3rem; line-height:1; }
-.declined-wrap[open] summary::before{ transform:rotate(-90deg); }
-.declined-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:.7rem; margin-top:.6rem; }
-.declined-grid .bk{ opacity:.7; margin:0; border-inline-start-color:var(--faint); }
-
-/* drop zones shown only while dragging */
-.dropbar{
-  position:fixed; inset-inline:0; bottom:18px; display:flex; justify-content:center; gap:1rem; z-index:40;
-  pointer-events:none; opacity:0; transform:translateY(20px); transition:opacity .2s, transform .2s;
-}
-body.bk-drag .dropbar{ opacity:1; transform:none; pointer-events:auto; }
-.dropzone{
-  display:flex; align-items:center; gap:.6rem; padding:1rem 1.6rem; border-radius:999px;
-  background:var(--card); box-shadow:var(--shadow-lift); font-weight:500; border:2px dashed var(--line2);
-  transition:transform .15s, background .15s, border-color .15s;
-}
-.dropzone.trash{ color:var(--berry-ink); }
-.dropzone.decline{ color:var(--soft); }
-.drop-over.dropzone{ transform:scale(1.08); }
-.drop-over.dropzone.trash{ background:var(--berry-bg); border-color:var(--berry); }
-.drop-over.dropzone.decline{ background:var(--stone-bg); border-color:var(--soft); }
-.drop-over.col{ background:#efe5d9; border-color:var(--soft); }
+.list-tools{ display:flex; align-items:center; gap:1rem; flex-wrap:wrap; }
+.list-status{ display:inline-flex; align-items:center; gap:.5rem; color:var(--soft); font-size:.9rem; }
+.list-status .inp{ min-height:36px; padding:.2rem .6rem; width:auto; }
 .drag-ghost{
   position:fixed; top:0; left:0; z-index:100; pointer-events:none; margin:0 !important;
   box-shadow:var(--shadow-lift); opacity:.95; transition:none; cursor:grabbing;
@@ -330,8 +305,8 @@ body.dragging, body.dragging *{ cursor:grabbing !important; user-select:none; }
 .list-head h2{ font-size:1.2rem; font-weight:600; }
 .list-filter{ display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; color:var(--soft); font-size:.95rem; margin:0; }
 .list-filter[hidden]{ display:none; }
-.bk.flash{ animation:flash 1.6s ease-out; }
-@keyframes flash{ 0%,40%{ box-shadow:0 0 0 3px var(--ink), var(--shadow); } 100%{ box-shadow:var(--shadow); } }
+.tbl tr.flash td{ animation:flash 1.8s ease-out; }
+@keyframes flash{ 0%,40%{ background:var(--honey-bg); } 100%{ background:transparent; } }
 .legend{ display:flex; flex-wrap:wrap; gap:1rem; margin-top:.9rem; font-size:.85rem; color:var(--soft); }
 .legend span{ display:inline-flex; align-items:center; gap:.4rem; }
 .legend i{ width:14px; height:10px; border-radius:3px; display:inline-block; }
@@ -423,7 +398,6 @@ body.dragging, body.dragging *{ cursor:grabbing !important; user-select:none; }
 .toast.warn{ background:#5a4636; }
 .toast button{ background:#fff; color:var(--ink); border:none; border-radius:999px; padding:.4rem 1rem; font-weight:600; min-height:36px; }
 @keyframes rise{ from{ transform:translateY(12px); opacity:0; } }
-body.bk-drag .toasts{ bottom:110px; }
 
 .loading{ color:var(--soft); padding:2rem; text-align:center; }
 @media (max-width:560px){
@@ -514,7 +488,7 @@ body.bk-drag .toasts{ bottom:110px; }
     <div class="page-head">
       <div>
         <h1>בקשות השכרה</h1>
-        <p>למעלה לוח שנה: כל בקשה יושבת על היום שלה, בצבע של השלב. לחיצה על יום מציגה למטה רק את הבקשות שלו. ברשימה אפשר <b>לגרור</b> כרטיס לעמודה הבאה, או ללחוץ על הכפתור שבתוכו. גוררים לפח כדי למחוק.</p>
+        <p>למעלה לוח שנה: כל בקשה יושבת על היום שלה, בצבע של השלב. לחיצה על יום מציגה למטה רק את הבקשות שלו. למטה טבלה: שורה לכל ליד, עם הסטטוס שלו והכפתור לשלב הבא.</p>
       </div>
       <div style="display:flex;gap:.5rem;flex-wrap:wrap">
         <button class="btn mint sm" id="bookNew">+ חוזה חדש</button>
@@ -544,16 +518,27 @@ body.bk-drag .toasts{ bottom:110px; }
 
     <div class="list-head">
       <h2>רשימת הבקשות</h2>
-      <p class="list-filter" id="bookFilter" hidden>
-        <span id="bookFilterText"></span>
-        <button class="btn quiet sm" id="bookFilterClear">הצגת כל הבקשות</button>
-      </p>
+      <div class="list-tools">
+        <p class="list-filter" id="bookFilter" hidden>
+          <span id="bookFilterText"></span>
+          <button class="btn quiet sm" id="bookFilterClear">הצגת כל הימים</button>
+        </p>
+        <label class="list-status">סטטוס
+          <select class="inp" id="bookStatus">
+            <option value="">הכל</option>
+            <option value="active">פעילות בלבד</option>
+            <option value="requested">בקשות חדשות</option>
+            <option value="sent">נשלח לחתימה</option>
+            <option value="signed">הלקוח חתם</option>
+            <option value="confirmed">סגור ומאושר</option>
+            <option value="declined">נדחו או בוטלו</option>
+          </select>
+        </label>
+      </div>
     </div>
-    <div id="board" class="board"><p class="loading">רגע, טוען…</p></div>
-    <details class="declined-wrap" id="declinedWrap" hidden>
-      <summary id="declinedSum">נדחו או בוטלו</summary>
-      <div class="declined-grid" id="declinedList"></div>
-    </details>
+    <div class="card table-card">
+      <div class="table-wrap" id="board"><p class="loading">רגע, טוען…</p></div>
+    </div>
   </section>
 
   <!-- ============ CALENDAR ============ -->
@@ -676,14 +661,6 @@ body.bk-drag .toasts{ bottom:110px; }
   </section>
 </div>
 
-<div class="dropbar" id="dropbar" aria-hidden="true">
-  <div class="dropzone decline" data-drop="declined" id="dropDecline">
-    <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M6 6l12 12"/></svg>דחייה / ביטול
-  </div>
-  <div class="dropzone trash" data-drop="trash">
-    <svg class="i" viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 002 2h6a2 2 0 002-2l1-12M9 7V4h6v3"/></svg>מחיקה
-  </div>
-</div>
 <div class="toasts" id="toasts" aria-live="polite"></div>
 
 <script>
@@ -1460,7 +1437,7 @@ async function loadBookings() {
     mailOn = Boolean(j.mail);
   } catch {
     $('board').innerHTML = '';
-    $('board').append(h('div', { class: 'card', text: 'לא הצלחתי לטעון את הבקשות. נסי "רענון" עוד רגע.' }));
+    $('board').append(h('p', { class: 'empty', text: 'לא הצלחתי לטעון את הבקשות. נסי "רענון" עוד רגע.' }));
     return;
   }
   renderBoard();
@@ -1506,9 +1483,9 @@ function renderBookCal() {
   }
 }
 
-function statusTitle(s) {
-  return s === 'declined' ? 'נדחה או בוטל' : (COLS.find((c) => c.k === s) || {}).title || '';
-}
+/* the status of one lead, in the singular */
+const STATUS_LABEL = { requested: 'בקשה חדשה', sent: 'נשלח לחתימה', signed: 'הלקוח חתם', confirmed: 'סגור ומאושר', declined: 'נדחה או בוטל' };
+function statusTitle(s) { return STATUS_LABEL[s] || ''; }
 
 function setBookDay(dIso) {
   bookDay = dIso;
@@ -1519,7 +1496,7 @@ function setBookDay(dIso) {
 /* after a chip is clicked, the card lights up briefly so the eye lands on it */
 function flashCard(id) {
   requestAnimationFrame(() => {
-    const card = document.querySelector('.bk[data-id="' + id + '"]');
+    const card = document.querySelector('.tbl tr[data-id="' + id + '"]');
     if (!card) return;
     card.scrollIntoView({ behavior: 'smooth', block: 'center' });
     card.classList.remove('flash'); void card.offsetWidth; card.classList.add('flash');
@@ -1531,112 +1508,101 @@ $('bookNextM').addEventListener('click', () => { bookView.setMonth(bookView.getM
 $('bookToday').addEventListener('click', () => { bookView = new Date(); bookView.setDate(1); renderBookCal(); });
 $('bookFilterClear').addEventListener('click', () => setBookDay(null));
 
+let bookStatusFilter = '';
+$('bookStatus').addEventListener('change', (e) => { bookStatusFilter = e.target.value; renderBoard(); });
+
 function renderBoard() {
   renderBookCal();
-  const board = $('board');
-  board.innerHTML = '';
+  const wrap = $('board');
+  wrap.innerHTML = '';
   const everything = bookings.filter((b) => !pendingDelete.has(b.id));
-  const visible = bookDay ? everything.filter((b) => b.date === bookDay) : everything;
+  let visible = bookDay ? everything.filter((b) => b.date === bookDay) : everything;
+  if (bookStatusFilter === 'active') visible = visible.filter((b) => b.status !== 'declined');
+  else if (bookStatusFilter) visible = visible.filter((b) => b.status === bookStatusFilter);
   $('bookFilter').hidden = !bookDay;
-  if (bookDay) $('bookFilterText').textContent = 'מציג רק את ' + heDate(bookDay) + ' (' + visible.length + ')';
-  COLS.forEach((c) => {
-    const items = visible.filter((b) => b.status === c.k);
-    const col = h('div', { class: 'col', 'data-k': c.k, 'data-drop': c.k },
-      h('div', { class: 'col-head' }, h('span', { class: 'dot' }), h('b', { text: c.title }), h('span', { class: 'n', text: items.length })),
-      h('div', { class: 'col-hint', text: c.hint }));
-    if (!items.length) col.append(h('div', { class: 'col-empty', text: 'אין כאן כלום כרגע' }));
-    items.forEach((b) => col.append(bookingCard(b)));
-    board.append(col);
-  });
+  if (bookDay) $('bookFilterText').textContent = 'מציג רק את ' + heDate(bookDay);
 
-  const declined = visible.filter((b) => b.status === 'declined');
-  $('declinedWrap').hidden = !declined.length;
-  $('declinedSum').textContent = 'נדחו או בוטלו (' + declined.length + ')';
-  const dl = $('declinedList');
-  dl.innerHTML = '';
-  declined.forEach((b) => dl.append(bookingCard(b)));
+  // what needs a hand comes first, then by date; declined sink to the bottom
+  const rank = { requested: 0, signed: 1, sent: 2, confirmed: 3, declined: 4 };
+  visible.sort((a, b) => (rank[a.status] ?? 9) - (rank[b.status] ?? 9) || (a.date || '').localeCompare(b.date || '') || (a.start || '').localeCompare(b.start || ''));
+
+  if (!visible.length) {
+    wrap.append(h('p', { class: 'empty', text: everything.length ? 'אין בקשות שמתאימות לסינון.' : 'עדיין אין בקשות השכרה.' }));
+  } else {
+    const head = h('tr', {}, ['סטטוס', 'מי', 'מתי', 'מה', 'קשר', 'התקבלה', ''].map((t) => h('th', { text: t })));
+    const body = h('tbody', {});
+    visible.forEach((b) => body.append(bookingRow(b)));
+    wrap.append(h('table', { class: 'tbl' }, h('thead', {}, head), body));
+  }
 
   const waiting = everything.filter((b) => b.status === 'requested' || b.status === 'signed').length;
   $('navBookCount').hidden = !waiting;
   $('navBookCount').textContent = waiting;
 }
 
-function bookingCard(b) {
+function bookingRow(b) {
   const link = location.origin + '/contract?bid=' + b.id;
-  const grip = h('button', { class: 'grip', type: 'button', title: 'גררי את הכרטיס', 'aria-label': 'גרירת הכרטיס' }, icon('grip'));
-  const card = h('div', { class: 'bk', 'data-id': b.id },
-    h('div', { class: 'bk-top' }, h('div', { class: 'bk-name', text: b.name || 'ללא שם' }), grip));
+  const tIso = todayIso();
+  const row = h('tr', { 'data-id': b.id, class: (b.status === 'declined' ? 'declined ' : '') + (b.date && b.date < tIso ? 'past' : '') });
 
-  card.append(h('div', { class: 'bk-when' }, icon('cal'),
-    h('span', { text: heShort(b.date) }),
-    b.start && b.end ? h('span', { dir: 'ltr', text: b.start + '–' + b.end }) : null));
-  card.append(h('div', { class: 'bk-got', title: 'מתי הבקשה הגיעה' }, icon('inbox'), h('span', { text: received(b.requestedAt) })));
+  row.append(h('td', {}, h('span', { class: 'status st-' + (b.status || 'requested'), text: statusTitle(b.status) })));
+
+  const who = h('td', { class: 'who' }, h('div', { class: 'nm', text: b.name || 'ללא שם' }));
+  if (b.message) {
+    const msg = h('span', { class: 'sub msg', title: 'לחיצה לפתיחה', text: b.message });
+    msg.addEventListener('click', () => msg.classList.toggle('open'));
+    who.append(msg);
+  }
+  if (b.idnum && (b.status === 'signed' || b.status === 'confirmed')) who.append(h('span', { class: 'sub', text: 'ת.ז / ח.פ: ' + b.idnum }));
+  if (b.status === 'sent' && b.holdUntil) who.append(h('span', { class: 'sub hold', text: 'שמור עד ' + heShort(b.holdUntil.slice(0, 10)) }));
+  row.append(who);
+
+  row.append(h('td', { class: 'when' }, h('div', { text: heShort(b.date) }),
+    b.start && b.end ? h('span', { class: 'hrs', dir: 'ltr', text: b.start + '–' + b.end }) : null));
 
   const chips = h('div', { class: 'chips' });
   if (b.purpose) chips.append(h('span', { class: 'chip', text: b.purpose }));
   if (b.participants) chips.append(h('span', { class: 'chip', text: b.participants + ' משתתפים' }));
   if (b.price) chips.append(h('span', { class: 'chip money', text: b.price }));
-  if (chips.childNodes.length) card.append(chips);
+  row.append(h('td', {}, chips));
 
-  const contact = h('div', { class: 'bk-contact' });
+  const contact = h('div', { class: 'contact' });
   if (b.phone) {
     const digits = String(b.phone).replace(/\D/g, '');
     contact.append(h('a', { href: 'tel:' + digits, dir: 'ltr' }, icon('phone'), b.phone));
     contact.append(h('a', { href: 'https://wa.me/' + waNumber(b.phone), target: '_blank', rel: 'noopener' }, icon('chat'), 'וואטסאפ'));
   }
   if (b.email) contact.append(h('a', { href: 'mailto:' + b.email, dir: 'ltr' }, icon('mail'), b.email));
-  if (contact.childNodes.length) card.append(contact);
+  row.append(h('td', {}, contact));
 
-  if (b.message) {
-    const msg = h('div', { class: 'bk-msg', title: 'לחיצה לפתיחה', text: b.message });
-    msg.addEventListener('click', () => msg.classList.toggle('open'));
-    card.append(msg);
-  }
-  if (b.idnum && (b.status === 'signed' || b.status === 'confirmed')) card.append(h('div', { class: 'bk-id', dir: 'rtl', text: 'ת.ז / ח.פ: ' + b.idnum }));
-  if (b.status === 'sent' && b.holdUntil) card.append(h('div', { class: 'bk-hold', text: 'התאריך שמור עד ' + heShort(b.holdUntil.slice(0, 10)) + '. אם לא ייחתם עד אז, הוא ישתחרר לבד.' }));
+  row.append(h('td', { class: 'got', title: received(b.requestedAt), text: receivedShort(b.requestedAt) }));
 
-  const acts = h('div', { class: 'bk-actions' });
+  const acts = h('div', { class: 'acts' });
   const btn = (label, cls, fn) => acts.append(h('button', { class: 'btn sm ' + cls, onclick: fn }, label));
   if (b.status === 'requested') {
     btn('אישור ושליחת חוזה', 'mint', () => approveFlow(b));
     btn('דחייה', 'danger-soft', () => declineFlow(b));
   } else if (b.status === 'sent') {
-    if (b.phone) btn('שליחת החוזה בוואטסאפ', 'mint', () => sendWhatsApp(b, link));
-    btn('עריכה ושליחה שוב', 'soft', () => approveFlow(b));
+    if (b.phone) btn('לשלוח בוואטסאפ', 'mint', () => sendWhatsApp(b, link));
+    btn('עריכה ושליחה', 'soft', () => approveFlow(b));
   } else if (b.status === 'signed') {
-    btn('חתימה וסגירת התאריך', 'mint', () => signFlow(b));
+    btn('חתימה וסגירה', 'mint', () => signFlow(b));
     btn('תיקון תנאים', 'soft', () => approveFlow(b));
+  } else if (b.status === 'confirmed') {
+    btn('ביטול', 'quiet', () => declineFlow(b));
   }
-  acts.append(h('span', { class: 'spacer' }));
   acts.append(h('a', { class: 'icon-btn', href: link, target: '_blank', rel: 'noopener', title: 'פתיחת ההסכם', 'aria-label': 'פתיחת ההסכם' }, icon('doc')));
   acts.append(h('button', { class: 'icon-btn del', title: 'מחיקת הבקשה', 'aria-label': 'מחיקת הבקשה', onclick: () => deleteFlow(b) }, icon('trash')));
-  card.append(acts);
-
-  draggable(card, {
-    grip,
-    onStart: () => { $('dropDecline').hidden = b.status === 'declined'; document.body.classList.add('bk-drag'); },
-    canDrop: (t) => t.dataset.drop !== b.status,
-    onDrop: (to) => dropBooking(b, to),
-  });
-  return card;
+  row.append(h('td', { class: 'acts-cell' }, acts));
+  return row;
 }
 
-/* What each drop means. A drop that skips a step explains, kindly, what has
-   to happen first instead of doing something surprising. */
-function dropBooking(b, to) {
-  if (to === 'trash') return deleteFlow(b);
-  if (b.status === 'declined') { toast('בקשה שנדחתה אפשר רק למחוק. אם הלקוח עדיין רוצה, אפשר לבקש ממנו לשלוח בקשה חדשה.', { ms: 7000 }); return; }
-  if (to === 'declined') return declineFlow(b);
-  if (to === 'sent') {
-    if (b.status === 'requested' || b.status === 'signed') return approveFlow(b);
-    toast('ההזמנה כבר סגורה. אם צריך לשנות משהו, אפשר לבטל אותה ולבקש מהלקוח בקשה חדשה.', { ms: 7000 }); return;
-  }
-  if (to === 'signed') { toast('את השלב הזה הלקוח עושה בעצמו: הוא חותם בקישור שנשלח אליו, והכרטיס יעבור לכאן לבד.', { ms: 7000 }); return; }
-  if (to === 'confirmed') {
-    if (b.status === 'signed') return signFlow(b);
-    toast(b.status === 'requested' ? 'קודם מאשרים ושולחים חוזה, ואחרי שהלקוח חותם אפשר לסגור.' : 'עוד רגע: קודם הלקוח צריך לחתום על החוזה.', { ms: 6000 }); return;
-  }
-  if (to === 'requested') { toast('אי אפשר להחזיר בקשה לשלב הראשון. אפשר לדחות או לשלוח מחדש.', { ms: 6000 }); }
+/* "3 בנובמבר, 10:12" — the compact form for a table cell */
+function receivedShort(isoStr) {
+  if (!isoStr) return '';
+  const d = new Date(isoStr);
+  if (isNaN(d)) return '';
+  return d.toLocaleDateString('he-IL', { day: 'numeric', month: 'short' }) + ', ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
 }
 
 async function approveFlow(b) {
