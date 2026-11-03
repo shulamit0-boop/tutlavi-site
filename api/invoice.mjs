@@ -65,15 +65,26 @@ function draft(b, price) {
   };
 }
 
+/* Since 2026 the token comes from morning's identity service (OAuth client
+   credentials), not from /account/token: that path now just answers 404.
+   Documents are still created on the greeninvoice.co.il API with the token. */
+const idp = () =>
+  process.env.GREENINVOICE_SANDBOX === '1' ? 'https://api.sandbox.morning.dev' : 'https://api.morning.co';
+
 async function token() {
-  const r = await fetch(base() + '/account/token', {
+  const r = await fetch(idp() + '/idp/v1/oauth/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ id: process.env.GREENINVOICE_API_ID, secret: process.env.GREENINVOICE_API_SECRET }),
+    body: JSON.stringify({
+      grant_type: 'client_credentials',
+      client_id: process.env.GREENINVOICE_API_ID,
+      client_secret: process.env.GREENINVOICE_API_SECRET,
+    }),
   });
   const j = await r.json().catch(() => ({}));
-  if (!r.ok || !j.token) throw new Error('auth ' + r.status + ' ' + (j.errorMessage || ''));
-  return j.token;
+  const t = j.accessToken || j.access_token || j.token;
+  if (!r.ok || !t) throw new Error('auth ' + r.status + ' ' + (j.errorMessage || j.error_description || j.error || ''));
+  return t;
 }
 
 export default async function handler(req) {
