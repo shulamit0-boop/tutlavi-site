@@ -2,8 +2,16 @@
 <html lang="he" dir="rtl">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>ניהול האתר — סטודיו תות</title>
+<!-- installable as an iPhone app: Share → Add to Home Screen -->
+<link rel="manifest" href="/admin.webmanifest">
+<link rel="apple-touch-icon" href="/icons/app-180.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="תות">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f7f3ee">
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="/favicon.png">
 <link rel="stylesheet" href="/fonts/web-fonts.css">
@@ -114,6 +122,11 @@ svg.i{ width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:1.8
 
 /* ---------- app shell ---------- */
 #app{ display:none; max-width:1240px; margin:0 auto; padding:18px clamp(14px,3vw,36px) 120px; }
+@media (display-mode: standalone){
+  #app{ padding-top:calc(10px + env(safe-area-inset-top)); padding-bottom:calc(120px + env(safe-area-inset-bottom));
+        padding-right:max(14px, env(safe-area-inset-right)); padding-left:max(14px, env(safe-area-inset-left)); }
+  body{ -webkit-tap-highlight-color:transparent; overscroll-behavior-y:none; }
+}
 .top{ display:flex; align-items:center; gap:1rem; flex-wrap:wrap; margin-bottom:1.1rem; }
 .brand{ display:flex; align-items:center; gap:.7rem; margin-inline-end:auto; }
 .brand .logo-dot{ width:40px; height:40px; font-size:1rem; margin:0; }
@@ -376,7 +389,7 @@ body.dragging, body.dragging *{ cursor:grabbing !important; user-select:none; }
 .g-chip.st-signed{ background:var(--sky-bg); color:var(--sky); }
 .g-chip.st-confirmed{ background:var(--mint-bg); color:var(--mint); }
 .g-chip.st-declined{ background:#e2dbd2; color:#5c544d; text-decoration:line-through; }
-@media (max-width:640px){ .gantt{ grid-template-columns:130px repeat(var(--n,30),52px); } .g-lbl{ padding:.3rem .5rem; } }
+@media (max-width:640px){ .gantt{ grid-template-columns:108px repeat(var(--n,30),52px); } .g-lbl{ padding:.3rem .5rem; } .g-lbl b{ font-size:.85rem; } .g-lbl small{ font-size:.7rem; } #ganttMonthLabel{ white-space:nowrap; font-size:1.05rem; } }
 
 /* ---------- events ---------- */
 .ev{ background:var(--card); border-radius:var(--r); box-shadow:var(--shadow); padding:1.1rem 1.2rem; margin-bottom:.9rem; position:relative; }
@@ -823,7 +836,11 @@ const MONTHS = ['ינואר','פברואר','מרץ','אפריל','מאי','יו
 const DOW = ['א׳','ב׳','ג׳','ד׳','ה׳','ו׳','ש׳'];
 const genId = () => Math.random().toString(36).slice(2, 10);
 
-function key() { try { return sessionStorage.getItem('tut-admin-key') || ''; } catch { return ''; } }
+const IS_APP = window.matchMedia?.('(display-mode: standalone)').matches || navigator.standalone === true;
+/* in the browser the key lives for the tab only; in the home-screen app it is remembered
+   on the phone, so opening the app doesn't ask for it every time */
+const keyStore = () => (IS_APP ? localStorage : sessionStorage);
+function key() { try { return keyStore().getItem('tut-admin-key') || ''; } catch { return ''; } }
 
 /* small DOM helper: h('div', {class:'x', onclick:fn}, child, 'text') */
 function h(tag, attrs, ...kids) {
@@ -981,7 +998,7 @@ function showTab(which) {
   if (which === 'artists') loadArtists();
   if (which === 'book' || which === 'home') loadBookings();
   if (which === 'gantt') { renderGantt(); loadBookings(); }
-  try { sessionStorage.setItem('tut-admin-tab', which); } catch {}
+  try { (IS_APP ? localStorage : sessionStorage).setItem('tut-admin-tab', which); } catch {}
   window.scrollTo({ top: 0 });
 }
 document.querySelectorAll('.nav button').forEach((b) => b.addEventListener('click', () => showTab(b.dataset.tab)));
@@ -1830,6 +1847,8 @@ async function bookAction(action, id, extra) {
 async function loadBookings() {
   try {
     const res = await fetch('/api/booking?list=1', { headers: { 'x-admin-key': key() }, cache: 'no-store' });
+    /* a remembered key that no longer works (it was changed) → back to the login screen */
+    if (res.status === 401) { try { sessionStorage.removeItem('tut-admin-key'); localStorage.removeItem('tut-admin-key'); } catch {} location.reload(); return; }
     if (!res.ok) throw new Error();
     const j = await res.json();
     bookings = Array.isArray(j.bookings) ? j.bookings : [];
@@ -2271,7 +2290,7 @@ $('icsCopy').addEventListener('click', async () => {
 });
 
 /* ================= LOGIN ================= */
-$('logoutBtn').addEventListener('click', () => { try { sessionStorage.removeItem('tut-admin-key'); } catch {} location.reload(); });
+$('logoutBtn').addEventListener('click', () => { try { sessionStorage.removeItem('tut-admin-key'); localStorage.removeItem('tut-admin-key'); } catch {} location.reload(); });
 $('loginBtn').addEventListener('click', doLogin);
 $('keyInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') doLogin(); });
 $('peekBtn').addEventListener('click', () => { const i = $('keyInput'); i.type = i.type === 'password' ? 'text' : 'password'; i.focus(); });
@@ -2284,7 +2303,7 @@ async function doLogin() {
   try {
     const res = await fetch('/api/booking?list=1', { headers: { 'x-admin-key': k }, cache: 'no-store' });
     if (res.ok) {
-      try { sessionStorage.setItem('tut-admin-key', k); } catch {}
+      try { keyStore().setItem('tut-admin-key', k); } catch {}
       start();
     } else if (res.status === 429) {
       $('loginErr').textContent = 'יותר מדי ניסיונות. כדאי לחכות רבע שעה ולנסות שוב.';
@@ -2449,8 +2468,8 @@ function start() {
   renderStickers();
   load();
   loadContent();
-  let tab = 'home';
-  try { tab = sessionStorage.getItem('tut-admin-tab') || 'home'; } catch {}
+  let tab = IS_APP ? 'gantt' : 'home';
+  try { tab = (IS_APP ? localStorage : sessionStorage).getItem('tut-admin-tab') || tab; } catch {}
   showTab(TABS.includes(tab) ? tab : 'home');
 }
 
