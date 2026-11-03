@@ -410,26 +410,31 @@ body.dragging, body.dragging *{ cursor:grabbing !important; user-select:none; }
 .pill.free{ background:var(--stone-bg); color:var(--ink); }
 
 /* ---------- artists ---------- */
-.ar-tools{ display:grid; gap:.7rem; margin-bottom:1rem; }
-.ar-tools .inp{ max-width:420px; }
-.ar-fields{ display:flex; flex-wrap:wrap; gap:.4rem; }
-.ar-fields button{
-  font:inherit; font-size:.86rem; padding:.3rem .8rem; border-radius:999px; cursor:pointer;
-  background:var(--card); color:var(--ink); border:1px solid var(--line2);
+.ar-tools{ display:flex; flex-wrap:wrap; gap:.6rem; margin-bottom:1rem; align-items:center; }
+.ar-tools .inp{ flex:1 1 240px; max-width:380px; }
+.ar-tools select.inp{ flex:0 1 190px; }
+.tbl.ar{ min-width:820px; }
+.tbl.ar td.who{ min-width:12rem; max-width:22rem; }
+.tbl.ar .sub.msg{ max-width:none; white-space:pre-line; }
+.tbl.ar select{ font:inherit; font-size:.86rem; border:1px solid var(--line2); border-radius:999px; padding:.25rem .6rem; background:var(--card); color:var(--ink); max-width:11rem; cursor:pointer; }
+.tbl.ar select.empty-val{ color:var(--faint); border-style:dashed; }
+.tbl.ar .got small{ display:block; margin-top:.15rem; }
+.tbl.ar td.acts-cell{ min-width:0; width:1%; }
+.tbl.ar .acts{ flex-wrap:nowrap; }
+.ml{ display:grid; gap:.55rem; }
+.ml h4{ font-size:1rem; font-weight:600; margin:0; }
+.ml .ml-list{ display:flex; flex-wrap:wrap; gap:.35rem; min-height:1.6rem; }
+.ml .ml-list .chip{ display:inline-flex; align-items:center; gap:.25rem; padding-inline-end:.3rem; font-size:.88rem; }
+.ml .ml-list .chip button{ border:none; background:none; color:var(--soft); cursor:pointer; font-size:1rem; line-height:1; padding:0 .25rem; border-radius:999px; }
+.ml .ml-list .chip button:hover{ color:var(--berry, #b33); background:#0000000d; }
+.ml .ml-add{ display:flex; gap:.4rem; }
+.ml .ml-add input{ flex:1; }
+@media (max-width:700px){
+  .tbl.ar{ min-width:0; }
+  .tbl.ar td.who{ max-width:none; }
+  .tbl.ar td.ar-sel{ display:inline-block; margin:.35rem 0 0 .4rem; }
+  .tbl.ar td.acts-cell{ width:auto; }
 }
-.ar-fields button.on{ background:var(--ink); color:#fff; border-color:var(--ink); }
-.ar-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:.9rem; }
-.ar-card{ background:var(--card); border-radius:var(--r); box-shadow:var(--shadow); padding:1.1rem 1.2rem; display:grid; gap:.5rem; align-content:start; position:relative; }
-.ar-card .ar-top{ display:flex; align-items:flex-start; gap:.6rem; }
-.ar-card h3{ font-size:1.08rem; font-weight:600; margin:0; flex:1; line-height:1.3; }
-.ar-card .ar-acts{ display:flex; gap:.1rem; flex:none; }
-.ar-field{ font-size:.82rem; font-weight:500; padding:.18rem .65rem; border-radius:999px; background:var(--honey-bg); color:var(--honey); justify-self:start; }
-.ar-field.none{ background:var(--stone-bg); color:var(--soft); }
-.ar-phone{ display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; font-size:.95rem; }
-.ar-phone a{ color:var(--ink); text-decoration:none; font-variant-numeric:tabular-nums; }
-.ar-phone a.wa{ font-size:.82rem; color:var(--mint); font-weight:500; }
-.ar-notes{ font-size:.92rem; line-height:1.5; color:var(--ink); white-space:pre-line; margin:0; }
-.ar-meta{ font-size:.8rem; color:var(--soft); margin:0; }
 
 /* ---------- content ---------- */
 .acc{ background:var(--card); border-radius:var(--r); box-shadow:var(--shadow); margin-bottom:.8rem; overflow:hidden; }
@@ -750,14 +755,16 @@ body.dragging, body.dragging *{ cursor:grabbing !important; user-select:none; }
         <button class="btn soft sm" id="artistsRefresh">
           <svg class="i" viewBox="0 0 24 24"><path d="M20 12a8 8 0 11-2.3-5.7M20 4v5h-5"/></svg>רענון
         </button>
-        <button class="btn berry sm" id="artistAdd">+ אמן חדש</button>
+        <button class="btn berry sm" id="artistAdd">+ אמן/ית</button>
       </div>
     </div>
     <div class="ar-tools">
-      <input class="inp" id="artistSearch" type="search" placeholder="חיפוש לפי שם, תחום או טלפון…" autocomplete="off">
-      <div class="ar-fields" id="artistFields"></div>
+      <input class="inp" id="artistSearch" type="search" placeholder="חיפוש לפי שם, תחום, קטגוריה או טלפון…" autocomplete="off">
+      <select class="inp" id="artistCatFilter" aria-label="סינון לפי קטגוריה"></select>
+      <select class="inp" id="artistFieldFilter" aria-label="סינון לפי תחום"></select>
+      <button class="btn soft sm" id="artistMeta" type="button">קטגוריות ותחומים</button>
     </div>
-    <div id="artistsList"></div>
+    <div class="card table-card"><div class="table-wrap" id="artistsList"><p class="loading">רגע, טוען…</p></div></div>
   </section>
 
   <!-- ============ CONTENT ============ -->
@@ -1534,7 +1541,9 @@ $('regsRefresh').addEventListener('click', loadRegs);
    added here by hand. Editing a card marks it `edited`, so the collector
    never overwrites a correction made in the panel. */
 let artists = [];
-let artistField = '';
+let artistMeta = { fields: [], categories: [] };
+let artistFilter = { field: '', category: '' };
+const NEW_OPT = '__new__';
 async function loadArtists() {
   const wrap = $('artistsList');
   wrap.innerHTML = '';
@@ -1544,72 +1553,188 @@ async function loadArtists() {
     if (!res.ok) throw new Error();
     const j = await res.json();
     artists = Array.isArray(j.artists) ? j.artists : [];
+    artistMeta = { fields: Array.isArray(j.fields) ? j.fields : [], categories: Array.isArray(j.categories) ? j.categories : [] };
   } catch {
     wrap.innerHTML = '';
-    wrap.append(h('div', { class: 'card', text: 'לא הצלחתי לטעון את האמנים. נסי "רענון" עוד רגע.' }));
+    wrap.append(h('p', { class: 'empty', text: 'לא הצלחתי לטעון את האמנים. נסי "רענון" עוד רגע.' }));
     return;
   }
   renderArtists();
 }
-function artistFieldsBar() {
-  const bar = $('artistFields');
-  bar.innerHTML = '';
-  const counts = new Map();
-  artists.forEach((a) => { const f = (a.field || '').trim(); if (f) counts.set(f, (counts.get(f) || 0) + 1); });
-  if (!counts.size) return;
-  if (artistField && !counts.has(artistField)) artistField = '';
-  const mk = (label, val) => h('button', { class: val === artistField ? 'on' : '', type: 'button', onclick: () => { artistField = val; renderArtists(); } }, label);
-  bar.append(mk('הכל (' + artists.length + ')', ''));
-  [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'he')).forEach(([f, n]) => bar.append(mk(f + ' (' + n + ')', f)));
+/* the list for a select: the managed list, plus any value a card already uses */
+function metaOptions(kind) {
+  const k = kind === 'field' ? 'field' : 'category';
+  const base = kind === 'field' ? artistMeta.fields : artistMeta.categories;
+  const extra = artists.map((a) => (a[k] || '').trim()).filter((v) => v && !base.includes(v));
+  return [...base, ...new Set(extra)];
+}
+function artistFilterBars() {
+  const fill = (sel, kind, allLabel) => {
+    const k = kind === 'field' ? 'field' : 'category';
+    const opts = metaOptions(kind);
+    if (artistFilter[k] && !opts.includes(artistFilter[k])) artistFilter[k] = '';
+    sel.innerHTML = '';
+    sel.append(h('option', { value: '', text: allLabel }));
+    opts.forEach((v) => {
+      const n = artists.filter((a) => (a[k] || '').trim() === v).length;
+      sel.append(h('option', { value: v, text: v + ' (' + n + ')' }));
+    });
+    if (artists.some((a) => !(a[k] || '').trim())) sel.append(h('option', { value: '-', text: 'בלי ' + (kind === 'field' ? 'תחום' : 'קטגוריה') }));
+    sel.value = artistFilter[k];
+  };
+  fill($('artistCatFilter'), 'category', 'כל הקטגוריות');
+  fill($('artistFieldFilter'), 'field', 'כל התחומים');
+}
+/* asks for a new תחום / קטגוריה, adds it to the managed list, returns it */
+async function addMetaValue(kind) {
+  const word = kind === 'field' ? 'תחום' : 'קטגוריה';
+  const inp = h('input', { type: 'text', placeholder: kind === 'field' ? 'למשל: קרמיקה' : 'למשל: מעבירי סדנאות' });
+  const r = await ask({ title: (kind === 'field' ? 'תחום חדש' : 'קטגוריה חדשה'), form: { el: h('div', { class: 'form' }, h('label', { class: 'field' }, h('span', { text: word }), inp)), collect: () => ({ v: inp.value.trim() }), focus: inp }, tone: 'mint', ok: 'הוספה', cancel: 'ביטול' });
+  const v = r && r.v ? r.v.slice(0, 80) : '';
+  if (!v) return '';
+  const list = kind === 'field' ? artistMeta.fields : artistMeta.categories;
+  if (!list.includes(v)) {
+    const next = { fields: [...artistMeta.fields], categories: [...artistMeta.categories] };
+    (kind === 'field' ? next.fields : next.categories).push(v);
+    const j = await artistAction({ action: 'meta', ...next });
+    if (!j) return '';
+    artistMeta = { fields: j.fields, categories: j.categories };
+  }
+  return v;
+}
+/* a <select> of the managed list, with "+ חדש…" at the end */
+function metaSelect(kind, value, onPick) {
+  const k = kind === 'field' ? 'field' : 'category';
+  const sel = h('select', { 'aria-label': kind === 'field' ? 'תחום' : 'קטגוריה' });
+  const build = (val) => {
+    sel.innerHTML = '';
+    sel.append(h('option', { value: '', text: kind === 'field' ? 'בלי תחום' : 'בלי קטגוריה' }));
+    const opts = metaOptions(kind);
+    if (val && !opts.includes(val)) opts.push(val);
+    opts.forEach((v) => sel.append(h('option', { value: v, text: v })));
+    sel.append(h('option', { value: NEW_OPT, text: kind === 'field' ? '+ תחום חדש…' : '+ קטגוריה חדשה…' }));
+    sel.value = val || '';
+    sel.classList.toggle('empty-val', !val);
+    sel.dataset.v = val || '';
+  };
+  build(value);
+  sel.addEventListener('change', async () => {
+    let v = sel.value;
+    if (v === NEW_OPT) {
+      v = await addMetaValue(kind);
+      if (!v) { sel.value = sel.dataset.v; return; }
+    }
+    build(v);
+    onPick?.(v);
+  });
+  sel.rebuild = build;
+  return sel;
 }
 function renderArtists() {
   const wrap = $('artistsList');
   wrap.innerHTML = '';
-  artistFieldsBar();
+  artistFilterBars();
   const q = ($('artistSearch').value || '').trim().toLowerCase();
   const qd = q.replace(/\D/g, '');
+  const match = (a, k) => { const f = artistFilter[k]; const v = (a[k] || '').trim(); return !f || (f === '-' ? !v : v === f); };
   const shown = artists.filter((a) => {
-    if (artistField && (a.field || '').trim() !== artistField) return false;
+    if (!match(a, 'field') || !match(a, 'category')) return false;
     if (!q) return true;
-    const hay = [a.name, a.field, a.notes, a.addedBy].join(' ').toLowerCase();
+    const hay = [a.name, a.field, a.category, a.notes, a.addedBy].join(' ').toLowerCase();
     return hay.includes(q) || (qd.length >= 3 && (a.phone || '').replace(/\D/g, '').includes(qd));
   });
   $('artistsCount').textContent = artists.length
-    ? artists.length + ' אמנים' + (shown.length !== artists.length ? ', מוצגים ' + shown.length : '') + '. כל מה שנשלח לקבוצת "קהילת האמנים" נכנס לכאן לבד.'
-    : 'כל אמן שנשלח לקבוצת הוואטסאפ "קהילת האמנים" מופיע כאן תוך כמה דקות. אפשר לתקן, להוסיף ידנית ולמחוק.';
-  if (!artists.length) {
-    wrap.append(h('div', { class: 'card', style: 'text-align:center;color:var(--soft)', text: 'עוד אין אמנים. כשמישהי תשלח שם וטלפון לקבוצה, הוא יופיע כאן.' }));
-    return;
-  }
+    ? artists.length + ' אמנים' + (shown.length !== artists.length ? ', מוצגים ' + shown.length : '') + '. מה שנשלח לקבוצת "קהילת האמנים" נכנס לכאן לבד, פעמיים ביום.'
+    : 'כל אמן שנשלח לקבוצת הוואטסאפ "קהילת האמנים" מופיע כאן (בדיקה פעמיים ביום). אפשר לתקן, להוסיף ידנית ולמחוק.';
   if (!shown.length) {
-    wrap.append(h('div', { class: 'card', style: 'text-align:center;color:var(--soft)', text: 'לא נמצא אמן שמתאים לחיפוש.' }));
+    wrap.append(h('p', { class: 'empty', text: artists.length ? 'לא נמצא אמן שמתאים לחיפוש או לסינון.' : 'עוד אין אמנים. כשמישהי תשלח שם וטלפון לקבוצה, הוא יופיע כאן.' }));
     return;
   }
-  const grid = h('div', { class: 'ar-grid' });
   const fmt = (isoStr) => { const d = new Date(isoStr); return isNaN(d) ? '' : pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + '.' + d.getFullYear(); };
+  const head = h('tr', {}, ['שם וכמה מילים', 'טלפון', 'קטגוריה', 'תחום', 'נוסף', ''].map((t) => h('th', { text: t })));
+  const body = h('tbody', {});
   shown.slice().sort((a, b) => (b.at || '').localeCompare(a.at || '')).forEach((a) => {
-    const digits = (a.phone || '').replace(/\D/g, '');
-    const intl = digits.startsWith('0') ? '972' + digits.slice(1) : digits;
+    const row = h('tr', { 'data-id': a.id });
+    const who = h('td', { class: 'who' }, h('div', { class: 'nm', text: a.name || 'ללא שם' }));
+    if (a.notes) {
+      const msg = h('span', { class: 'sub msg', title: 'לחיצה לפתיחה', text: a.notes });
+      msg.addEventListener('click', () => msg.classList.toggle('open'));
+      who.append(msg);
+    }
+    row.append(who);
+    const contact = h('div', { class: 'contact' });
+    if (a.phone) {
+      const digits = a.phone.replace(/\D/g, '');
+      contact.append(h('a', { href: 'tel:' + digits, dir: 'ltr' }, icon('phone'), a.phone));
+      if (digits.length >= 9) contact.append(h('a', { href: 'https://wa.me/' + waNumber(a.phone), target: '_blank', rel: 'noopener' }, icon('chat'), 'וואטסאפ'));
+    }
+    row.append(h('td', {}, contact));
+    const quick = (k) => metaSelect(k, a[k] || '', async (v) => {
+      if ((a[k] || '') === v) return;
+      const j = await artistAction({ action: 'save', artist: { ...a, [k]: v } });
+      if (j) { Object.assign(a, j.artist); toast('נשמר'); artistFilterBars(); }
+      else loadArtists();
+    });
+    row.append(h('td', { class: 'ar-sel' }, quick('category')));
+    row.append(h('td', { class: 'ar-sel' }, quick('field')));
+    row.append(h('td', { class: 'got' }, h('span', { text: a.at ? fmt(a.at) : '' }),
+      h('small', { text: (a.source === 'whatsapp' ? 'מהקבוצה' + (a.addedBy ? ' · ' + a.addedBy : '') : 'ידני') + (a.edited ? ' · תוקן' : '') })));
     const edit = h('button', { class: 'icon-btn', title: 'עריכה', 'aria-label': 'עריכה', onclick: () => editArtist(a) }, icon('doc'));
     const del = h('button', { class: 'icon-btn del', title: 'מחיקה', 'aria-label': 'מחיקה' }, icon('trash'));
     del.addEventListener('click', async () => {
-      const ok = await ask({ title: 'למחוק את ' + (a.name || 'האמן/ית') + '?', text: 'הכרטיס יימחק מהרשימה. את זה אי אפשר להחזיר.', ok: 'כן, למחוק' });
+      const ok = await ask({ title: 'למחוק את ' + (a.name || 'האמן/ית') + '?', text: 'השורה תימחק מהרשימה. את זה אי אפשר להחזיר.', ok: 'כן, למחוק' });
       if (!ok) return;
       del.disabled = true;
       const j = await artistAction({ action: 'delete', id: a.id });
-      if (j) { toast('הכרטיס נמחק'); loadArtists(); } else del.disabled = false;
+      if (j) { toast('נמחק'); loadArtists(); } else del.disabled = false;
     });
-    const card = h('div', { class: 'ar-card' },
-      h('div', { class: 'ar-top' }, h('h3', { text: a.name || 'ללא שם' }), h('div', { class: 'ar-acts' }, edit, del)),
-      h('span', { class: 'ar-field' + (a.field ? '' : ' none'), text: a.field || 'בלי תחום' }),
-      a.phone ? h('div', { class: 'ar-phone' },
-        h('a', { href: 'tel:' + a.phone, dir: 'ltr', text: a.phone }),
-        intl.length >= 11 ? h('a', { class: 'wa', href: 'https://wa.me/' + intl, target: '_blank', rel: 'noopener', text: 'וואטסאפ' }) : null) : null,
-      a.notes ? h('p', { class: 'ar-notes', text: a.notes }) : null,
-      h('p', { class: 'ar-meta', text: (a.source === 'whatsapp' ? 'מהקבוצה' + (a.addedBy ? ', שלח/ה ' + a.addedBy : '') : 'נוסף ידנית') + (a.at ? ' · ' + fmt(a.at) : '') + (a.edited ? ' · תוקן בפאנל' : '') }));
-    grid.append(card);
+    row.append(h('td', { class: 'acts-cell' }, h('div', { class: 'acts' }, edit, del)));
+    body.append(row);
   });
-  wrap.append(grid);
+  wrap.append(h('table', { class: 'tbl ar' }, h('thead', {}, head), body));
+}
+/* the dialog that manages both lists */
+async function editArtistMeta() {
+  const lists = { categories: [...artistMeta.categories], fields: [...artistMeta.fields] };
+  const used = (k, v) => artists.filter((a) => (a[k] || '').trim() === v).length;
+  const block = (title, key, k, ph) => {
+    const listEl = h('div', { class: 'ml-list' });
+    const draw = () => {
+      listEl.innerHTML = '';
+      if (!lists[key].length) listEl.append(h('span', { class: 'note', text: 'עוד אין. הוסיפי למטה.' }));
+      lists[key].forEach((v, i) => {
+        const n = used(k, v);
+        listEl.append(h('span', { class: 'chip' }, v + (n ? ' (' + n + ')' : ''),
+          h('button', { type: 'button', title: 'הסרה מהרשימה', 'aria-label': 'הסרת ' + v, onclick: () => { lists[key].splice(i, 1); draw(); } }, '×')));
+      });
+    };
+    const inp = h('input', { type: 'text', placeholder: ph });
+    const add = () => {
+      const v = inp.value.trim().slice(0, 80);
+      if (v && !lists[key].includes(v)) lists[key].push(v);
+      inp.value = ''; draw(); inp.focus();
+    };
+    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); add(); } });
+    draw();
+    return { el: h('div', { class: 'ml' }, h('h4', { text: title }), listEl, h('div', { class: 'ml-add field' }, inp, h('button', { type: 'button', class: 'btn soft sm', onclick: add }, 'הוספה'))), inp };
+  };
+  const cats = block('קטגוריות', 'categories', 'category', 'למשל: אמנים יחידים, קהילות, מעבירי סדנאות');
+  const flds = block('תחומים', 'fields', 'field', 'למשל: ציור, קרמיקה, צילום');
+  const r = await ask({
+    title: 'קטגוריות ותחומים',
+    text: 'אלה האפשרויות שמופיעות ברשימות שבטבלה. הסרה מהרשימה לא משנה אמנים שכבר משויכים אליה.',
+    form: { el: h('div', { class: 'form' }, cats.el, flds.el), collect: () => {
+      [cats, flds].forEach((b) => b.inp.value.trim() && b.inp.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' })));
+      return lists;
+    }, focus: cats.inp },
+    tone: 'mint', ok: 'שמירה', cancel: 'ביטול',
+  });
+  if (!r) return;
+  const j = await artistAction({ action: 'meta', categories: r.categories, fields: r.fields });
+  if (!j) return;
+  artistMeta = { fields: j.fields, categories: j.categories };
+  toast('הרשימות נשמרו');
+  renderArtists();
 }
 async function artistAction(body) {
   try {
@@ -1631,14 +1756,13 @@ async function editArtist(a) {
   const f = (label, el, hint) => h('label', { class: 'field' }, h('span', { text: label }), el, hint ? h('small', { text: hint }) : null);
   const name = h('input', { type: 'text', value: a.name || '', placeholder: 'שם האמן/ית' });
   const phone = h('input', { type: 'tel', value: a.phone || '', placeholder: '05x-xxxxxxx', dir: 'ltr' });
-  const field = h('input', { type: 'text', value: a.field || '', placeholder: 'למשל: ציור, קרמיקה, צילום', list: 'artistFieldList' });
-  const dl = h('datalist', { id: 'artistFieldList' });
-  [...new Set(artists.map((x) => (x.field || '').trim()).filter(Boolean))].forEach((v) => dl.append(h('option', { value: v })));
+  const field = metaSelect('field', a.field || '');
+  const category = metaSelect('category', a.category || '');
   const notes = h('textarea', { rows: '4', placeholder: 'כמה מילים על האמן/ית' });
   notes.value = a.notes || '';
   const form = {
-    el: h('div', { class: 'form' }, f('שם', name), f('טלפון', phone), f('תחום', field, 'מילה או שתיים. לפי זה אפשר לסנן את הרשימה.'), dl, f('כמה מילים', notes)),
-    collect: () => ({ name: name.value.trim(), phone: phone.value.trim(), field: field.value.trim(), notes: notes.value.trim() }),
+    el: h('div', { class: 'form' }, f('שם', name), f('טלפון', phone), f('קטגוריה', category), f('תחום', field), f('כמה מילים', notes)),
+    collect: () => ({ name: name.value.trim(), phone: phone.value.trim(), field: field.dataset.v || '', category: category.dataset.v || '', notes: notes.value.trim() }),
     focus: name,
   };
   for (;;) {
@@ -1655,6 +1779,9 @@ async function editArtist(a) {
 $('artistsRefresh').addEventListener('click', loadArtists);
 $('artistAdd').addEventListener('click', () => editArtist(null));
 $('artistSearch').addEventListener('input', () => { if (artists.length) renderArtists(); });
+$('artistCatFilter').addEventListener('change', (e) => { artistFilter.category = e.target.value; renderArtists(); });
+$('artistFieldFilter').addEventListener('change', (e) => { artistFilter.field = e.target.value; renderArtists(); });
+$('artistMeta').addEventListener('click', editArtistMeta);
 
 /* ================= RENTAL BOOKINGS =================
    The lifecycle mirrors api/booking.mjs:

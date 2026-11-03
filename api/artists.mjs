@@ -9,9 +9,13 @@
 
    Everything needs the admin key: the list is personal data.
 
-   Storage: KV key `artists` → [{ id, name, phone, field, notes, source,
-   msgIds, addedBy, at, updatedAt, edited }]. `edited` is set once a card was
-   changed in the panel, and from then on the collector never overwrites it. */
+   Storage: KV key `artists` → [{ id, name, phone, field, category, notes,
+   source, msgIds, addedBy, at, updatedAt, edited }]. `edited` is set once a
+   card was changed in the panel, and from then on the collector never
+   overwrites it.
+   KV key `artists_meta` → { fields: [...], categories: [...] }: the lists the
+   panel offers for תחום and קטגוריה. Managed in the panel; the collector reads
+   `fields` so the model picks one of them when it fits. */
 
 import { kvGet, kvSet, storeReady } from './_store.mjs';
 import { requireAdmin } from './_guard.mjs';
@@ -20,6 +24,7 @@ import { text, multiline } from './_input.mjs';
 export const config = { runtime: 'edge' };
 
 const KEY = 'artists';
+const META = 'artists_meta';
 const MAX = 500;
 
 const rid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
@@ -32,11 +37,24 @@ const canon = (s) => {
   return d;
 };
 
+const cleanList = (v) => [...new Set((Array.isArray(v) ? v : []).map((x) => text(x, 80)).filter(Boolean))].slice(0, 60);
+
+/* the stored lists, or (before anything was saved) whatever the cards use */
+async function readMeta(list) {
+  const m = (await kvGet(META)) || {};
+  const used = (k) => [...new Set(list.map((a) => (a[k] || '').trim()).filter(Boolean))];
+  return {
+    fields: Array.isArray(m.fields) ? m.fields : used('field'),
+    categories: Array.isArray(m.categories) ? m.categories : used('category'),
+  };
+}
+
 const clean = (a, prev) => ({
   id: /^[a-z0-9]{4,40}$/.test(String(a.id || '')) ? String(a.id) : (prev?.id || rid()),
   name: text(a.name, 120),
   phone: text(a.phone, 40),
   field: text(a.field, 80),
+  category: text(a.category, 80),
   notes: multiline(a.notes, 1000),
   source: a.source === 'whatsapp' ? 'whatsapp' : 'manual',
   msgIds: Array.isArray(a.msgIds) ? a.msgIds.map((x) => text(x, 80)).filter(Boolean).slice(0, 20) : (prev?.msgIds || []),
@@ -53,7 +71,8 @@ export default async function handler(req) {
 
   if (req.method === 'GET') {
     const list = (await kvGet(KEY)) || [];
-    return Response.json({ artists: list }, { headers: { 'Cache-Control': 'no-store' } });
+    const meta = await readMeta(list);
+    return Response.json({ artists: list, ...meta }, { headers: { 'Cache-Control': 'no-store' } });
   }
 
   if (req.method !== 'POST') return Response.json({ error: 'method not allowed' }, { status: 405 });
@@ -92,6 +111,7 @@ export default async function handler(req) {
           name: raw.name || prev.name,
           phone: raw.phone || prev.phone,
           field: raw.field || prev.field,
+          category: raw.category || prev.category,
           notes: [prev.notes, raw.notes].filter(Boolean).filter((v, i, arr) => arr.indexOf(v) === i).join('\n'),
           msgIds: [...new Set([...(prev.msgIds || []), ...ids])],
           addedBy: prev.addedBy || raw.addedBy,
@@ -116,6 +136,13 @@ export default async function handler(req) {
     if (list.length > MAX) return Response.json({ error: 'too many' }, { status: 400 });
     if (!(await kvSet(KEY, list))) return Response.json({ error: 'store write failed' }, { status: 500 });
     return Response.json({ ok: true, artist: c });
+  }
+
+  /* panel: the תחום / קטגוריה lists */
+  if (body.action === 'meta') {
+    const meta = { fields: cleanList(body.fields), categories: cleanList(body.categories) };
+    if (!(await kvSet(META, meta))) return Response.json({ error: 'store write failed' }, { status: 500 });
+    return Response.json({ ok: true, ...meta });
   }
 
   if (body.action === 'delete') {
