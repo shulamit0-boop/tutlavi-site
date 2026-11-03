@@ -313,6 +313,25 @@ body.dragging, body.dragging *{ cursor:grabbing !important; user-select:none; }
   .day{ min-height:62px; padding:.25rem; }
   .dchip{ font-size:0; height:7px; padding:0; border-radius:4px; }
 }
+/* the requests calendar: same grid as the availability one, chips per request */
+.bookcal-card{ margin-bottom:1.4rem; }
+.bookcal .day{ cursor:pointer; }
+.bookcal .day.has{ border-color:var(--line); }
+.bookcal .day.selected{ border-color:var(--ink); }
+.bookcal .day .n-more{ font-size:.72rem; color:var(--soft); padding:0 4px; }
+.dchip.st-requested{ background:var(--berry-bg); color:var(--berry-ink); }
+.dchip.st-sent{ background:var(--honey-bg); color:var(--honey); }
+.dchip.st-signed{ background:var(--sky-bg); color:var(--sky); }
+.dchip.st-confirmed{ background:var(--mint-bg); color:var(--mint); }
+.dchip.st-declined{ background:#e2dbd2; color:#5c544d; text-decoration:line-through; }
+.dchip.bkchip{ cursor:pointer; }
+.dchip.bkchip:hover{ filter:brightness(.95); }
+.list-head{ display:flex; align-items:center; justify-content:space-between; gap:.8rem; flex-wrap:wrap; margin-bottom:.8rem; }
+.list-head h2{ font-size:1.2rem; font-weight:600; }
+.list-filter{ display:flex; align-items:center; gap:.6rem; flex-wrap:wrap; color:var(--soft); font-size:.95rem; margin:0; }
+.list-filter[hidden]{ display:none; }
+.bk.flash{ animation:flash 1.6s ease-out; }
+@keyframes flash{ 0%,40%{ box-shadow:0 0 0 3px var(--ink), var(--shadow); } 100%{ box-shadow:var(--shadow); } }
 .legend{ display:flex; flex-wrap:wrap; gap:1rem; margin-top:.9rem; font-size:.85rem; color:var(--soft); }
 .legend span{ display:inline-flex; align-items:center; gap:.4rem; }
 .legend i{ width:14px; height:10px; border-radius:3px; display:inline-block; }
@@ -495,7 +514,7 @@ body.bk-drag .toasts{ bottom:110px; }
     <div class="page-head">
       <div>
         <h1>בקשות השכרה</h1>
-        <p>כל בקשה היא כרטיס. אפשר <b>לגרור</b> כרטיס לעמודה הבאה, או ללחוץ על הכפתור שבתוכו. גוררים לפח כדי למחוק.</p>
+        <p>למעלה לוח שנה: כל בקשה יושבת על היום שלה, בצבע של השלב. לחיצה על יום מציגה למטה רק את הבקשות שלו. ברשימה אפשר <b>לגרור</b> כרטיס לעמודה הבאה, או ללחוץ על הכפתור שבתוכו. גוררים לפח כדי למחוק.</p>
       </div>
       <div style="display:flex;gap:.5rem;flex-wrap:wrap">
         <button class="btn mint sm" id="bookNew">+ חוזה חדש</button>
@@ -503,6 +522,32 @@ body.bk-drag .toasts{ bottom:110px; }
           <svg class="i" viewBox="0 0 24 24"><path d="M20 12a8 8 0 11-2.3-5.7M20 4v5h-5"/></svg>רענון
         </button>
       </div>
+    </div>
+    <!-- the month view: every request sits on its day, coloured by status.
+         Clicking a day narrows the list below to that day. -->
+    <div class="card bookcal-card">
+      <div class="month-nav">
+        <button class="icon-btn" id="bookPrevM" aria-label="החודש הקודם"><svg class="i" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+        <b id="bookMonthLabel"></b>
+        <button class="btn quiet sm" id="bookToday">היום</button>
+        <button class="icon-btn" id="bookNextM" aria-label="החודש הבא"><svg class="i" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+      </div>
+      <div class="cal bookcal" id="bookCal"></div>
+      <div class="legend">
+        <span><i style="background:var(--berry-bg);border:1px solid #f1c9ca"></i>בקשה חדשה</span>
+        <span><i style="background:var(--honey-bg);border:1px solid #f0d9a6"></i>נשלח לחתימה</span>
+        <span><i style="background:var(--sky-bg);border:1px solid #c5d6ee"></i>הלקוח חתם</span>
+        <span><i style="background:var(--mint-bg);border:1px solid #bfe3cc"></i>סגור ומאושר</span>
+        <span><i style="background:#e2dbd2"></i>נדחה או בוטל</span>
+      </div>
+    </div>
+
+    <div class="list-head">
+      <h2>רשימת הבקשות</h2>
+      <p class="list-filter" id="bookFilter" hidden>
+        <span id="bookFilterText"></span>
+        <button class="btn quiet sm" id="bookFilterClear">הצגת כל הבקשות</button>
+      </p>
     </div>
     <div id="board" class="board"><p class="loading">רגע, טוען…</p></div>
     <details class="declined-wrap" id="declinedWrap" hidden>
@@ -1422,10 +1467,78 @@ async function loadBookings() {
   renderHome();
 }
 
+/* ---- the month view above the list ---- */
+let bookView = new Date(); bookView.setDate(1);
+let bookDay = null;   // iso date the list is narrowed to, or null for everything
+
+function renderBookCal() {
+  $('bookMonthLabel').textContent = MONTHS[bookView.getMonth()] + ' ' + bookView.getFullYear();
+  const cal = $('bookCal');
+  cal.innerHTML = '';
+  DOW.forEach((d) => cal.append(h('div', { class: 'dow', text: d })));
+  const all = bookings.filter((b) => !pendingDelete.has(b.id));
+  const gridStart = new Date(bookView); gridStart.setDate(1 - bookView.getDay());
+  const tIso = todayIso();
+  const MAX = 3;
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(gridStart); d.setDate(gridStart.getDate() + i);
+    const dIso = iso(d);
+    // live requests first, by hour; declined ones sink to the end of the day
+    const items = all.filter((b) => b.date === dIso).sort((a, b) =>
+      (a.status === 'declined') - (b.status === 'declined') || ((a.start || '') < (b.start || '') ? -1 : 1));
+    const el = h('div', {
+      class: 'day' + (d.getMonth() !== bookView.getMonth() ? ' out' : '') + (dIso === tIso ? ' today' : '') +
+        (dIso < tIso ? ' past' : '') + (bookDay === dIso ? ' selected' : '') + (items.length ? ' has' : ''),
+      role: 'button', tabindex: '0', 'aria-label': heDate(dIso) + (items.length ? ', ' + items.length + ' בקשות' : ''),
+    }, h('span', { class: 'num', text: d.getDate() }));
+    items.slice(0, MAX).forEach((b) => {
+      const chip = h('span', { class: 'dchip bkchip st-' + (b.status || 'requested'),
+        title: (b.name || 'ללא שם') + (b.start && b.end ? ' · ' + b.start + '–' + b.end : '') + ' · ' + statusTitle(b.status),
+        text: (b.start ? b.start + ' ' : '') + (b.name || 'ללא שם') });
+      chip.addEventListener('click', (e) => { e.stopPropagation(); setBookDay(dIso); flashCard(b.id); });
+      el.append(chip);
+    });
+    if (items.length > MAX) el.append(h('span', { class: 'n-more', text: '+' + (items.length - MAX) + ' עוד' }));
+    const pick = () => setBookDay(bookDay === dIso ? null : dIso);
+    el.addEventListener('click', pick);
+    el.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pick(); } });
+    cal.append(el);
+  }
+}
+
+function statusTitle(s) {
+  return s === 'declined' ? 'נדחה או בוטל' : (COLS.find((c) => c.k === s) || {}).title || '';
+}
+
+function setBookDay(dIso) {
+  bookDay = dIso;
+  renderBoard();
+  if (dIso && innerWidth < 980) $('board').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/* after a chip is clicked, the card lights up briefly so the eye lands on it */
+function flashCard(id) {
+  requestAnimationFrame(() => {
+    const card = document.querySelector('.bk[data-id="' + id + '"]');
+    if (!card) return;
+    card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    card.classList.remove('flash'); void card.offsetWidth; card.classList.add('flash');
+  });
+}
+
+$('bookPrevM').addEventListener('click', () => { bookView.setMonth(bookView.getMonth() - 1); renderBookCal(); });
+$('bookNextM').addEventListener('click', () => { bookView.setMonth(bookView.getMonth() + 1); renderBookCal(); });
+$('bookToday').addEventListener('click', () => { bookView = new Date(); bookView.setDate(1); renderBookCal(); });
+$('bookFilterClear').addEventListener('click', () => setBookDay(null));
+
 function renderBoard() {
+  renderBookCal();
   const board = $('board');
   board.innerHTML = '';
-  const visible = bookings.filter((b) => !pendingDelete.has(b.id));
+  const everything = bookings.filter((b) => !pendingDelete.has(b.id));
+  const visible = bookDay ? everything.filter((b) => b.date === bookDay) : everything;
+  $('bookFilter').hidden = !bookDay;
+  if (bookDay) $('bookFilterText').textContent = 'מציג רק את ' + heDate(bookDay) + ' (' + visible.length + ')';
   COLS.forEach((c) => {
     const items = visible.filter((b) => b.status === c.k);
     const col = h('div', { class: 'col', 'data-k': c.k, 'data-drop': c.k },
@@ -1443,7 +1556,7 @@ function renderBoard() {
   dl.innerHTML = '';
   declined.forEach((b) => dl.append(bookingCard(b)));
 
-  const waiting = visible.filter((b) => b.status === 'requested' || b.status === 'signed').length;
+  const waiting = everything.filter((b) => b.status === 'requested' || b.status === 'signed').length;
   $('navBookCount').hidden = !waiting;
   $('navBookCount').textContent = waiting;
 }
@@ -1451,7 +1564,7 @@ function renderBoard() {
 function bookingCard(b) {
   const link = location.origin + '/contract?bid=' + b.id;
   const grip = h('button', { class: 'grip', type: 'button', title: 'גררי את הכרטיס', 'aria-label': 'גרירת הכרטיס' }, icon('grip'));
-  const card = h('div', { class: 'bk' },
+  const card = h('div', { class: 'bk', 'data-id': b.id },
     h('div', { class: 'bk-top' }, h('div', { class: 'bk-name', text: b.name || 'ללא שם' }), grip));
 
   card.append(h('div', { class: 'bk-when' }, icon('cal'),
