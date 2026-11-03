@@ -55,13 +55,17 @@ const describe = (b) =>
   ['השכרת חלל סטודיו תות', heDate(b.date), [b.start, b.end].filter(Boolean).join('–'), b.purpose]
     .filter(Boolean).join(' · ').slice(0, 250);
 
-function draft(b, price) {
-  const vat = round2(price * VAT);
+/* `incl`: the amount already includes VAT (what the renter actually paid).
+   Otherwise it is the price before VAT, as the contract states it. */
+function draft(b, amount, incl) {
+  const net = incl ? round2(amount / (1 + VAT)) : amount;
+  const total = incl ? amount : round2(amount * (1 + VAT));
   return {
     client: { name: b.name || '', taxId: b.idnum || '', email: b.email || '', phone: b.phone || '' },
     description: describe(b),
     eventDate: b.date || '',
-    price, vat, total: round2(price + vat),
+    vatIncluded: Boolean(incl),
+    price: net, vat: round2(total - net), total,
   };
 }
 
@@ -114,7 +118,7 @@ export default async function handler(req) {
       sandbox: process.env.GREENINVOICE_SANDBOX === '1',
       status: b.status || '',
       invoice: b.invoice || null,
-      ...draft(b, parsePrice(b.price)),
+      ...draft(b, parsePrice(b.price), body.vatIncluded === true),
     }, { headers: { 'Cache-Control': 'no-store' } });
   }
 
@@ -128,10 +132,11 @@ export default async function handler(req) {
   const price = parsePrice(body.price);
   if (!price) return Response.json({ error: 'missing price' }, { status: 400 });
   if (!b.name) return Response.json({ error: 'missing client name' }, { status: 400 });
-  if (!b.email) return Response.json({ error: 'missing client email' }, { status: 400 });
+  // no email is fine: the document link is then handed over on WhatsApp instead
   const payDate = isDate(body.paymentDate) ? body.paymentDate : new Date().toISOString().slice(0, 10);
 
-  const d = draft(b, price);
+  const incl = body.vatIncluded === true;
+  const d = draft(b, price, incl);
   const doc = {
     type: DOC_TYPE,
     lang: 'he',
@@ -141,13 +146,14 @@ export default async function handler(req) {
     remarks: text(body.remarks, 300),
     client: {
       name: d.client.name,
-      emails: [d.client.email],
+      ...(d.client.email ? { emails: [d.client.email] } : {}),
       ...(d.client.taxId ? { taxId: d.client.taxId } : {}),
       ...(d.client.phone ? { phone: d.client.phone } : {}),
       country: 'IL',
       add: true,
     },
-    income: [{ description: d.description, quantity: 1, price, currency: 'ILS', vatType: 0 }],
+    // income vatType: 0 = VAT added on top, 1 = VAT included in the price
+    income: [{ description: d.description, quantity: 1, price, currency: 'ILS', vatType: incl ? 1 : 0 }],
     payment: [{ type: PAY_BANK_TRANSFER, date: payDate, price: d.total, currency: 'ILS' }],
   };
 
@@ -173,11 +179,11 @@ export default async function handler(req) {
     id: j.id,
     number: j.number || '',
     url: (j.url && (j.url.he || j.url.origin)) || '',
-    price, total: d.total,
+    price: d.price, total: d.total,
     at: new Date().toISOString(),
     sandbox: process.env.GREENINVOICE_SANDBOX === '1',
   };
   // the document exists either way; a failed write only loses the duplicate guard
   if (!(await kvSet('booking:' + id, b))) console.warn('invoice issued but not stored', { id, number: b.invoice.number });
-  return Response.json({ ok: true, invoice: b.invoice, emailedTo: d.client.email });
+  return Response.json({ ok: true, invoice: b.invoice, emailedTo: d.client.email || '' });
 }

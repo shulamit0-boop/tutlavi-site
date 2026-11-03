@@ -2119,34 +2119,46 @@ async function invoiceFlow(b) {
   const f = (label, el, hint) => h('label', { class: 'field' }, h('span', { text: label }), el, hint ? h('small', { text: hint }) : null);
   const price = h('input', { type: 'number', min: '0', step: '1', inputmode: 'decimal', dir: 'ltr', value: j.price || '' });
   const pay = h('input', { type: 'date', dir: 'ltr', value: todayIso() });
+  const incl = h('input', { type: 'checkbox' });
   const sum = h('p', { class: 'note' });
-  const upd = () => { const p = +price.value || 0; const v = Math.round(p * 18) / 100; sum.textContent = 'לפני מע"מ ' + shekel(p) + ' · מע"מ 18% ' + shekel(v) + ' · סה"כ ' + shekel(p + v); };
-  price.addEventListener('input', upd); upd();
+  const upd = () => {
+    const a = +price.value || 0;
+    const net = incl.checked ? Math.round(a / 1.18 * 100) / 100 : a;
+    const tot = incl.checked ? a : Math.round(a * 118) / 100;
+    sum.textContent = 'לפני מע"מ ' + shekel(net) + ' · מע"מ 18% ' + shekel(tot - net) + ' · סה"כ ' + shekel(tot);
+  };
+  price.addEventListener('input', upd); incl.addEventListener('change', upd); upd();
   const form = {
     el: h('div', { class: 'form' },
-      f('המחיר שסוכם, לפני מע"מ ₪', price, 'זה המחיר מההזמנה. אם סוכם משהו אחר, לתקן כאן.'),
+      f('הסכום ₪', price, 'זה המחיר מההזמנה. אם סוכם משהו אחר, לתקן כאן.'),
+      h('label', { class: 'field', style: 'flex-direction:row;align-items:center;gap:.5rem' }, incl, h('span', { text: 'הסכום כבר כולל מע"מ' })),
       sum,
       f('תאריך התשלום', pay, 'ההעברה הבנקאית שהלקוח שילם')),
-    collect: () => ({ price: +price.value || 0, paymentDate: pay.value }),
+    collect: () => ({ price: +price.value || 0, paymentDate: pay.value, vatIncluded: incl.checked }),
     focus: price,
   };
   const text = [
     'חשבונית מס קבלה ל' + (c.name || '—') + (c.taxId ? ' · ת.ז / ח.פ ' + c.taxId : ' · בלי ת.ז / ח.פ'),
-    'תישלח במייל ל-' + (c.email || '— אין מייל'),
+    c.email ? 'תישלח במייל ל-' + c.email : 'אין מייל ללקוח, אז אחרי ההפקה אפשר לשלוח את הקישור בוואטסאפ.',
     j.description,
     j.sandbox ? 'מצב ניסיון (sandbox): לא תופק חשבונית אמיתית.' : '',
     j.eventDate && j.eventDate > todayIso() ? 'שימי לב: האירוע עוד לא התקיים.' : '',
   ];
-  if (!c.email) { await ask({ title: 'חסר מייל ללקוח', text: 'לא אוכל לשלוח חשבונית בלי מייל. אפשר להוסיף אותו ב"תיקון תנאים".', ok: 'הבנתי', cancel: 'סגירה' }); return; }
   for (;;) {
     const r = await ask({ title: 'שליחת חשבונית', text, form, tone: 'mint', ok: 'כן, המחיר נכון, לשלוח', cancel: 'עוד לא' });
     if (!r) return;
     if (!(r.price > 0)) { toast('חסר מחיר', { warn: true }); continue; }
     saving();
-    const res = await invoiceApi({ action: 'issue', id: b.id, price: r.price, paymentDate: r.paymentDate });
+    const res = await invoiceApi({ action: 'issue', id: b.id, price: r.price, paymentDate: r.paymentDate, vatIncluded: r.vatIncluded });
     if (res.j.ok) {
       saved();
-      toast('החשבונית ' + (res.j.invoice.number || '') + ' נשלחה ל-' + res.j.emailedTo + ' ✓', { ms: 6000 });
+      const inv = res.j.invoice;
+      if (res.j.emailedTo) toast('החשבונית ' + (inv.number || '') + ' נשלחה ל-' + res.j.emailedTo + ' ✓', { ms: 6000 });
+      else toast('החשבונית ' + (inv.number || '') + ' הופקה ✓', { ms: 6000 });
+      if (b.phone && inv.url && await ask({ title: 'לשלוח בוואטסאפ?', tone: 'mint', text: 'לשלוח ל' + b.name + ' את הקישור לחשבונית בוואטסאפ?', ok: 'בוואטסאפ', cancel: 'לא צריך' })) {
+        const msg = 'היי ' + (b.name || '').split(' ')[0] + ', תודה שבחרת בסטודיו תות 🍓\nמצורפת חשבונית מס קבלה ' + (inv.number || '') + ':\n' + inv.url;
+        window.open('https://wa.me/' + waNumber(b.phone) + '?text=' + encodeURIComponent(msg), '_blank');
+      }
     } else {
       saveFailed('החשבונית לא הופקה');
       toast(res.status === 409 ? 'כבר הופקה חשבונית להזמנה הזאת.' : 'החשבונית לא הופקה: ' + (res.j.error || 'אין חיבור'), { warn: true, ms: 8000 });
