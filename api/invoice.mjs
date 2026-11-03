@@ -46,7 +46,8 @@ const round2 = (n) => Math.round(n * 100) / 100;
 export function parsePrice(v) {
   if (typeof v === 'number') return Number.isFinite(v) && v > 0 ? round2(v) : 0;
   const m = String(v || '').replace(/,/g, '').match(/\d+(?:\.\d+)?/);
-  return m ? round2(+m[0]) : 0;
+  // "אין דמי שכירות (ראו סעיף 7)" is not a price of ₪7: tiny numbers are clause numbers
+  return m && +m[0] >= 50 ? round2(+m[0]) : 0;
 }
 
 const heDate = (iso) => (isDate(iso) ? iso.split('-').reverse().join('.') : '');
