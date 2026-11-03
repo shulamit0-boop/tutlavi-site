@@ -516,7 +516,7 @@ document.getElementById('fcalNext')?.addEventListener('click', () => { fcalView.
    signature, nothing that binds anyone. Those steps moved to /contract, which
    the studio releases once it has approved the request. */
 
-/* Registers the request and places the tentative hold on the chosen window. */
+/* Registers the request. It holds nothing; the slot is taken when the contract is signed. */
 async function createRequest(payload) {
   const res = await fetch('/api/booking', {
     method: 'POST',
@@ -668,13 +668,12 @@ function buildMail(p, isRental, bookingId) {
   if (heDate) mail['תאריך מבוקש'] = heDate;
   if (hours) mail['שעות'] = hours;
   if (p['estimated-cost']) mail['עלות'] = p['estimated-cost'];
-  mail['התאריך מוחזק עד'] = heDateOf(new Date(Date.now() + 7 * 864e5).toISOString().slice(0, 10));
   mail['לאישור הבקשה'] = 'https://tutlavi.com/admin';
   if (bookingId) mail['החוזה של הבקשה'] = 'https://tutlavi.com/contract?bid=' + bookingId;
 
   mail._autoresponse =
     'תודה על פנייתך לסטודיו תות!\n\n' +
-    'קיבלנו את הבקשה שלכם והתאריך שמור עבורכם בינתיים:\n' +
+    'קיבלנו את הבקשה שלכם:\n' +
     (heDate ? 'תאריך: ' + heDate + '\n' : '') +
     (hours ? 'שעות: ' + hours + '\n' : '') +
     (p['event-purpose'] ? 'מטרה: ' + p['event-purpose'] + '\n' : '') +
@@ -718,9 +717,8 @@ inquiryForm.addEventListener('submit', (e) => {
     let bookingId = '';
     let mailed = false;
     if (isRental) {
-      /* Register the request first. It is what places the hold on the window,
-         so if the slot has gone in the meantime the visitor is told now —
-         before an email goes out promising them a date they cannot have. */
+      /* Register the request first, so if the slot has gone in the meantime
+         (taken, or someone already signed for it) the visitor is told now. */
       const reg = await createRequest(payload);
       if (!reg.ok) {
         const taken = reg.status === 409;
@@ -754,7 +752,7 @@ inquiryForm.addEventListener('submit', (e) => {
 
     formStatus.className = 'form-status ok';
     formStatus.textContent = isRental
-      ? 'תודה! הבקשה נקלטה והתאריך שמור עבורכם. נחזור אליכם, ואם הכול מסתדר נשלח חוזה לחתימה במייל.'
+      ? 'תודה! הבקשה נקלטה. נחזור אליכם, ואם הכול מסתדר נשלח חוזה לחתימה במייל. התאריך נשמר עבורכם עם החתימה.'
       : 'תודה! הפנייה נשלחה, נחזור אליכם בהקדם.';
     inquiryForm.reset();
     selectedDate = null;

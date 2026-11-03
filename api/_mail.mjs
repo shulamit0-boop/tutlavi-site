@@ -154,7 +154,6 @@ export function newRequestToStudio(b, id) {
         ['מטרה', b.purpose],
         ['משתתפים', b.participants],
         ['עלות', b.price],
-        ['מוחזק עד', heDate(String(b.holdUntil || '').slice(0, 10))],
       ])}
     </table>
     ${b.message ? `<p style="margin:22px 0 0;padding:16px;background:#fafafa;border-right:3px solid ${RED};color:${INK};font-size:15px;line-height:1.7">${esc(b.message)}</p>` : ''}`,
@@ -174,7 +173,7 @@ export function receiptToClient(b) {
   const html = layout({
     eyebrow: 'הבקשה התקבלה',
     title: 'תודה, קיבלנו את הבקשה שלכם',
-    lead: 'התאריך שמור עבורכם בינתיים. נחזור אליכם בהקדם, ואם הכול מסתדר נשלח חוזה לחתימה במייל נפרד.<br>זו בקשה עקרונית — עדיין לא נדרשתם לחתום על כלום.',
+    lead: 'נחזור אליכם בהקדם, ואם הכול מסתדר נשלח חוזה לחתימה במייל נפרד. התאריך נשמר עבורכם עם החתימה על החוזה.<br>זו בקשה עקרונית — עדיין לא נדרשתם לחתום על כלום.',
     body: detailRows(b) + `
     <p style="margin:22px 0 0;color:${MUTED};font-size:14px;line-height:1.8">התשלום מתבצע בהעברה בנקאית — פרטי החשבון יישלחו עם אישור ההזמנה.</p>`,
   });
@@ -183,7 +182,7 @@ export function receiptToClient(b) {
     subject: 'קיבלנו את בקשתכם · סטודיו תות',
     html,
     replyTo: STUDIO,
-    text: `תודה, קיבלנו את הבקשה שלכם.\n${when(b)}\nהתאריך שמור עבורכם בינתיים; נחזור אליכם בהקדם.\n\nסטודיו תות · מגן אברהם 6, תל אביב`,
+    text: `תודה, קיבלנו את הבקשה שלכם.\n${when(b)}\nנחזור אליכם בהקדם. התאריך נשמר עבורכם עם החתימה על החוזה.\n\nסטודיו תות · מגן אברהם 6, תל אביב`,
   });
 }
 

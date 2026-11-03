@@ -1,8 +1,8 @@
 import { kvGet, kvSet, kvDel, storeReady } from './_store.mjs';
 import { isAdmin, limitPublic, requireAdmin } from './_guard.mjs';
 import {
-  HOLD_DAYS, holdExpiry, placeHold, releaseHold, commitHold,
-  withExpiredHoldsCleared,
+  HOLD_DAYS, SIGNED_HOLD_DAYS, holdExpiry, placeHold, releaseHold, commitHold,
+  withExpiredHoldsCleared, findWindow, holdLive,
 } from './_avail.mjs';
 import { text, multiline } from './_input.mjs';
 import {
@@ -15,9 +15,12 @@ export const config = { runtime: 'edge' };
 /* Booking lifecycle
    ─────────────────
    requested  visitor sent a principle request — no ID number, no signature.
-              The chosen window is held for HOLD_DAYS days.
+              Nothing is held: the window stays open on the site, and others
+              may ask for the same slot. Only the panel shows that it was asked
+              for (the studio's wish, 03.11.2026).
    sent       the studio approved the request and handed over the signing link.
-   signed     the visitor filled in their ID number and signed.
+   signed     the visitor filled in their ID number and signed. Only now is
+              the window taken off the site (held until the countersignature).
    confirmed  the studio countersigned. Only now is the window actually booked
               and only now does it reach the calendar feed.
    declined   the studio turned it down, or the hold lapsed. Window released.
@@ -173,19 +176,15 @@ export default async function handler(req) {
 
     const id = rid();
 
-    // hold the slot before writing the booking, so a slot that is already
-    // spoken for is reported as such instead of creating a dead request
+    /* a request holds nothing. It is only refused when the slot is already
+       truly gone — taken, or the day locked — or someone has signed for it */
     if (clean.windowId) {
       const avail = await readAvail();
-      const until = holdExpiry();
-      const res = placeHold(avail, clean.windowId, clean.date, id, until);
-      if (!res.ok) {
-        return Response.json({ error: res.reason }, { status: 409 });
-      }
-      if (!(await kvSet(AVAIL_KEY, avail))) {
-        return Response.json({ error: 'store write failed' }, { status: 500 });
-      }
-      clean.holdUntil = until;
+      const w = findWindow(avail, clean.windowId, clean.date);
+      if (!w) return Response.json({ error: 'not found' }, { status: 409 });
+      if (w.booked) return Response.json({ error: 'already booked' }, { status: 409 });
+      if ((avail.locked || []).includes(w.date)) return Response.json({ error: 'day locked' }, { status: 409 });
+      if (holdLive(w)) return Response.json({ error: 'already held' }, { status: 409 });
     }
 
     if (!(await kvSet('booking:' + id, clean))) {
@@ -249,6 +248,14 @@ export default async function handler(req) {
     b.signature = sig;
     b.status = 'signed';
     b.signedAt = new Date().toISOString();
+    /* the renter signed: the slot comes off the site now, held for them until
+       the studio countersigns. If someone else signed for it first, the
+       signature still stands and the studio sorts it out from the panel. */
+    if (b.windowId && b.date) {
+      const avail = await readAvail();
+      const until = holdExpiry(SIGNED_HOLD_DAYS);
+      if (placeHold(avail, b.windowId, b.date, id, until).ok && await kvSet(AVAIL_KEY, avail)) b.holdUntil = until;
+    }
     if (!(await kvSet('booking:' + id, b))) {
       return Response.json({ error: 'store write failed' }, { status: 500 });
     }
@@ -341,19 +348,14 @@ export default async function handler(req) {
     if (b.signature) {
       b.signature = null;
       b.signedAt = null;
+      // the slot was held for that signature; it goes back on the site until they sign again
+      const avail = await readAvail();
+      if (releaseHold(avail, id)) await kvSet(AVAIL_KEY, avail);
+      b.holdUntil = null;
     }
     b.status = 'sent';
     b.sentAt = new Date().toISOString();
-    // approving restarts the clock: the visitor gets the full window to sign
-    if (b.windowId && b.date) {
-      const avail = await readAvail();
-      const until = holdExpiry();
-      const res = placeHold(avail, b.windowId, b.date, id, until);
-      if (res.ok) {
-        await kvSet(AVAIL_KEY, avail);
-        b.holdUntil = until;
-      }
-    }
+    // approving holds nothing either; the slot is taken when the renter signs
     if (!(await kvSet('booking:' + id, b))) {
       return Response.json({ error: 'store write failed' }, { status: 500 });
     }
@@ -371,7 +373,14 @@ export default async function handler(req) {
     b.studioSigned = true;
     b.studioSignedAt = new Date().toISOString();
     const avail = await readAvail();
-    if (commitHold(avail, id)) {
+    /* normally the renter's signature placed a hold; if it could not (an old
+       record, or the hold lapsed), the window is marked taken directly */
+    let touched = commitHold(avail, id);
+    if (!touched && b.windowId && b.date) {
+      const w = findWindow(avail, b.windowId, b.date);
+      if (w && !w.booked && !holdLive(w)) { w.booked = true; w.hold = null; touched = true; }
+    }
+    if (touched) {
       if (!(await kvSet(AVAIL_KEY, avail))) {
         return Response.json({ error: 'store write failed' }, { status: 500 });
       }

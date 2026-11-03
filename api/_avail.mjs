@@ -3,8 +3,8 @@
    A window now has three effective states, not two:
 
      open      — nobody has asked for it
-     pending   — someone sent a booking request and it is being held for them
-                 while the contract goes out, gets signed and countersigned
+     pending   — the renter signed the contract and the slot is held for them
+                 until the studio countersigns (a bare request holds nothing)
      booked    — the studio countersigned; the day is taken
 
    `booked` is still the plain boolean it always was, so records written by the
@@ -15,6 +15,8 @@
    a window off the calendar. */
 
 export const HOLD_DAYS = 7;
+/* after the renter signs, the studio has this long to countersign */
+export const SIGNED_HOLD_DAYS = 30;
 
 export const holdExpiry = (days = HOLD_DAYS) =>
   new Date(Date.now() + days * 86400000).toISOString();

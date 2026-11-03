@@ -359,6 +359,14 @@ body.dragging, body.dragging *{ cursor:grabbing !important; user-select:none; }
 .gc-day.sel{ background:#f3efe9; }
 .gc-day.sel .gc-num{ box-shadow:0 0 0 2px var(--ink); }
 .gc-day.locked{ background:repeating-linear-gradient(135deg,#f6f2ed 0 6px,#ede6de 6px 12px); }
+/* someone asked for this day and nobody has signed yet — a mark for the studio only */
+.gc-day.asked{ background:#fdf4f3; box-shadow:inset 0 3px 0 var(--berry); }
+.gc-day.asked.sel{ background:#f8ebe9; }
+.gc-top{ display:flex; align-items:center; justify-content:center; gap:3px; flex:none; }
+.gc-top .gc-num{ align-self:auto; }
+.gc-ask{ width:7px; height:7px; border-radius:50%; background:var(--berry); flex:none; }
+.gday-ask{ display:flex; gap:.55rem; align-items:flex-start; background:var(--berry-bg); color:var(--berry-ink); border-radius:12px; padding:.6rem .75rem; font-size:.88rem; line-height:1.45; margin-bottom:.8rem; }
+.gday-ask::before{ content:''; width:8px; height:8px; border-radius:50%; background:var(--berry); margin-top:.45em; flex:none; }
 .gc-pill{ display:block; font-size:.68rem; line-height:17px; height:17px; border-radius:4px; padding:0 4px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-weight:500; flex:none; }
 .gc-more{ font-size:.66rem; color:var(--soft); padding:0 4px; line-height:15px; }
 .gc-lock{ font-size:.66rem; color:#6b625a; padding:0 4px; line-height:15px; }
@@ -687,6 +695,7 @@ body.dragging, body.dragging *{ cursor:grabbing !important; user-select:none; }
         <div class="gcal-dow"><span>א׳</span><span>ב׳</span><span>ג׳</span><span>ד׳</span><span>ה׳</span><span>ו׳</span><span>ש׳</span></div>
         <div class="gcal-grid" id="gantt"></div>
         <div class="legend gcal-legend">
+          <span><i style="background:#fdf4f3;box-shadow:inset 0 3px 0 var(--berry)"></i>יש בקשה ליום (רק את רואה)</span>
           <span><i class="c-requested"></i>בקשה חדשה</span>
           <span><i class="c-sent"></i>נשלח לחתימה</span>
           <span><i class="c-signed"></i>הלקוח חתם</span>
@@ -732,7 +741,7 @@ body.dragging, body.dragging *{ cursor:grabbing !important; user-select:none; }
         <div class="cal" id="cal"></div>
         <div class="legend">
           <span><i style="background:var(--mint-bg);border:1px solid #bfe3cc"></i>פנוי להשכרה</span>
-          <span><i style="background:var(--honey-bg);border:1px solid #f0d9a6"></i>מישהו ביקש, בהמתנה</span>
+          <span><i style="background:var(--honey-bg);border:1px solid #f0d9a6"></i>הלקוח חתם, מחכה לחתימה שלך</span>
           <span><i style="background:var(--berry-bg);border:1px solid #f1c9ca"></i>תפוס</span>
           <span><i style="background:#e2dbd2"></i>יום נעול</span>
         </div>
@@ -1163,7 +1172,7 @@ function render() {
     wins.forEach((w) => {
       const st = winState(w);
       const chip = h('span', { class: 'dchip ' + st, dir: 'ltr',
-        title: st === 'open' ? 'פנוי · אפשר לגרור ליום אחר' : st === 'pending' ? 'מישהו ביקש את החלון הזה' : 'תפוס',
+        title: st === 'open' ? 'פנוי · אפשר לגרור ליום אחר' : st === 'pending' ? 'הלקוח חתם, מחכה לחתימה שלך' : 'תפוס',
         text: w.start + '–' + w.end });
       if (st === 'open') {
         draggable(chip, {
@@ -1227,7 +1236,7 @@ function renderPanel() {
     note.addEventListener('input', () => { w.note = note.value.slice(0, 120); queueSave(); });
 
     let status;
-    if (st === 'pending') status = h('span', { class: 'pending-note', text: 'מישהו ביקש את החלון הזה' });
+    if (st === 'pending') status = h('span', { class: 'pending-note', text: 'הלקוח חתם, מחכה לחתימה שלך' });
     else {
       const seg = h('div', { class: 'seg', role: 'group', 'aria-label': 'מצב החלון' });
       const mk = (label, cls, val) => seg.append(h('button', {
@@ -1975,7 +1984,7 @@ function bookingRow(b) {
     who.append(msg);
   }
   if (b.idnum && (b.status === 'signed' || b.status === 'confirmed')) who.append(h('span', { class: 'sub', text: 'ת.ז / ח.פ: ' + b.idnum }));
-  if (b.status === 'sent' && b.holdUntil) who.append(h('span', { class: 'sub hold', text: 'שמור עד ' + heShort(b.holdUntil.slice(0, 10)) }));
+  if (b.status === 'signed' && b.holdUntil) who.append(h('span', { class: 'sub hold', text: 'שמור עד ' + heShort(b.holdUntil.slice(0, 10)) }));
   row.append(who);
 
   row.append(h('td', { class: 'when' }, h('div', { text: heShort(b.date) }),
@@ -2105,13 +2114,13 @@ function waNumber(phone) {
 
 function contractText(b, link) {
   return 'שלום ' + (b.name || '') + ',\n\n' +
-    'שמחנו לקבל את בקשתכם, והתאריך שמור עבורכם:\n' +
+    'שמחנו לקבל את בקשתכם:\n' +
     heDate(b.date) + (b.start && b.end ? ', ' + b.start + '–' + b.end : '') + '\n' +
     (b.price ? 'עלות ההשכרה: ' + b.price + '\n' : '') +
     (b.studioNote ? '\nסיכומים נוספים:\n' + b.studioNote + '\n' : '') +
     '\nלהשלמת ההזמנה נותר רק לחתום על ההסכם בקישור הבא:\n' +
     link + '\n\n' +
-    'בקישור תתבקשו למלא ת.ז / ח.פ ולחתום. לאחר מכן נחתום גם אנחנו והתאריך ייסגר סופית.\n' +
+    'בקישור תתבקשו למלא ת.ז / ח.פ ולחתום. עם החתימה התאריך נשמר עבורכם, ולאחר שנחתום גם אנחנו הוא ייסגר סופית.\n' +
     'התשלום מתבצע בהעברה בנקאית — פרטי החשבון יישלחו עם אישור ההזמנה.\n\n' +
     'סטודיו תות · מגן אברהם 6, תל אביב · 054-312-9933';
 }
@@ -2334,6 +2343,8 @@ const evIso = (s) => {
   return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : '';
 };
 const GKINDS = () => PRESETS.filter((p) => !p.lock);
+/* requests for a day that are still open (asked or contract sent, not signed yet) */
+const openAsks = (d) => bookings.filter((b) => !pendingDelete.has(b.id) && b.date === d && (b.status === 'requested' || b.status === 'sent' || !b.status));
 /* keeps "18:00–23:00" reading left-to-right inside Hebrew text */
 const hrs = (a, b) => '\u2066' + a + '–' + b + '\u2069';
 const kindOfWin = (w) => GKINDS().find((p) => p.start === w.start && p.end === w.end) || null;
@@ -2354,7 +2365,7 @@ function ganttItems(d) {
     out.push({
       cls: 'c-win k-' + (k ? k.id : 'other'), grid: st === 'open',   // a taken window already shows as its booking
       short: k ? k.label : w.start, title: name + (st === 'open' ? ' פנוי' : ''),
-      sub: [hrs(w.start, w.end), st === 'open' ? 'פתוח להזמנה באתר' : st === 'pending' ? 'מישהו ביקש, בהמתנה' : 'תפוס', w.price ? '₪' + w.price : '', w.note].filter(Boolean).join(' · '),
+      sub: [hrs(w.start, w.end), st === 'open' ? 'פתוח להזמנה באתר' : st === 'pending' ? 'הלקוח חתם, מחכה לחתימה שלך' : 'תפוס', w.price ? '₪' + w.price : '', w.note].filter(Boolean).join(' · '),
       sort: w.start,
       go: () => { view = new Date(d + 'T00:00'); view.setDate(1); selected = d; showTab('cal'); render(); },
     });
@@ -2388,17 +2399,19 @@ function renderGantt() {
     const locked = data.locked.includes(d);
     const shown = items.length > room ? items.slice(0, room - 1) : items;
     const out = d.slice(0, 7) !== ym;
+    const asks = openAsks(d).length;
     grid.append(h('button', {
       type: 'button',
-      class: 'gc-day' + (out ? ' out' : '') + (d < tIso ? ' past' : '') + (d === tIso ? ' today' : '') + (d === ganttSel ? ' sel' : '') + (locked ? ' locked' : ''),
-      'aria-label': heDate(d) + (items.length ? ', ' + items.length + ' פריטים' : '') + (locked ? ', נעול' : ''),
+      class: 'gc-day' + (out ? ' out' : '') + (d < tIso ? ' past' : '') + (d === tIso ? ' today' : '') + (d === ganttSel ? ' sel' : '') + (locked ? ' locked' : '') + (asks && !locked ? ' asked' : ''),
+      'aria-label': heDate(d) + (asks ? ', יש בקשה' : '') + (items.length ? ', ' + items.length + ' פריטים' : '') + (locked ? ', נעול' : ''),
+      title: asks ? (asks === 1 ? 'יש בקשה ליום הזה' : 'יש ' + asks + ' בקשות ליום הזה') + ' · עוד לא נחתם' : null,
       onclick: () => {
         if (out) { ganttView = new Date(d + 'T00:00'); ganttView.setDate(1); }
         ganttSel = d; renderGantt();
         if (phone) $('ganttDay').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
       },
     },
-      h('span', { class: 'gc-num', text: +d.slice(8) }),
+      h('span', { class: 'gc-top' }, h('span', { class: 'gc-num', text: +d.slice(8) }), asks ? h('span', { class: 'gc-ask' }) : null),
       locked && !items.length ? h('span', { class: 'gc-lock', text: 'נעול' }) : null,
       shown.map((x) => h('span', { class: 'gc-pill ' + x.cls, text: x.short })),
       items.length > shown.length ? h('span', { class: 'gc-more', text: '+' + (items.length - shown.length) }) : null));
@@ -2415,6 +2428,10 @@ function renderGanttDay() {
   const note = [d === tIso ? 'היום' : d < tIso ? 'יום שעבר' : '', locked ? 'היום הזה נעול' : ''].filter(Boolean).join(' · ');
   box.innerHTML = '';
   box.append(h('h3', { text: heDate(d) }), h('p', { class: 'sub', text: note }));
+  const asks = openAsks(d);
+  if (asks.length) box.append(h('div', { class: 'gday-ask', text:
+    (asks.length === 1 ? 'יש בקשה ליום הזה (' + (asks[0].name || 'ללא שם') + ')' : 'יש ' + asks.length + ' בקשות ליום הזה (' + asks.map((b) => b.name || 'ללא שם').join(', ') + ')') +
+    '. עוד לא נחתם, אז היום לא נעול ונשאר פתוח באתר. הוא ייסגר כשהלקוח יחתום.' }));
   if (items.length) {
     box.append(h('div', { class: 'gday-list' }, items.map((x) => h('button', { type: 'button', class: 'gday-item', onclick: x.go },
       h('i', { class: x.cls }), h('span', {}, h('b', { text: x.title }), x.sub ? h('small', { text: x.sub }) : null), h('span', { class: 'go', text: '‹' })))));
