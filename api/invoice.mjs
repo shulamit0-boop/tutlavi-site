@@ -65,6 +65,22 @@ const billTo = (b) => ({ name: b.billName || b.name || '', taxId: b.billTaxId ||
 // Israeli company numbers (ח.פ.) start with 51; 52/54/55/56/57/58/59 are other corporations
 export const looksCorporate = (taxId) => /^5[1-9]\d{7}$/.test(String(taxId || '').replace(/\D/g, ''));
 
+/* The registered name of an Israeli company, from the public companies
+   registry on data.gov.il (רשם החברות). Only used to *suggest* the name on
+   the confirmation screen; the studio still confirms it. */
+const REGISTRY = 'https://data.gov.il/api/3/action/datastore_search?resource_id=f004176c-b85f-4542-8901-7b3176f9a054&q=';
+export async function companyName(taxId) {
+  const n = String(taxId || '').replace(/\D/g, '');
+  if (!looksCorporate(n)) return '';
+  try {
+    const r = await fetch(REGISTRY + n, { signal: AbortSignal.timeout(4000) });
+    const j = await r.json();
+    const rec = ((j.result && j.result.records) || []).find((x) => String(x['מספר חברה']) === n);
+    // the registry writes the gershayim of בע"מ as "~"
+    return rec ? String(rec['שם חברה'] || '').replace(/~/g, '"').trim() : '';
+  } catch { return ''; }
+}
+
 function draft(b, amount, incl) {
   const net = incl ? round2(amount / (1 + VAT)) : amount;
   const total = incl ? amount : round2(amount * (1 + VAT));
@@ -182,12 +198,20 @@ export default async function handler(req) {
   if (!b) return Response.json({ error: 'not found' }, { status: 404 });
 
   if (body.action === 'preview') {
+    const d = draft(b, parsePrice(b.price), body.vatIncluded === true);
+    // a company number with the signer's private name on it: suggest the registered name
+    let nameFrom = b.billName ? 'confirmed' : 'signer';
+    if (!b.billName && d.corporate) {
+      const reg = await companyName(d.client.taxId);
+      if (reg) { d.client.name = reg; nameFrom = 'registry'; }
+    }
     return Response.json({
       ok: true, ready: invoiceReady(), sandbox,
       status: b.status || '',
       invoice: b.invoice || null,
       signer: { name: b.name || '', idnum: b.idnum || '' },
-      ...draft(b, parsePrice(b.price), body.vatIncluded === true),
+      nameFrom,
+      ...d,
     }, { headers: { 'Cache-Control': 'no-store' } });
   }
 

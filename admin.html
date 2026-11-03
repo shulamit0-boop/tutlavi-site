@@ -2132,7 +2132,7 @@ async function invoiceFlow(b) {
   price.addEventListener('input', upd); incl.addEventListener('change', upd); upd();
   const form = {
     el: h('div', { class: 'form' },
-      f('החשבונית על שם', billName, j.corporate ? 'המספר נראה כמו ח.פ. של חברה, אז כאן צריך להיות שם החברה, לא שם האדם שחתם.' : 'אם משלמת חברה, לכתוב כאן את שם החברה.'),
+      f('החשבונית על שם', billName, j.nameFrom === 'registry' ? 'השם נלקח מרשם החברות לפי הח.פ. (חתם/ה: ' + j.signer.name + ').' : j.corporate ? 'המספר נראה כמו ח.פ. של חברה, אז כאן צריך להיות שם החברה, לא שם האדם שחתם.' : 'אם משלמת חברה, לכתוב כאן את שם החברה.'),
       f('ח.פ. / ת.ז.', billTax),
       f('הסכום ₪', price, 'זה המחיר מההזמנה. אם סוכם משהו אחר, לתקן כאן.'),
       h('label', { class: 'field', style: 'flex-direction:row;align-items:center;gap:.5rem' }, incl, h('span', { text: 'הסכום כבר כולל מע"מ' })),
