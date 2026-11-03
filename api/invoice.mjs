@@ -83,6 +83,14 @@ export default async function handler(req) {
   if (!storeReady()) return Response.json({ error: 'store not configured' }, { status: 503 });
 
   const body = await req.json().catch(() => ({}));
+
+  // connection test: signs in to Green Invoice and nothing else — no document
+  if (body.action === 'check') {
+    if (!invoiceReady()) return Response.json({ ok: false, ready: false });
+    try { await token(); return Response.json({ ok: true, ready: true, sandbox: process.env.GREENINVOICE_SANDBOX === '1' }); }
+    catch (e) { return Response.json({ ok: false, ready: true, error: String(e && e.message).slice(0, 120) }); }
+  }
+
   const id = text(body.id, 64);
   if (!/^[a-z0-9]+$/i.test(id)) return Response.json({ error: 'bad id' }, { status: 400 });
   const b = await kvGet('booking:' + id);
