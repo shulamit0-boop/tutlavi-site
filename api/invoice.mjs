@@ -197,9 +197,14 @@ export default async function handler(req) {
      A tax document cannot be edited or deleted; this is the only way to
      correct one. The booking is then free for a new invoice. ---- */
   if (body.action === 'credit') {
-    const inv = b.invoice;
-    if (!inv || !inv.id) return Response.json({ error: 'no invoice to cancel' }, { status: 409 });
-    if (body.number !== inv.number) return Response.json({ error: 'confirm the invoice number' }, { status: 400 });
+    /* Normally the booking's current invoice. A top-up credit for an invoice
+       already cancelled (only partly) names it from the history instead, and
+       carries the exact amount, VAT included. */
+    const fromHistory = (b.invoiceHistory || []).find((x) => x.number === body.number);
+    const inv = body.number === (b.invoice && b.invoice.number) ? b.invoice : fromHistory;
+    if (!inv || !inv.id) return Response.json({ error: 'no such invoice on this booking' }, { status: 409 });
+    const partial = parsePrice(body.amount);
+    if (inv === fromHistory && !partial) return Response.json({ error: 'amount required for an already-credited invoice' }, { status: 400 });
     let t, src, j;
     try {
       t = await token();
@@ -213,7 +218,9 @@ export default async function handler(req) {
            sent with, so the credit always adds VAT on top (vatType 0). Copying
            the source's vatType 1 ("included") credited 1,059.32 instead of
            1,250 on credit note 70005. */
-        income: (src.income || []).map((x) => ({ description: x.description, quantity: x.quantity, price: x.price, currency: 'ILS', vatType: 0 })),
+        income: partial
+          ? [{ description: 'השלמת ביטול חשבונית ' + inv.number, quantity: 1, price: partial, currency: 'ILS', vatType: 1 }]
+          : (src.income || []).map((x) => ({ description: x.description, quantity: x.quantity, price: x.price, currency: 'ILS', vatType: 0 })),
         linkedDocumentIds: [inv.id],
         linkType: 'cancel',
       };
@@ -226,8 +233,12 @@ export default async function handler(req) {
       return Response.json({ error: 'green invoice unreachable' }, { status: 502 });
     }
     const cr = { id: j.id, number: j.number || '', url: (j.url && (j.url.he || j.url.origin)) || '', at: new Date().toISOString() };
-    b.invoiceHistory = [...(b.invoiceHistory || []), { ...inv, cancelledBy: cr }];
-    b.invoice = null;
+    if (inv === fromHistory) {
+      inv.credits = [...(inv.credits || []), { ...cr, amount: partial }];
+    } else {
+      b.invoiceHistory = [...(b.invoiceHistory || []), { ...inv, cancelledBy: cr }];
+      b.invoice = null;
+    }
     await kvSet('booking:' + id, b);
     return Response.json({ ok: true, credit: cr });
   }
