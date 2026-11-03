@@ -129,6 +129,9 @@ test('invoice: admin only, and never issues without Green Invoice configured', a
   for (const h of [{}, WRONG, SHORT]) {
     assert.equal((await invoice(json('/api/invoice', 'POST', { action: 'issue', id: 'abc', price: 100 }, h))).status, 401);
   }
-  assert.equal((await invoice(req('/api/invoice'))).status, 405);
+  // GET is the public branded copy: only an exact 32-hex token can ever match
+  assert.equal((await invoice(req('/api/invoice'))).status, 404);
+  assert.equal((await invoice(req('/api/invoice?v=../../x'))).status, 404);
+  assert.equal((await invoice(json('/api/invoice', 'POST', { action: 'credit', id: 'abc', number: 1 }, WRONG))).status, 401);
   assert.equal((await invoice(json('/api/invoice', 'POST', { action: 'issue', id: '../x', price: 100 }, KEY))).status, 400);
 });

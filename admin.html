@@ -2019,7 +2019,7 @@ function bookingRow(b) {
     btn('חתימה וסגירה', 'mint', () => signFlow(b));
     btn('תיקון תנאים', 'soft', () => approveFlow(b));
   } else if (b.status === 'confirmed') {
-    if (b.invoice) acts.append(h('a', { class: 'btn sm soft', href: b.invoice.url || '#', target: '_blank', rel: 'noopener', title: 'נשלחה ' + heShort((b.invoice.at || '').slice(0, 10)) }, 'חשבונית ' + (b.invoice.number || '✓')));
+    if (b.invoice) acts.append(h('a', { class: 'btn sm soft', href: b.invoice.view ? '/invoice?v=' + b.invoice.view : (b.invoice.url || '#'), target: '_blank', rel: 'noopener', title: 'נשלחה ' + heShort((b.invoice.at || '').slice(0, 10)) }, 'חשבונית ' + (b.invoice.number || '✓')));
     else btn('חשבונית', 'mint', () => invoiceFlow(b));
     btn('ביטול', 'quiet', () => declineFlow(b));
   }
@@ -2118,6 +2118,8 @@ async function invoiceFlow(b) {
   const c = j.client;
   const f = (label, el, hint) => h('label', { class: 'field' }, h('span', { text: label }), el, hint ? h('small', { text: hint }) : null);
   const price = h('input', { type: 'number', min: '0', step: '1', inputmode: 'decimal', dir: 'ltr', value: j.price || '' });
+  const billName = h('input', { type: 'text', autocomplete: 'off', value: c.name || '' });
+  const billTax = h('input', { type: 'text', inputmode: 'numeric', dir: 'ltr', autocomplete: 'off', value: c.taxId || '' });
   const pay = h('input', { type: 'date', dir: 'ltr', value: todayIso() });
   const incl = h('input', { type: 'checkbox' });
   const sum = h('p', { class: 'note' });
@@ -2130,15 +2132,17 @@ async function invoiceFlow(b) {
   price.addEventListener('input', upd); incl.addEventListener('change', upd); upd();
   const form = {
     el: h('div', { class: 'form' },
+      f('החשבונית על שם', billName, j.corporate ? 'המספר נראה כמו ח.פ. של חברה, אז כאן צריך להיות שם החברה, לא שם האדם שחתם.' : 'אם משלמת חברה, לכתוב כאן את שם החברה.'),
+      f('ח.פ. / ת.ז.', billTax),
       f('הסכום ₪', price, 'זה המחיר מההזמנה. אם סוכם משהו אחר, לתקן כאן.'),
       h('label', { class: 'field', style: 'flex-direction:row;align-items:center;gap:.5rem' }, incl, h('span', { text: 'הסכום כבר כולל מע"מ' })),
       sum,
       f('תאריך התשלום', pay, 'ההעברה הבנקאית שהלקוח שילם')),
-    collect: () => ({ price: +price.value || 0, paymentDate: pay.value, vatIncluded: incl.checked }),
+    collect: () => ({ price: +price.value || 0, paymentDate: pay.value, vatIncluded: incl.checked, clientName: billName.value.trim(), clientTaxId: billTax.value.trim() }),
     focus: price,
   };
   const text = [
-    'חשבונית מס קבלה ל' + (c.name || '—') + (c.taxId ? ' · ת.ז / ח.פ ' + c.taxId : ' · בלי ת.ז / ח.פ'),
+    'חשבונית מס קבלה. חתם/ה על ההסכם: ' + (j.signer.name || '—') + '. לבדוק כאן על שם מי החשבונית יוצאת.',
     c.email ? 'תישלח במייל ל-' + c.email : 'אין מייל ללקוח, אז אחרי ההפקה אפשר לשלוח את הקישור בוואטסאפ.',
     j.description,
     j.sandbox ? 'מצב ניסיון (sandbox): לא תופק חשבונית אמיתית.' : '',
@@ -2148,15 +2152,17 @@ async function invoiceFlow(b) {
     const r = await ask({ title: 'שליחת חשבונית', text, form, tone: 'mint', ok: 'כן, המחיר נכון, לשלוח', cancel: 'עוד לא' });
     if (!r) return;
     if (!(r.price > 0)) { toast('חסר מחיר', { warn: true }); continue; }
+    if (!r.clientName) { toast('חסר על שם מי החשבונית', { warn: true }); continue; }
     saving();
-    const res = await invoiceApi({ action: 'issue', id: b.id, price: r.price, paymentDate: r.paymentDate, vatIncluded: r.vatIncluded });
+    const res = await invoiceApi({ action: 'issue', id: b.id, price: r.price, paymentDate: r.paymentDate, vatIncluded: r.vatIncluded, clientName: r.clientName, clientTaxId: r.clientTaxId });
     if (res.j.ok) {
       saved();
       const inv = res.j.invoice;
       if (res.j.emailedTo) toast('החשבונית ' + (inv.number || '') + ' נשלחה ל-' + res.j.emailedTo + ' ✓', { ms: 6000 });
       else toast('החשבונית ' + (inv.number || '') + ' הופקה ✓', { ms: 6000 });
-      if (b.phone && inv.url && await ask({ title: 'לשלוח בוואטסאפ?', tone: 'mint', text: 'לשלוח ל' + b.name + ' את הקישור לחשבונית בוואטסאפ?', ok: 'בוואטסאפ', cancel: 'לא צריך' })) {
-        const msg = 'היי ' + (b.name || '').split(' ')[0] + ', תודה שבחרת בסטודיו תות 🍓\nמצורפת חשבונית מס קבלה ' + (inv.number || '') + ':\n' + inv.url;
+      const link = inv.view ? location.origin + '/invoice?v=' + inv.view : inv.url;
+      if (b.phone && link && await ask({ title: 'לשלוח בוואטסאפ?', tone: 'mint', text: 'לשלוח ל' + b.name + ' את הקישור לחשבונית בוואטסאפ?', ok: 'בוואטסאפ', cancel: 'לא צריך' })) {
+        const msg = 'היי ' + (b.name || '').split(' ')[0] + ', תודה שבחרת בסטודיו תות 🍓\nמצורפת חשבונית מס קבלה ' + (inv.number || '') + ':\n' + link;
         window.open('https://wa.me/' + waNumber(b.phone) + '?text=' + encodeURIComponent(msg), '_blank');
       }
     } else {

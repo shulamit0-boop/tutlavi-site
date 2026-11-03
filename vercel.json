@@ -6,6 +6,10 @@
       "destination": "/admin.html"
     },
     {
+      "source": "/invoice",
+      "destination": "/invoice.html"
+    },
+    {
       "source": "/contract",
       "destination": "/contract.html"
     },

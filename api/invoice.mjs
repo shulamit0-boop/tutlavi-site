@@ -1,5 +1,5 @@
 import { kvGet, kvSet, storeReady } from './_store.mjs';
-import { requireAdmin } from './_guard.mjs';
+import { requireAdmin, limitPublic } from './_guard.mjs';
 import { text } from './_input.mjs';
 
 export const config = { runtime: 'edge' };
@@ -58,11 +58,19 @@ const describe = (b) =>
 
 /* `incl`: the amount already includes VAT (what the renter actually paid).
    Otherwise it is the price before VAT, as the contract states it. */
+/* Who the invoice is made out to. The renter who signed is not always who
+   pays: a company rents, a person signs. The studio confirms this on every
+   invoice; what she confirmed is remembered on the booking for next time. */
+const billTo = (b) => ({ name: b.billName || b.name || '', taxId: b.billTaxId || b.idnum || '' });
+// Israeli company numbers (ח.פ.) start with 51; 52/54/55/56/57/58/59 are other corporations
+export const looksCorporate = (taxId) => /^5[1-9]\d{7}$/.test(String(taxId || '').replace(/\D/g, ''));
+
 function draft(b, amount, incl) {
   const net = incl ? round2(amount / (1 + VAT)) : amount;
   const total = incl ? amount : round2(amount * (1 + VAT));
   return {
-    client: { name: b.name || '', taxId: b.idnum || '', email: b.email || '', phone: b.phone || '' },
+    client: { ...billTo(b), email: b.email || '', phone: b.phone || '' },
+    corporate: looksCorporate(billTo(b).taxId),
     description: describe(b),
     eventDate: b.date || '',
     vatIncluded: Boolean(incl),
@@ -92,18 +100,79 @@ async function token() {
   return t;
 }
 
+const rid = () => {
+  const a = new Uint8Array(16);
+  crypto.getRandomValues(a);
+  return Array.from(a, (x) => x.toString(16).padStart(2, '0')).join('');
+};
+
+async function gi(t, method, path, payload) {
+  const r = await fetch(base() + path, {
+    method,
+    headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t },
+    body: payload ? JSON.stringify(payload) : undefined,
+  });
+  const j = await r.json().catch(() => ({}));
+  return { r, j };
+}
+
+/* What the Tut-branded copy (/invoice?v=…) shows. Read back from Green Invoice
+   right after issuing, so it carries the business details exactly as they are
+   on the signed original (name, עוסק number, address). */
+function snapshot(doc, fallback) {
+  const biz = doc.business || {};
+  const cl = doc.client || {};
+  return {
+    type: doc.type || fallback.type,
+    number: doc.number || fallback.number,
+    date: doc.documentDate || fallback.date,
+    business: {
+      name: biz.name || '', title: biz.title || '', taxId: biz.taxId || '', type: biz.type ?? null,
+      address: [biz.address, biz.city].filter(Boolean).join(', '), phone: biz.phone || biz.mobile || '', email: biz.email || '',
+    },
+    client: { name: cl.name || fallback.client.name, taxId: cl.taxId || fallback.client.taxId || '', phone: cl.phone || fallback.client.phone || '' },
+    income: (doc.income || fallback.income).map((x) => ({ description: x.description, quantity: x.quantity, price: x.price, amount: x.amount ?? x.price * x.quantity })),
+    payment: (doc.payment || fallback.payment).map((x) => ({ type: x.type, date: x.date, price: x.price })),
+    net: doc.amountDueVat ?? fallback.net,
+    vat: doc.vat ?? fallback.vat,
+    vatRate: doc.vatRate ?? VAT,
+    total: doc.amount ?? fallback.total,
+    original: (doc.url && (doc.url.he || doc.url.origin)) || fallback.original,
+    links: (doc.linkedDocuments || []).map((x) => ({ type: x.documentType ?? x.type, number: x.number })),
+  };
+}
+
+async function saveView(t, j, fallback) {
+  let full = {};
+  try { const g = await gi(t, 'GET', '/documents/' + j.id); if (g.r.ok) full = g.j; } catch {}
+  const view = rid();
+  await kvSet('invoiceview:' + view, snapshot(full, fallback));
+  return view;
+}
+
 export default async function handler(req) {
+  /* public: the branded copy, by its unguessable token */
+  if (req.method === 'GET') {
+    const limited = await limitPublic(req, 'invoiceview', 60);
+    if (limited) return limited;
+    const v = new URL(req.url).searchParams.get('v') || '';
+    if (!/^[a-f0-9]{32}$/.test(v)) return Response.json({ error: 'not found' }, { status: 404 });
+    const snap = await kvGet('invoiceview:' + v);
+    if (!snap) return Response.json({ error: 'not found' }, { status: 404 });
+    return Response.json({ ok: true, doc: snap }, { headers: { 'Cache-Control': 'no-store', 'X-Robots-Tag': 'noindex' } });
+  }
   if (req.method !== 'POST') return Response.json({ error: 'method' }, { status: 405 });
   const denied = await requireAdmin(req);
   if (denied) return denied;
   if (!storeReady()) return Response.json({ error: 'store not configured' }, { status: 503 });
 
   const body = await req.json().catch(() => ({}));
+  const sandbox = process.env.GREENINVOICE_SANDBOX === '1';
 
   // connection test: signs in to Green Invoice and nothing else — no document
   if (body.action === 'check') {
     if (!invoiceReady()) return Response.json({ ok: false, ready: false });
-    try { await token(); return Response.json({ ok: true, ready: true, sandbox: process.env.GREENINVOICE_SANDBOX === '1' }); }
+    try { await token(); return Response.json({ ok: true, ready: true, sandbox }); }
     catch (e) { return Response.json({ ok: false, ready: true, error: String(e && e.message).slice(0, 120) }); }
   }
 
@@ -114,30 +183,69 @@ export default async function handler(req) {
 
   if (body.action === 'preview') {
     return Response.json({
-      ok: true,
-      ready: invoiceReady(),
-      sandbox: process.env.GREENINVOICE_SANDBOX === '1',
+      ok: true, ready: invoiceReady(), sandbox,
       status: b.status || '',
       invoice: b.invoice || null,
+      signer: { name: b.name || '', idnum: b.idnum || '' },
       ...draft(b, parsePrice(b.price), body.vatIncluded === true),
     }, { headers: { 'Cache-Control': 'no-store' } });
   }
 
-  if (body.action !== 'issue') return Response.json({ error: 'unknown action' }, { status: 400 });
   if (!invoiceReady()) return Response.json({ error: 'green invoice not configured' }, { status: 503 });
+
+  /* ---- cancel an issued invoice with a credit note (חשבונית זיכוי, 330).
+     A tax document cannot be edited or deleted; this is the only way to
+     correct one. The booking is then free for a new invoice. ---- */
+  if (body.action === 'credit') {
+    const inv = b.invoice;
+    if (!inv || !inv.id) return Response.json({ error: 'no invoice to cancel' }, { status: 409 });
+    if (body.number !== inv.number) return Response.json({ error: 'confirm the invoice number' }, { status: 400 });
+    let t, src, j;
+    try {
+      t = await token();
+      src = (await gi(t, 'GET', '/documents/' + inv.id)).j;
+      const credit = {
+        type: 330, lang: 'he', currency: 'ILS', vatType: src.vatType ?? 0,
+        description: 'ביטול חשבונית ' + inv.number,
+        remarks: text(body.reason, 200),
+        client: { ...(src.client && src.client.id ? { id: src.client.id } : {}), name: (src.client && src.client.name) || b.name, ...(src.client && src.client.taxId ? { taxId: src.client.taxId } : {}), country: 'IL' },
+        income: (src.income || []).map((x) => ({ description: x.description, quantity: x.quantity, price: x.price, currency: 'ILS', vatType: x.vatType ?? 0 })),
+        linkedDocumentIds: [inv.id],
+        linkType: 'cancel',
+      };
+      ({ j } = await gi(t, 'POST', '/documents', credit));
+      if (!j.id) {
+        console.warn('green invoice: credit rejected', { code: j.errorCode, msg: j.errorMessage });
+        return Response.json({ error: 'green invoice: ' + (j.errorMessage || 'rejected') }, { status: 502 });
+      }
+    } catch (e) {
+      return Response.json({ error: 'green invoice unreachable' }, { status: 502 });
+    }
+    const cr = { id: j.id, number: j.number || '', url: (j.url && (j.url.he || j.url.origin)) || '', at: new Date().toISOString() };
+    b.invoiceHistory = [...(b.invoiceHistory || []), { ...inv, cancelledBy: cr }];
+    b.invoice = null;
+    await kvSet('booking:' + id, b);
+    return Response.json({ ok: true, credit: cr });
+  }
+
+  if (body.action !== 'issue') return Response.json({ error: 'unknown action' }, { status: 400 });
   if (b.invoice && body.again !== true) {
     return Response.json({ error: 'already issued', invoice: b.invoice }, { status: 409 });
   }
-  /* The price is the one the studio confirmed on screen, sent back explicitly:
-     issuing never falls back to whatever is stored on the booking. */
+  /* Price and recipient are the ones the studio confirmed on screen, sent
+     back explicitly: issuing never falls back to what is on the booking. */
   const price = parsePrice(body.price);
   if (!price) return Response.json({ error: 'missing price' }, { status: 400 });
-  if (!b.name) return Response.json({ error: 'missing client name' }, { status: 400 });
+  const clientName = text(body.clientName, 120);
+  const clientTaxId = text(body.clientTaxId, 20).replace(/[^\d]/g, '');
+  if (!clientName) return Response.json({ error: 'missing client name' }, { status: 400 });
   // no email is fine: the document link is then handed over on WhatsApp instead
   const payDate = isDate(body.paymentDate) ? body.paymentDate : new Date().toISOString().slice(0, 10);
 
   const incl = body.vatIncluded === true;
   const d = draft(b, price, incl);
+  d.client.name = clientName;
+  d.client.taxId = clientTaxId;
   const doc = {
     type: DOC_TYPE,
     lang: 'he',
@@ -146,9 +254,9 @@ export default async function handler(req) {
     description: 'השכרת חלל סטודיו תות',   // document title; the full line is in the income row
     remarks: text(body.remarks, 300),
     client: {
-      name: d.client.name,
+      name: clientName,
       ...(d.client.email ? { emails: [d.client.email] } : {}),
-      ...(d.client.taxId ? { taxId: d.client.taxId } : {}),
+      ...(clientTaxId ? { taxId: clientTaxId } : {}),
       ...(d.client.phone ? { phone: d.client.phone } : {}),
       country: 'IL',
       add: true,
@@ -158,31 +266,37 @@ export default async function handler(req) {
     payment: [{ type: PAY_BANK_TRANSFER, date: payDate, price: d.total, currency: 'ILS' }],
   };
 
-  let j;
+  let j, t;
   try {
-    const t = await token();
-    const r = await fetch(base() + '/documents', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + t },
-      body: JSON.stringify(doc),
-    });
-    j = await r.json().catch(() => ({}));
-    if (!r.ok || !j.id) {
-      console.warn('green invoice: rejected', { status: r.status, code: j.errorCode, msg: j.errorMessage });
-      return Response.json({ error: 'green invoice: ' + (j.errorMessage || r.status) }, { status: 502 });
+    t = await token();
+    ({ j } = await gi(t, 'POST', '/documents', doc));
+    if (!j.id) {
+      console.warn('green invoice: rejected', { code: j.errorCode, msg: j.errorMessage });
+      return Response.json({ error: 'green invoice: ' + (j.errorMessage || 'rejected') }, { status: 502 });
     }
   } catch (e) {
     console.warn('green invoice: failed', String(e && e.message));
     return Response.json({ error: 'green invoice unreachable' }, { status: 502 });
   }
 
+  const original = (j.url && (j.url.he || j.url.origin)) || '';
+  const view = await saveView(t, j, {
+    type: DOC_TYPE, number: j.number, date: payDate, client: d.client, original,
+    income: [{ description: d.description, quantity: 1, price: d.price, amount: d.price }],
+    payment: [{ type: PAY_BANK_TRANSFER, date: payDate, price: d.total }],
+    net: d.price, vat: d.vat, total: d.total,
+  }).catch(() => '');
+
+  b.billName = clientName;
+  b.billTaxId = clientTaxId;
   b.invoice = {
     id: j.id,
     number: j.number || '',
-    url: (j.url && (j.url.he || j.url.origin)) || '',
+    url: original,
+    view,
     price: d.price, total: d.total,
     at: new Date().toISOString(),
-    sandbox: process.env.GREENINVOICE_SANDBOX === '1',
+    sandbox,
   };
   // the document exists either way; a failed write only loses the duplicate guard
   if (!(await kvSet('booking:' + id, b))) console.warn('invoice issued but not stored', { id, number: b.invoice.number });

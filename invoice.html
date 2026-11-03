@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<title>חשבונית · סטודיו תות</title>
+<link rel="icon" href="favicon.png">
+<link rel="stylesheet" href="fonts/web-fonts.css">
+<!-- The Tut-branded copy of an invoice issued in Green Invoice.
+     The legal document is the digitally signed original from Green Invoice,
+     linked at the bottom. This page repeats every detail the law requires
+     (the issuing עוסק with its number and address, document number, date,
+     client, lines, VAT, payment) and marks itself as a true copy. -->
+<style>
+:root{ --paper:#f7f3ee; --ink:#2b2724; --soft:#7a716a; --faint:#b3aaa2; --line:#ebe4dc; --berry:#d9363b; }
+*{ box-sizing:border-box; }
+body{ margin:0; background:var(--paper); color:var(--ink); font-family:'Heebo', system-ui, -apple-system, 'Segoe UI', Arial, sans-serif; -webkit-font-smoothing:antialiased; }
+.sheet{ max-width:780px; margin:32px auto; background:#fff; border-radius:20px; padding:48px 52px 36px; box-shadow:0 1px 2px rgba(43,39,36,.05), 0 12px 40px rgba(43,39,36,.06); }
+.top{ display:flex; justify-content:space-between; align-items:flex-start; gap:24px; }
+.logo{ width:150px; height:auto; display:block; }
+.issuer{ font-size:12px; line-height:1.6; color:var(--soft); text-align:left; }
+.issuer b{ color:var(--ink); font-weight:500; }
+.title{ margin:40px 0 4px; font-size:30px; font-weight:700; letter-spacing:-.01em; }
+.title .no{ color:var(--berry); font-variant-numeric:tabular-nums; }
+.copy{ font-size:13px; color:var(--soft); }
+.meta{ display:grid; grid-template-columns:1fr 1fr; gap:24px; margin:32px 0 28px; padding:20px 0; border-top:1px solid var(--line); border-bottom:1px solid var(--line); }
+.lbl{ font-size:12px; color:var(--faint); margin-bottom:4px; }
+.val{ font-size:15px; line-height:1.55; }
+table{ width:100%; border-collapse:collapse; font-size:14.5px; }
+th{ text-align:right; font-weight:500; font-size:12px; color:var(--faint); padding:0 0 10px; border-bottom:1px solid var(--line); }
+td{ padding:14px 0; border-bottom:1px solid var(--line); vertical-align:top; }
+.num{ text-align:left; font-variant-numeric:tabular-nums; white-space:nowrap; }
+.totals{ margin:18px 0 0 auto; width:min(320px,100%); font-size:14.5px; }
+.totals div{ display:flex; justify-content:space-between; padding:6px 0; }
+.totals .grand{ margin-top:6px; padding-top:12px; border-top:2px solid var(--ink); font-size:19px; font-weight:700; }
+h2{ font-size:13px; font-weight:500; color:var(--faint); margin:36px 0 10px; }
+.foot{ margin-top:40px; display:flex; justify-content:space-between; align-items:center; gap:16px; flex-wrap:wrap; font-size:12.5px; color:var(--soft); }
+.btn{ display:inline-flex; align-items:center; gap:8px; background:var(--ink); color:#fff; text-decoration:none; border:0; border-radius:999px; padding:11px 20px; font:inherit; font-size:14px; font-weight:500; cursor:pointer; }
+.btn.soft{ background:#fff; color:var(--ink); box-shadow:inset 0 0 0 1px var(--line); }
+.actions{ display:flex; gap:10px; flex-wrap:wrap; }
+.msg{ max-width:520px; margin:120px auto; text-align:center; color:var(--soft); font-size:16px; line-height:1.7; }
+[dir=ltr]{ unicode-bidi:isolate; }
+@media (max-width:640px){
+  .sheet{ margin:0; border-radius:0; padding:28px 20px 28px; box-shadow:none; }
+  .top{ flex-direction:column-reverse; }
+  .issuer{ text-align:right; }
+  .logo{ width:120px; }
+  .title{ font-size:24px; margin-top:24px; }
+  .meta{ grid-template-columns:1fr; gap:14px; }
+}
+@media print{
+  body{ background:#fff; }
+  .sheet{ margin:0; box-shadow:none; border-radius:0; padding:12mm 4mm; max-width:none; }
+  .actions{ display:none; }
+}
+</style>
+</head>
+<body>
+<main id="app"><p class="msg">טוען את החשבונית…</p></main>
+<script>
+(async () => {
+  const app = document.getElementById('app');
+  const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const money = (n) => '₪' + Number(n || 0).toLocaleString('he-IL', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const date = (iso) => (/^\d{4}-\d{2}-\d{2}/.test(iso || '') ? iso.slice(0, 10).split('-').reverse().join('.') : esc(iso));
+  const TYPES = { 305: 'חשבונית מס', 320: 'חשבונית מס / קבלה', 330: 'חשבונית זיכוי', 400: 'קבלה' };
+  const PAY = { 1: 'מזומן', 2: 'צ׳ק', 3: 'כרטיס אשראי', 4: 'העברה בנקאית', 5: 'פייפאל', 10: 'אפליקציית תשלום', 11: 'אחר' };
+  const BIZ = { 1: 'עוסק מורשה', 2: 'חברה בע״מ, ח.פ.', 3: 'עוסק פטור', 4: 'עמותה', 5: 'חל״צ', 6: 'שותפות' };
+
+  const v = new URLSearchParams(location.search).get('v') || '';
+  let doc;
+  try {
+    const r = await fetch('/api/invoice?v=' + encodeURIComponent(v), { cache: 'no-store' });
+    const j = await r.json();
+    if (!j.ok) throw 0;
+    doc = j.doc;
+  } catch {
+    app.innerHTML = '<p class="msg">לא מצאנו את החשבונית בקישור הזה.<br>אפשר לכתוב לנו ונשלח אותה שוב.</p>';
+    return;
+  }
+  const b = doc.business || {};
+  const c = doc.client || {};
+  const kind = TYPES[doc.type] || 'מסמך';
+  document.title = kind + ' ' + doc.number + ' · סטודיו תות';
+
+  app.innerHTML = `
+  <article class="sheet">
+    <header class="top">
+      <img class="logo" src="media/logo-tut.png" alt="סטודיו תות" width="645" height="249">
+      <div class="issuer">
+        <b>${esc(b.name)}</b><br>
+        ${esc(BIZ[b.type] || 'עוסק')} ${b.taxId ? '<span dir="ltr">' + esc(b.taxId) + '</span>' : ''}<br>
+        ${esc(b.address)}${b.phone ? '<br><span dir="ltr">' + esc(b.phone) + '</span>' : ''}
+      </div>
+    </header>
+
+    <h1 class="title">${esc(kind)} <span class="no">${esc(doc.number)}</span></h1>
+    <div class="copy">העתק נאמן למקור · המקור חתום דיגיטלית בחשבונית ירוקה</div>
+
+    <section class="meta">
+      <div><div class="lbl">לכבוד</div><div class="val">${esc(c.name)}${c.taxId ? '<br>ח.פ. / ת.ז. <span dir="ltr">' + esc(c.taxId) + '</span>' : ''}</div></div>
+      <div><div class="lbl">תאריך</div><div class="val">${date(doc.date)}</div></div>
+    </section>
+
+    <table>
+      <thead><tr><th>פירוט</th><th class="num">כמות</th><th class="num">סכום</th></tr></thead>
+      <tbody>${(doc.income || []).map((x) => `<tr><td>${esc(x.description)}</td><td class="num">${esc(x.quantity)}</td><td class="num">${money(x.amount)}</td></tr>`).join('')}</tbody>
+    </table>
+
+    <div class="totals">
+      <div><span>סה״כ לפני מע״מ</span><span class="num">${money(doc.net)}</span></div>
+      <div><span>מע״מ ${Math.round((doc.vatRate || 0) * 100)}%</span><span class="num">${money(doc.vat)}</span></div>
+      <div class="grand"><span>סה״כ</span><span class="num">${money(doc.total)}</span></div>
+    </div>
+
+    ${(doc.payment || []).length ? `
+    <h2>פרטי התשלום</h2>
+    <table>
+      <tbody>${doc.payment.map((p) => `<tr><td>${esc(PAY[p.type] || 'תשלום')}</td><td>${date(p.date)}</td><td class="num">${money(p.price)}</td></tr>`).join('')}</tbody>
+    </table>` : ''}
+
+    <footer class="foot">
+      <span>תודה שבחרתם בסטודיו תות 🍓 · tutlavi.com</span>
+      <div class="actions">
+        ${/^https:\/\//.test(doc.original || '') ? `<a class="btn" href="${esc(doc.original)}" target="_blank" rel="noopener noreferrer">המסמך המקורי (PDF)</a>` : ''}
+        <button class="btn soft" onclick="print()">הדפסה / שמירה</button>
+      </div>
+    </footer>
+  </article>`;
+})();
+</script>
+</body>
+</html>
