@@ -133,7 +133,7 @@ const detailRows = (b) => `
         ['שעות', [b.start, b.end].filter(Boolean).join('–')],
         ['מטרה', b.purpose],
         ['משתתפים', b.participants],
-        ['עלות', b.price],
+        ['עלות', b.price ? b.price + ' + מע"מ' : ''],
       ])}
     </table>`;
 
@@ -142,7 +142,7 @@ export function newRequestToStudio(b, id) {
   const html = layout({
     eyebrow: 'בקשה חדשה',
     title: `${b.name || 'פנייה'} מבקש/ת את החלל`,
-    lead: 'התאריך מוחזק עבורם עד לתשובתך. אישור הבקשה שולח להם את החוזה לחתימה.',
+    lead: 'התאריך עדיין פתוח באתר ויירד ממנו רק כשהלקוח יחתום. אישור הבקשה שולח להם את החוזה לחתימה.',
     body: `
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top:22px">
       ${rows([
@@ -153,7 +153,7 @@ export function newRequestToStudio(b, id) {
         ['שעות', [b.start, b.end].filter(Boolean).join('–')],
         ['מטרה', b.purpose],
         ['משתתפים', b.participants],
-        ['עלות', b.price],
+        ['עלות', b.price ? b.price + ' + מע"מ' : ''],
       ])}
     </table>
     ${b.message ? `<p style="margin:22px 0 0;padding:16px;background:#fafafa;border-right:3px solid ${RED};color:${INK};font-size:15px;line-height:1.7">${esc(b.message)}</p>` : ''}`,

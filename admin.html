@@ -2116,7 +2116,7 @@ function contractText(b, link) {
   return 'שלום ' + (b.name || '') + ',\n\n' +
     'שמחנו לקבל את בקשתכם:\n' +
     heDate(b.date) + (b.start && b.end ? ', ' + b.start + '–' + b.end : '') + '\n' +
-    (b.price ? 'עלות ההשכרה: ' + b.price + '\n' : '') +
+    (b.price ? 'עלות ההשכרה: ' + b.price + ' בתוספת מע"מ (מחיר הרצה)\n' : '') +
     (b.studioNote ? '\nסיכומים נוספים:\n' + b.studioNote + '\n' : '') +
     '\nלהשלמת ההזמנה נותר רק לחתום על ההסכם בקישור הבא:\n' +
     link + '\n\n' +

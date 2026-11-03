@@ -484,7 +484,7 @@ function selectDay(dIso) {
           costLine.hidden = true;
         }
         availStatus.textContent = 'נבחר: ' + fmtHe(dIso) + ' · ' + w.start + '–' + w.end +
-          (w.price ? ' · ₪' + w.price.toLocaleString() : '') + ' — החלון יישמר עבורכם עם השליחה.';
+          (w.price ? ' · ₪' + w.price.toLocaleString() : '') + ' — החלון יישמר עבורכם כשתחתמו על החוזה.';
         availStatus.className = 'avail-status ok';
       });
       availChips.appendChild(chip);
