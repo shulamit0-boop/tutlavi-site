@@ -402,6 +402,10 @@
 .paper-form .radio.is-on{
   background:var(--ink); border-color:var(--ink); color:var(--paper);
 }
+/* the free-text line that "אחר" opens under the pills */
+.purpose-other{ margin-top:.85rem; }
+.purpose-other[hidden]{ display:none; }
+.purpose-other .field-label{ font-size:.85rem; }
 
 /* ---- the calendar keeps its own frame, just quieter inside the sheet ---- */
 .paper-form .form-section,

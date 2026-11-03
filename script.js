@@ -320,11 +320,13 @@ const inquiryForm = document.getElementById('inquiryForm');
 const rentalFields = document.getElementById('rentalFields');
 const rentalInputs = rentalFields.querySelectorAll('input');
 const formStatus = document.getElementById('formStatus');
-/* "מה חשבתם" — the chips are the only choice the visitor makes about the kind
-   of request. Everything except "משהו אחר" is a request for the space itself,
-   which is what opens the calendar and creates a real hold. */
+/* "מה חשבתם" — the chips are the purpose of the rental. Every one of them is a
+   request for the space itself (calendar + hold); "אחר" just adds a free-text
+   line, and what is typed there becomes the purpose. */
 const typeRadios = inquiryForm.querySelectorAll('input[name="event-purpose"]');
-const OTHER_PURPOSE = 'משהו אחר';
+const OTHER_PURPOSE = 'אחר';
+const purposeOther = document.getElementById('purposeOther');
+const purposeOtherInput = document.getElementById('f-purpose-other');
 const typeInput = document.getElementById('f-type');
 const dateNoteField = document.getElementById('dateNoteField');
 const rentalSteps = document.getElementById('rentalSteps');
@@ -336,6 +338,16 @@ const rentalSteps = document.getElementById('rentalSteps');
    class is the one thing guaranteed to track the state everywhere. */
 function syncTypeCards() {
   typeRadios.forEach(r => r.closest('.radio')?.classList.toggle('is-on', r.checked));
+  const other = inquiryForm.querySelector('input[name="event-purpose"][value="' + OTHER_PURPOSE + '"]');
+  if (purposeOther) purposeOther.hidden = !(other && other.checked);
+}
+
+/* The purpose as it should be stored and mailed: the chip, or the free text
+   typed under "אחר" (falling back to the chip itself when the line is empty). */
+function chosenPurpose(payload) {
+  const chip = payload['event-purpose'] || '';
+  const free = (payload['event-purpose-other'] || '').trim();
+  return chip === OTHER_PURPOSE && free ? free : chip;
 }
 
 function setRentalVisible(show) {
@@ -562,13 +574,9 @@ function openInquiry(mode) {
   if (menuOverlay.classList.contains('open')) closeMenu();
   const checked = inquiryForm.querySelector('input[name="event-purpose"]:checked');
   if (mode === 'rental') {
-    // keep whatever chip is already chosen unless it is the one that skips the
-    // calendar, in which case fall back to the first chip
-    if (!checked || checked.value === OTHER_PURPOSE) typeRadios[0].checked = true;
+    if (!checked) typeRadios[0].checked = true;
     setRentalVisible(true);
   } else {
-    const other = inquiryForm.querySelector('input[value="' + OTHER_PURPOSE + '"]');
-    if (other) other.checked = true;
     setRentalVisible(false);
   }
   syncSubmitState();
@@ -589,7 +597,10 @@ document.querySelectorAll('[data-close-inquiry]').forEach(el => el.addEventListe
 window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && inquiryModal.classList.contains('open')) closeInquiry(); });
 
 typeRadios.forEach(r => {
-  r.addEventListener('change', () => setRentalVisible(r.checked && r.value !== OTHER_PURPOSE));
+  r.addEventListener('change', () => {
+    syncTypeCards();
+    if (r.checked && r.value === OTHER_PURPOSE) purposeOtherInput?.focus();
+  });
 });
 
 /* ---------- "שם + טלפון או מייל, וזה מספיק" ----------
@@ -699,6 +710,8 @@ inquiryForm.addEventListener('submit', (e) => {
   submitBtn.disabled = true;
 
   const payload = Object.fromEntries(new FormData(inquiryForm).entries());
+  payload['event-purpose'] = chosenPurpose(payload);
+  delete payload['event-purpose-other'];
   const isRental = !rentalFields.hidden;
 
   (async () => {

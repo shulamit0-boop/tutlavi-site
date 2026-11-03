@@ -319,8 +319,9 @@
       <!-- the mail itself (subject, template, Hebrew labels) is assembled in
            buildMail() in script.js; only the honeypot has to sit in the form -->
       <input type="hidden" name="_captcha" value="false">
-      <!-- set by setRentalVisible() from the chosen chip: everything but
-           "משהו אחר" is a request for the space itself -->
+      <!-- set by setRentalVisible(); every chip is a request for the space
+           itself, so this stays "השכרת חלל" unless the modal is opened in
+           another mode -->
       <input type="hidden" name="type" id="f-type" value="השכרת חלל">
       <p class="hp-field"><label>אל תמלאו: <input name="_honey"></label></p>
 
@@ -352,7 +353,14 @@
           <label class="radio"><input type="radio" name="event-purpose" value="סדנה"> סדנה</label>
           <label class="radio"><input type="radio" name="event-purpose" value="ארוחה או ערב"> ארוחה או ערב</label>
           <label class="radio"><input type="radio" name="event-purpose" value="אירוע חברה"> אירוע חברה</label>
-          <label class="radio"><input type="radio" name="event-purpose" value="משהו אחר"> משהו אחר</label>
+          <label class="radio"><input type="radio" name="event-purpose" value="השקה"> השקה</label>
+          <label class="radio"><input type="radio" name="event-purpose" value="אחר"> אחר</label>
+        </div>
+        <!-- "אחר" opens this line; what is typed here becomes the purpose
+             (on the request, in the mail and on the contract) -->
+        <div class="purpose-other" id="purposeOther" hidden>
+          <label class="field-label" for="f-purpose-other">מה בדיוק?</label>
+          <input id="f-purpose-other" type="text" name="event-purpose-other" maxlength="160" placeholder="למשל: צילומי קליפ, מסיבת יום הולדת, ערב הרצאות">
         </div>
       </div>
 
