@@ -209,7 +209,11 @@ export default async function handler(req) {
         description: 'ביטול חשבונית ' + inv.number,
         remarks: text(body.reason, 200),
         client: { ...(src.client && src.client.id ? { id: src.client.id } : {}), name: (src.client && src.client.name) || b.name, ...(src.client && src.client.taxId ? { taxId: src.client.taxId } : {}), country: 'IL' },
-        income: (src.income || []).map((x) => ({ description: x.description, quantity: x.quantity, price: x.price, currency: 'ILS', vatType: x.vatType ?? 0 })),
+        /* Green Invoice stores a row's price before VAT, whatever vatType it was
+           sent with, so the credit always adds VAT on top (vatType 0). Copying
+           the source's vatType 1 ("included") credited 1,059.32 instead of
+           1,250 on credit note 70005. */
+        income: (src.income || []).map((x) => ({ description: x.description, quantity: x.quantity, price: x.price, currency: 'ILS', vatType: 0 })),
         linkedDocumentIds: [inv.id],
         linkType: 'cancel',
       };
