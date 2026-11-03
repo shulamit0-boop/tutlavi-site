@@ -330,6 +330,54 @@ body.dragging, body.dragging *{ cursor:grabbing !important; user-select:none; }
 .add-win select{ width:auto; min-width:100px; }
 .lock-row{ display:flex; align-items:center; justify-content:space-between; gap:1rem; padding:.7rem .9rem; border-radius:14px; background:var(--paper); margin-bottom:1rem; }
 
+/* ---------- gantt ---------- */
+.gantt-span{ width:auto; min-height:36px; padding:.3rem .7rem; font-size:.9rem; }
+.gantt-wrap{ overflow:auto; max-height:70vh; border-radius:14px; border:1px solid var(--line); background:var(--card); }
+.gantt{ display:grid; grid-template-columns:200px repeat(var(--n,30),66px); min-width:max-content; }
+.g-head{ position:sticky; top:0; z-index:5; background:#fcfaf7; border-bottom:1px solid var(--line2); height:54px; display:flex; flex-direction:column; align-items:center; justify-content:center; font-size:.76rem; color:var(--soft); line-height:1.25; }
+.g-head b{ color:var(--ink); font-size:1rem; font-weight:600; }
+.g-head.today b{ background:var(--ink); color:#fff; border-radius:999px; padding:0 .45rem; }
+.g-head.wk{ background:#f6f2ec; }
+.g-lbl{ position:sticky; right:0; z-index:4; background:var(--card); border-left:1px solid var(--line2); border-bottom:1px solid var(--line); padding:.3rem .8rem; display:flex; flex-direction:column; justify-content:center; min-height:44px; overflow:hidden; }
+.g-lbl.h{ top:0; z-index:6; background:#fcfaf7; border-bottom:1px solid var(--line2); height:54px; }
+.g-lbl b{ font-weight:600; font-size:.95rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.g-lbl small{ color:var(--soft); font-size:.76rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.g-lbl.group{ background:var(--paper); color:var(--soft); font-size:.8rem; font-weight:500; min-height:30px; }
+.g-grp{ background:var(--paper); border-bottom:1px solid var(--line); min-height:30px; }
+.g-cell{ border-bottom:1px solid var(--line); border-left:1px solid #f1ece6; min-height:44px; padding:5px 2px; display:flex; align-items:center; }
+.g-cell.wk{ background:#faf7f3; }
+.g-cell.past{ background:#faf8f5; }
+.g-cell.today{ background:#f3efe9; }
+.g-cell.can{ cursor:pointer; }
+.g-cell.can:hover{ background:var(--mint-bg); }
+.g-cell.can.lockable:hover{ background:var(--stone-bg); }
+.g-chip{ flex:1; min-width:0; height:30px; border-radius:8px; font-size:.74rem; font-weight:500; line-height:30px; padding:0 6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; cursor:pointer; border:none; text-align:start; background:var(--paper); }
+.g-chip:hover{ filter:brightness(.95); }
+.g-cell.stack{ flex-direction:column; align-items:stretch; justify-content:center; gap:3px; }
+.g-cell.stack .g-chip{ flex:0 0 auto; height:22px; line-height:22px; font-size:.7rem; }
+.g-cell.stack .g-chip:only-child{ height:30px; line-height:30px; font-size:.74rem; }
+/* calendar windows: the colour says which kind, the fill says its state */
+.g-chip.k-eve{ --k:#7a4fb0; --kb:#f1eafa; }
+.g-chip.k-shoot{ --k:#1f8a8a; --kb:#e2f4f3; }
+.g-chip.k-morn{ --k:#b7790f; --kb:#fdf3dc; }
+.g-chip.k-noon{ --k:#d0602a; --kb:#fdebe1; }
+.g-chip.k-other{ --k:#6b625a; --kb:#efebe6; }
+.g-chip.win{ background:var(--kb); color:var(--k); }
+.g-chip.win.pending{ background:var(--kb); box-shadow:inset 0 0 0 1.5px var(--k); }
+.g-chip.win.booked{ background:var(--k); color:#fff; }
+.g-pick{ display:grid; grid-template-columns:1fr 1fr; gap:.5rem; margin-bottom:1.1rem; }
+.g-pick .g-chip{ height:auto; line-height:1.3; padding:.7rem .8rem; font-size:.95rem; text-align:center; white-space:normal; }
+.g-pick .g-chip small{ display:block; font-size:.78rem; opacity:.8; }
+.g-pick .g-chip:disabled{ opacity:.4; cursor:not-allowed; filter:none; }
+.g-chip.lock{ background:repeating-linear-gradient(135deg,#ede6de 0 6px,#e2dbd2 6px 12px); color:#5c544d; }
+.g-chip.ev{ background:var(--sky-bg); color:var(--sky); }
+.g-chip.st-requested{ background:var(--berry-bg); color:var(--berry-ink); }
+.g-chip.st-sent{ background:var(--honey-bg); color:var(--honey); }
+.g-chip.st-signed{ background:var(--sky-bg); color:var(--sky); }
+.g-chip.st-confirmed{ background:var(--mint-bg); color:var(--mint); }
+.g-chip.st-declined{ background:#e2dbd2; color:#5c544d; text-decoration:line-through; }
+@media (max-width:640px){ .gantt{ grid-template-columns:130px repeat(var(--n,30),52px); } .g-lbl{ padding:.3rem .5rem; } }
+
 /* ---------- events ---------- */
 .ev{ background:var(--card); border-radius:var(--r); box-shadow:var(--shadow); padding:1.1rem 1.2rem; margin-bottom:.9rem; position:relative; }
 .ev-top{ display:flex; align-items:center; gap:.6rem; margin-bottom:.9rem; }
@@ -469,6 +517,9 @@ body.dragging, body.dragging *{ cursor:grabbing !important; user-select:none; }
     <button data-tab="book">
       <svg class="i" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><path d="M3 9h18M8 13h4"/></svg>בקשות השכרה<span class="count" id="navBookCount" hidden></span>
     </button>
+    <button data-tab="gantt">
+      <svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="12" height="4" rx="1.5"/><rect x="7" y="11" width="14" height="4" rx="1.5"/><rect x="5" y="17" width="8" height="4" rx="1.5"/></svg>גאנט
+    </button>
     <button data-tab="cal">
       <svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>יומן פנוי
     </button>
@@ -563,6 +614,50 @@ body.dragging, body.dragging *{ cursor:grabbing !important; user-select:none; }
     </div>
     <div class="card table-card">
       <div class="table-wrap" id="board"><p class="loading">רגע, טוען…</p></div>
+    </div>
+  </section>
+
+  <!-- ============ GANTT ============ -->
+  <section id="tab-gantt" hidden>
+    <div class="page-head">
+      <div>
+        <h1>גאנט</h1>
+        <p>כל הימים בשורה אחת, וכל מה שיושב עליהם: מי ביקש להשכיר ובאיזה שלב, אילו ערבים וימי צילום פתוחים, אילו ימים נעולים ומה האירועים באתר. לחיצה על פריט לוקחת אליו. בשורת החלונות כל סוג בצבע משלו, ולחיצה על משבצת ריקה מציעה לפתוח בה ערב, יום צילום, בוקר או אחה״צ.</p>
+      </div>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+        <button class="btn mint sm" id="ganttNew">+ חוזה חדש</button>
+        <button class="btn soft sm" id="ganttRefresh">
+          <svg class="i" viewBox="0 0 24 24"><path d="M20 12a8 8 0 11-2.3-5.7M20 4v5h-5"/></svg>רענון
+        </button>
+      </div>
+    </div>
+    <div class="card gantt-card">
+      <div class="month-nav">
+        <button class="icon-btn" id="ganttPrevM" aria-label="החודש הקודם"><svg class="i" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+        <b id="ganttMonthLabel"></b>
+        <button class="btn quiet sm" id="ganttToday">היום</button>
+        <select class="inp gantt-span" id="ganttSpan" aria-label="כמה חודשים להציג">
+          <option value="1">חודש</option>
+          <option value="2">חודשיים</option>
+          <option value="3">3 חודשים</option>
+        </select>
+        <button class="icon-btn" id="ganttNextM" aria-label="החודש הבא"><svg class="i" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+      </div>
+      <div class="gantt-wrap"><div class="gantt" id="gantt"></div></div>
+      <div class="legend">
+        <span><i style="background:var(--berry-bg);border:1px solid #f1c9ca"></i>בקשה חדשה</span>
+        <span><i style="background:var(--honey-bg);border:1px solid #f0d9a6"></i>נשלח לחתימה</span>
+        <span><i style="background:var(--sky-bg);border:1px solid #c5d6ee"></i>הלקוח חתם</span>
+        <span><i style="background:var(--mint-bg);border:1px solid #bfe3cc"></i>סגור ומאושר</span>
+        <span><i style="background:#f1eafa;border:1px solid #d9c8ef"></i>ערב</span>
+        <span><i style="background:#e2f4f3;border:1px solid #b8e0de"></i>יום צילום</span>
+        <span><i style="background:#fdf3dc;border:1px solid #f0d9a6"></i>בוקר</span>
+        <span><i style="background:#fdebe1;border:1px solid #f3cbb5"></i>אחה״צ</span>
+        <span><i style="background:#fff;box-shadow:inset 0 0 0 1.5px #7a4fb0"></i>חלון בהמתנה (מסגרת)</span>
+        <span><i style="background:#7a4fb0"></i>חלון תפוס (מלא)</span>
+        <span><i style="background:repeating-linear-gradient(135deg,#ede6de 0 4px,#e2dbd2 4px 8px)"></i>יום נעול</span>
+        <span><i style="background:var(--sky-bg);border:1px solid #c5d6ee"></i>אירוע באתר</span>
+      </div>
     </div>
   </section>
 
@@ -870,7 +965,7 @@ function draggable(el, { onDrop, canDrop, grip, whole = true, onStart }) {
 }
 
 /* ================= TABS ================= */
-const TABS = ['home', 'book', 'cal', 'events', 'regs', 'artists', 'content'];
+const TABS = ['home', 'book', 'gantt', 'cal', 'events', 'regs', 'artists', 'content'];
 function showTab(which) {
   live.filter((x) => !x.undo).forEach((x) => x.finish(false));
   TABS.forEach((t) => { $('tab-' + t).hidden = t !== which; });
@@ -878,6 +973,7 @@ function showTab(which) {
   if (which === 'regs') loadRegs();
   if (which === 'artists') loadArtists();
   if (which === 'book' || which === 'home') loadBookings();
+  if (which === 'gantt') { renderGantt(); loadBookings(); }
   try { sessionStorage.setItem('tut-admin-tab', which); } catch {}
   window.scrollTo({ top: 0 });
 }
@@ -1040,6 +1136,7 @@ function render() {
     cal.append(el);
   }
   renderPanel();
+  renderGantt();
 }
 
 const TIMES = [];
@@ -1200,6 +1297,7 @@ async function loadContent() {
   if (backfilled) queueContentSave();
   renderContentForm();
   renderEvents();
+  renderGantt();
   window.renderMediaUI?.();
 }
 
@@ -1712,6 +1810,7 @@ function renderBoard() {
   const waiting = everything.filter((b) => b.status === 'requested' || b.status === 'signed').length;
   $('navBookCount').hidden = !waiting;
   $('navBookCount').textContent = waiting;
+  renderGantt();
 }
 
 function bookingRow(b) {
@@ -2068,6 +2167,154 @@ async function doLogin() {
   } catch { $('loginErr').textContent = 'אין חיבור לאינטרנט כרגע.'; }
   $('loginBtn').disabled = false;
 }
+
+/* ================= GANTT =================
+   One line per thing that sits on a day: every rental request, every open
+   window by its kind (evening, shoot day…), the locked days and the site
+   events. Nothing is stored here — it reads `bookings`, `data` and
+   `content.events`, and every click is handed to the tab that owns the item,
+   so there is exactly one place where each thing is edited. */
+let ganttView = new Date(); ganttView.setDate(1);
+let ganttSpan = 1;
+try { ganttSpan = Math.min(3, Math.max(1, +localStorage.getItem('tut-gantt-span') || 1)); } catch {}
+
+const addDaysIso = (dIso, n) => { const d = new Date(dIso + 'T00:00'); d.setDate(d.getDate() + n); return iso(d); };
+/* events keep their date as "24.07.2026"; older records may already be ISO */
+const evIso = (s) => {
+  const v = String(s || '').trim();
+  const m = /^(\d{1,2})\.(\d{1,2})\.(\d{4})$/.exec(v);
+  if (m) return m[3] + '-' + pad(+m[2]) + '-' + pad(+m[1]);
+  return /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : '';
+};
+
+function renderGantt() {
+  const grid = $('gantt');
+  if (!grid || $('tab-gantt').hidden) return;
+  const y = ganttView.getFullYear(), m = ganttView.getMonth();
+  const from = iso(new Date(y, m, 1)), to = iso(new Date(y, m + ganttSpan, 0));
+  const days = [];
+  for (let d = from; d <= to; d = addDaysIso(d, 1)) days.push(d);
+  const last = new Date(y, m + ganttSpan - 1, 1);
+  $('ganttMonthLabel').textContent = MONTHS[m] + ' ' + y + (ganttSpan > 1 ? ' – ' + MONTHS[last.getMonth()] + ' ' + last.getFullYear() : '');
+  grid.style.setProperty('--n', days.length);
+  grid.innerHTML = '';
+  const tIso = todayIso();
+  const dow = (d) => new Date(d + 'T00:00').getDay();
+  const inRange = (d) => d >= from && d <= to;
+
+  grid.append(h('div', { class: 'g-lbl h' }, h('small', { text: 'מה יושב על כל יום' })));
+  days.forEach((d) => {
+    const dt = new Date(d + 'T00:00');
+    grid.append(h('div', { class: 'g-head' + (dow(d) >= 5 ? ' wk' : '') + (d === tIso ? ' today' : ''), title: heDate(d) },
+      h('b', { text: dt.getDate() }),
+      h('span', { text: DOW[dow(d)] + (dt.getDate() === 1 && ganttSpan > 1 ? ' · ' + MONTHS[dt.getMonth()] : '') })));
+  });
+
+  let row = 2;
+  const group = (title) => {
+    grid.append(h('div', { class: 'g-lbl group', text: title, style: 'grid-row:' + row }));
+    grid.append(h('div', { class: 'g-grp', style: 'grid-row:' + row + ';grid-column:2 / -1' }));
+    row++;
+  };
+  /* a line: label on the right, one cell per day. chipFor(d) returns the chip
+     for that day or nothing; onEmpty(d) runs when a blank future cell is clicked */
+  const line = (label, sub, chipFor, onEmpty, emptyCls) => {
+    grid.append(h('div', { class: 'g-lbl', style: 'grid-row:' + row }, h('b', { text: label }), sub ? h('small', { text: sub }) : null));
+    days.forEach((d) => {
+      const got = chipFor(d);
+      const chip = Array.isArray(got) ? (got.length ? got : null) : got;
+      const can = (!chip || (Array.isArray(chip) && !data.locked.includes(d))) && Boolean(onEmpty) && d >= tIso;
+      const cell = h('div', {
+        class: 'g-cell' + (Array.isArray(chip) ? ' stack' : '') + (dow(d) >= 5 ? ' wk' : '') + (d < tIso ? ' past' : '') + (d === tIso ? ' today' : '') + (can ? ' can ' + (emptyCls || '') : ''),
+        style: 'grid-row:' + row, title: can ? heShort(d) : null,
+      }, chip);
+      if (can) cell.addEventListener('click', () => onEmpty(d));
+      grid.append(cell);
+    });
+    row++;
+  };
+  const chip = (cls, text, title, go) => h('button', { class: 'g-chip ' + cls, type: 'button', text, title, onclick: (e) => { e.stopPropagation(); go(); } });
+
+  /* 1. rental requests — a line per request in range, in date order */
+  const reqs = bookings.filter((b) => !pendingDelete.has(b.id) && inRange(b.date))
+    .sort((a, b) => (a.date || '').localeCompare(b.date || '') || (a.start || '').localeCompare(b.start || ''));
+  group('בקשות השכרה');
+  if (!reqs.length) line('אין בקשות בטווח הזה', 'בקשות חדשות יופיעו כאן', () => null);
+  reqs.forEach((b) => line(b.name || 'ללא שם', statusTitle(b.status) + (b.purpose ? ' · ' + b.purpose : ''),
+    (d) => d !== b.date ? null : chip('st-' + (b.status || 'requested'),
+      b.name || 'ללא שם',
+      (b.name || 'ללא שם') + ' · ' + heShort(b.date) + (b.start && b.end ? ' ' + b.start + '–' + b.end : '') + ' · ' + statusTitle(b.status) + '\nלחיצה פותחת את הבקשה',
+      () => { bookView = new Date(b.date + 'T00:00'); bookView.setDate(1); showTab('book'); setBookDay(b.date); flashCard(b.id); })));
+
+  /* 2. calendar windows — one line; each kind has its colour, the fill shows its state */
+  group('חלונות ביומן');
+  const kinds = PRESETS.filter((p) => !p.lock);
+  const kindOf = (w) => kinds.find((p) => p.start === w.start && p.end === w.end) || null;
+  const openDay = (d) => { view = new Date(d + 'T00:00'); view.setDate(1); selected = d; showTab('cal'); render(); };
+  const winChip = (w) => {
+    const st = winState(w), k = kindOf(w);
+    const what = st === 'open' ? 'פנוי' : st === 'pending' ? 'מישהו ביקש, בהמתנה' : 'תפוס';
+    const name = k ? k.label : w.start;
+    return chip('win ' + st + ' k-' + (k ? k.id : 'other'), name,
+      name + ' · ' + what + (w.price ? ' · ₪' + w.price : '') + ' · ' + heShort(w.date) + ' ' + w.start + '–' + w.end + (w.note ? '\n' + w.note : '') + '\nלחיצה פותחת את היום ביומן',
+      () => openDay(w.date));
+  };
+  line('חלונות', 'לחיצה על יום ריק פותחת חלון',
+    (d) => data.windows.filter((x) => x.date === d).sort((a, b) => a.start.localeCompare(b.start)).map(winChip),
+    (d) => pickKind(d, kinds));
+
+  /* 3. locked days */
+  line('ימים נעולים', 'לחיצה על יום ריק נועלת',
+    (d) => data.locked.includes(d) ? chip('lock', 'נעול', heShort(d) + ' נעול · לחיצה משחררת', () => unlockDay(d)) : null,
+    (d) => applyPreset(PRESETS.find((p) => p.lock), d), 'lockable');
+
+  /* 4. the site's events */
+  group('אירועים באתר');
+  const evs = (content.events || []).map((e) => ({ ...e, _d: evIso(e.date) })).filter((e) => inRange(e._d));
+  line('אירועים', evs.length ? evs.length + ' בטווח הזה' : 'אין אירועים בטווח הזה',
+    (d) => { const e = evs.find((x) => x._d === d); return e ? chip('ev', e.name || 'אירוע', (e.name || 'אירוע') + ' · ' + heShort(d) + (e.hidden ? ' · מוסתר מהאתר' : '') + '\nלחיצה פותחת את האירועים', () => showTab('events')) : null; });
+
+  if (!renderGantt.scrolled) {
+    renderGantt.scrolled = true;
+    grid.querySelector('.g-head.today')?.scrollIntoView({ inline: 'center', block: 'nearest' });
+  }
+}
+
+function pickKind(d, kinds) {
+  if (data.locked.includes(d)) { toast('היום הזה נעול. קודם משחררים אותו'); return; }
+  const close = () => { veil.remove(); document.removeEventListener('keydown', onKey); };
+  const onKey = (e) => { if (e.key === 'Escape') close(); };
+  const taken = (p) => data.windows.some((w) => w.date === d && w.start < p.end && p.start < w.end);
+  const dlg = h('div', { class: 'dialog', role: 'dialog', 'aria-modal': 'true', 'aria-label': 'מה פותחים ב' + heShort(d) },
+    h('h3', { text: 'מה פותחים ב' + heShort(d) + '?' }),
+    h('div', { class: 'g-pick' }, kinds.map((p) => h('button', {
+      class: 'g-chip win open k-' + p.id, type: 'button', disabled: taken(p),
+      title: taken(p) ? 'כבר יש חלון בשעות האלה' : null,
+      onclick: () => { close(); applyPreset(p, d); },
+    }, p.label, h('small', { dir: 'ltr', text: p.start + '–' + p.end })))),
+    h('div', { class: 'acts' }, h('button', { class: 'btn soft', onclick: close }, 'ביטול')));
+  const veil = h('div', { class: 'veil', onclick: (e) => { if (e.target === veil) close(); } }, dlg);
+  document.body.append(veil);
+  document.addEventListener('keydown', onKey);
+  dlg.querySelector('button:not([disabled])')?.focus();
+}
+
+async function unlockDay(d) {
+  if (!await ask({ title: 'לשחרר את ' + heShort(d) + '?', text: 'היום יחזור להיות רגיל ביומן, ואפשר יהיה לפתוח בו חלונות.', ok: 'כן, לשחרר', tone: 'mint' })) return;
+  calChange('שחררתי את ' + heShort(d), () => { data.locked = data.locked.filter((x) => x !== d); });
+}
+
+$('ganttPrevM').addEventListener('click', () => { ganttView.setMonth(ganttView.getMonth() - 1); renderGantt(); });
+$('ganttNextM').addEventListener('click', () => { ganttView.setMonth(ganttView.getMonth() + 1); renderGantt(); });
+$('ganttToday').addEventListener('click', () => { ganttView = new Date(); ganttView.setDate(1); renderGantt.scrolled = false; renderGantt(); });
+$('ganttSpan').value = ganttSpan;
+$('ganttSpan').addEventListener('change', (e) => {
+  ganttSpan = +e.target.value || 1;
+  try { localStorage.setItem('tut-gantt-span', ganttSpan); } catch {}
+  renderGantt();
+});
+$('ganttNew').addEventListener('click', newContractFlow);
+$('ganttRefresh').addEventListener('click', () => { load(); loadBookings(); });
 
 function start() {
   $('login').style.display = 'none';
