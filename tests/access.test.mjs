@@ -123,3 +123,12 @@ test('calendar: the feed says nothing without its own token', async () => {
   // minting a token is the studio's call
   assert.equal((await calendar(req('/api/calendar', { method: 'POST' }))).status, 401);
 });
+
+test('invoice: admin only, and never issues without Green Invoice configured', async () => {
+  const { default: invoice } = await import('../api/invoice.mjs');
+  for (const h of [{}, WRONG, SHORT]) {
+    assert.equal((await invoice(json('/api/invoice', 'POST', { action: 'issue', id: 'abc', price: 100 }, h))).status, 401);
+  }
+  assert.equal((await invoice(req('/api/invoice'))).status, 405);
+  assert.equal((await invoice(json('/api/invoice', 'POST', { action: 'issue', id: '../x', price: 100 }, KEY))).status, 400);
+});

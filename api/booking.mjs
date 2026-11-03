@@ -106,7 +106,7 @@ export default async function handler(req) {
         const b = await kvGet('booking:' + id);
         // the list view never needs the signature image — it is the bulk of
         // the record and would make this response enormous
-        if (b) rows.push({ ...publicView(b, id), idnum: b.idnum || '', signature: null });
+        if (b) rows.push({ ...publicView(b, id), idnum: b.idnum || '', signature: null, invoice: b.invoice || null });
       }
       // the panel phrases its buttons differently when it can send mail itself
       return Response.json({ ok: true, bookings: rows, mail: mailReady() }, {

@@ -2019,6 +2019,8 @@ function bookingRow(b) {
     btn('חתימה וסגירה', 'mint', () => signFlow(b));
     btn('תיקון תנאים', 'soft', () => approveFlow(b));
   } else if (b.status === 'confirmed') {
+    if (b.invoice) acts.append(h('a', { class: 'btn sm soft', href: b.invoice.url || '#', target: '_blank', rel: 'noopener', title: 'נשלחה ' + heShort((b.invoice.at || '').slice(0, 10)) }, 'חשבונית ' + (b.invoice.number || '✓')));
+    else btn('חשבונית', 'mint', () => invoiceFlow(b));
     btn('ביטול', 'quiet', () => declineFlow(b));
   }
   acts.append(h('a', { class: 'icon-btn', href: link, target: '_blank', rel: 'noopener', title: 'פתיחת ההסכם', 'aria-label': 'פתיחת ההסכם' }, icon('doc')));
@@ -2086,6 +2088,71 @@ async function approveFlow(b) {
     const j = await bookAction('approve', b.id, r);
     if (!j) return;
     return deliverContract({ ...b, ...d, price: r.price, studioNote: r.note }, location.origin + '/contract?bid=' + b.id, j.mailed);
+  }
+}
+
+/* Invoice after the event: one "חשבונית מס קבלה" through Green Invoice.
+   The server first returns what would be issued; nothing goes out until she
+   has looked at the client details and the price and pressed send. */
+async function invoiceApi(body) {
+  try {
+    const res = await fetch('/api/invoice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': key() },
+      body: JSON.stringify(body),
+    });
+    return { status: res.status, j: await res.json().catch(() => ({})) };
+  } catch { return { status: 0, j: {} }; }
+}
+const shekel = (n) => '₪' + Number(n || 0).toLocaleString('he-IL', { maximumFractionDigits: 2 });
+
+async function invoiceFlow(b) {
+  const { status, j } = await invoiceApi({ action: 'preview', id: b.id });
+  if (!status) { toast('אין חיבור לאינטרנט כרגע.', { warn: true }); return; }
+  if (!j.ok) { toast('לא הצלחתי לטעון את פרטי ההזמנה.', { warn: true }); return; }
+  if (!j.ready) {
+    await ask({ title: 'חשבונית ירוקה עוד לא מחוברת', tone: 'mint', ok: 'הבנתי', cancel: 'סגירה',
+      text: ['כדי להפיק חשבוניות מכאן צריך להוסיף ב-Vercel את מפתח ה-API של חשבונית ירוקה (GREENINVOICE_API_ID ו-GREENINVOICE_API_SECRET).'] });
+    return;
+  }
+  const c = j.client;
+  const f = (label, el, hint) => h('label', { class: 'field' }, h('span', { text: label }), el, hint ? h('small', { text: hint }) : null);
+  const price = h('input', { type: 'number', min: '0', step: '1', inputmode: 'decimal', dir: 'ltr', value: j.price || '' });
+  const pay = h('input', { type: 'date', dir: 'ltr', value: todayIso() });
+  const sum = h('p', { class: 'note' });
+  const upd = () => { const p = +price.value || 0; const v = Math.round(p * 18) / 100; sum.textContent = 'לפני מע"מ ' + shekel(p) + ' · מע"מ 18% ' + shekel(v) + ' · סה"כ ' + shekel(p + v); };
+  price.addEventListener('input', upd); upd();
+  const form = {
+    el: h('div', { class: 'form' },
+      f('המחיר שסוכם, לפני מע"מ ₪', price, 'זה המחיר מההזמנה. אם סוכם משהו אחר, לתקן כאן.'),
+      sum,
+      f('תאריך התשלום', pay, 'ההעברה הבנקאית שהלקוח שילם')),
+    collect: () => ({ price: +price.value || 0, paymentDate: pay.value }),
+    focus: price,
+  };
+  const text = [
+    'חשבונית מס קבלה ל' + (c.name || '—') + (c.taxId ? ' · ת.ז / ח.פ ' + c.taxId : ' · בלי ת.ז / ח.פ'),
+    'תישלח במייל ל-' + (c.email || '— אין מייל'),
+    j.description,
+    j.sandbox ? 'מצב ניסיון (sandbox): לא תופק חשבונית אמיתית.' : '',
+    j.eventDate && j.eventDate > todayIso() ? 'שימי לב: האירוע עוד לא התקיים.' : '',
+  ];
+  if (!c.email) { await ask({ title: 'חסר מייל ללקוח', text: 'לא אוכל לשלוח חשבונית בלי מייל. אפשר להוסיף אותו ב"תיקון תנאים".', ok: 'הבנתי', cancel: 'סגירה' }); return; }
+  for (;;) {
+    const r = await ask({ title: 'שליחת חשבונית', text, form, tone: 'mint', ok: 'כן, המחיר נכון, לשלוח', cancel: 'עוד לא' });
+    if (!r) return;
+    if (!(r.price > 0)) { toast('חסר מחיר', { warn: true }); continue; }
+    saving();
+    const res = await invoiceApi({ action: 'issue', id: b.id, price: r.price, paymentDate: r.paymentDate });
+    if (res.j.ok) {
+      saved();
+      toast('החשבונית ' + (res.j.invoice.number || '') + ' נשלחה ל-' + res.j.emailedTo + ' ✓', { ms: 6000 });
+    } else {
+      saveFailed('החשבונית לא הופקה');
+      toast(res.status === 409 ? 'כבר הופקה חשבונית להזמנה הזאת.' : 'החשבונית לא הופקה: ' + (res.j.error || 'אין חיבור'), { warn: true, ms: 8000 });
+    }
+    await loadBookings();
+    return;
   }
 }
 
