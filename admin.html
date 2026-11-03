@@ -361,6 +361,28 @@ body.dragging, body.dragging *{ cursor:grabbing !important; user-select:none; }
 .pill.pending{ background:var(--honey-bg); color:var(--honey); }
 .pill.free{ background:var(--stone-bg); color:var(--ink); }
 
+/* ---------- artists ---------- */
+.ar-tools{ display:grid; gap:.7rem; margin-bottom:1rem; }
+.ar-tools .inp{ max-width:420px; }
+.ar-fields{ display:flex; flex-wrap:wrap; gap:.4rem; }
+.ar-fields button{
+  font:inherit; font-size:.86rem; padding:.3rem .8rem; border-radius:999px; cursor:pointer;
+  background:var(--card); color:var(--ink); border:1px solid var(--line2);
+}
+.ar-fields button.on{ background:var(--ink); color:#fff; border-color:var(--ink); }
+.ar-grid{ display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:.9rem; }
+.ar-card{ background:var(--card); border-radius:var(--r); box-shadow:var(--shadow); padding:1.1rem 1.2rem; display:grid; gap:.5rem; align-content:start; position:relative; }
+.ar-card .ar-top{ display:flex; align-items:flex-start; gap:.6rem; }
+.ar-card h3{ font-size:1.08rem; font-weight:600; margin:0; flex:1; line-height:1.3; }
+.ar-card .ar-acts{ display:flex; gap:.1rem; flex:none; }
+.ar-field{ font-size:.82rem; font-weight:500; padding:.18rem .65rem; border-radius:999px; background:var(--honey-bg); color:var(--honey); justify-self:start; }
+.ar-field.none{ background:var(--stone-bg); color:var(--soft); }
+.ar-phone{ display:flex; gap:.5rem; align-items:center; flex-wrap:wrap; font-size:.95rem; }
+.ar-phone a{ color:var(--ink); text-decoration:none; font-variant-numeric:tabular-nums; }
+.ar-phone a.wa{ font-size:.82rem; color:var(--mint); font-weight:500; }
+.ar-notes{ font-size:.92rem; line-height:1.5; color:var(--ink); white-space:pre-line; margin:0; }
+.ar-meta{ font-size:.8rem; color:var(--soft); margin:0; }
+
 /* ---------- content ---------- */
 .acc{ background:var(--card); border-radius:var(--r); box-shadow:var(--shadow); margin-bottom:.8rem; overflow:hidden; }
 .acc summary{
@@ -455,6 +477,9 @@ body.dragging, body.dragging *{ cursor:grabbing !important; user-select:none; }
     </button>
     <button data-tab="regs">
       <svg class="i" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.5 3.4-5.5 6.5-5.5s5.7 2 6.5 5.5"/><path d="M16 4.5a3.5 3.5 0 010 7M18 14.8c2 .7 3.2 2.5 3.6 5.2"/></svg>נרשמים
+    </button>
+    <button data-tab="artists">
+      <svg class="i" viewBox="0 0 24 24"><path d="M12 3a9 9 0 100 18c1.2 0 1.8-.8 1.8-1.7 0-.6-.3-1-.6-1.5-.3-.4-.5-.8-.5-1.3 0-.9.8-1.5 1.7-1.5H16a5 5 0 005-5c0-4-4-7-9-7z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10.5" cy="7.5" r="1.2"/><circle cx="15" cy="7.5" r="1.2"/></svg>אמנים
     </button>
     <button data-tab="content">
       <svg class="i" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>טקסטים ותמונות
@@ -617,6 +642,27 @@ body.dragging, body.dragging *{ cursor:grabbing !important; user-select:none; }
       </button>
     </div>
     <div id="regsList"></div>
+  </section>
+
+  <!-- ============ ARTISTS ============ -->
+  <section id="tab-artists" hidden>
+    <div class="page-head">
+      <div>
+        <h1>קהילת האמנים</h1>
+        <p id="artistsCount">כל אמן שנשלח לקבוצת הוואטסאפ "קהילת האמנים" מופיע כאן תוך כמה דקות. אפשר לתקן, להוסיף ידנית ולמחוק.</p>
+      </div>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+        <button class="btn soft sm" id="artistsRefresh">
+          <svg class="i" viewBox="0 0 24 24"><path d="M20 12a8 8 0 11-2.3-5.7M20 4v5h-5"/></svg>רענון
+        </button>
+        <button class="btn berry sm" id="artistAdd">+ אמן חדש</button>
+      </div>
+    </div>
+    <div class="ar-tools">
+      <input class="inp" id="artistSearch" type="search" placeholder="חיפוש לפי שם, תחום או טלפון…" autocomplete="off">
+      <div class="ar-fields" id="artistFields"></div>
+    </div>
+    <div id="artistsList"></div>
   </section>
 
   <!-- ============ CONTENT ============ -->
@@ -824,12 +870,13 @@ function draggable(el, { onDrop, canDrop, grip, whole = true, onStart }) {
 }
 
 /* ================= TABS ================= */
-const TABS = ['home', 'book', 'cal', 'events', 'regs', 'content'];
+const TABS = ['home', 'book', 'cal', 'events', 'regs', 'artists', 'content'];
 function showTab(which) {
   live.filter((x) => !x.undo).forEach((x) => x.finish(false));
   TABS.forEach((t) => { $('tab-' + t).hidden = t !== which; });
   document.querySelectorAll('.nav button').forEach((b) => b.classList.toggle('active', b.dataset.tab === which));
   if (which === 'regs') loadRegs();
+  if (which === 'artists') loadArtists();
   if (which === 'book' || which === 'home') loadBookings();
   try { sessionStorage.setItem('tut-admin-tab', which); } catch {}
   window.scrollTo({ top: 0 });
@@ -1383,6 +1430,133 @@ async function loadRegs() {
   });
 }
 $('regsRefresh').addEventListener('click', loadRegs);
+
+/* ================= ARTISTS (קהילת האמנים) =================
+   Cards collected from the WhatsApp group by the Hefziba server, plus cards
+   added here by hand. Editing a card marks it `edited`, so the collector
+   never overwrites a correction made in the panel. */
+let artists = [];
+let artistField = '';
+async function loadArtists() {
+  const wrap = $('artistsList');
+  wrap.innerHTML = '';
+  wrap.append(h('p', { class: 'loading', text: 'רגע, טוען…' }));
+  try {
+    const res = await fetch('/api/artists', { headers: { 'x-admin-key': key() }, cache: 'no-store' });
+    if (!res.ok) throw new Error();
+    const j = await res.json();
+    artists = Array.isArray(j.artists) ? j.artists : [];
+  } catch {
+    wrap.innerHTML = '';
+    wrap.append(h('div', { class: 'card', text: 'לא הצלחתי לטעון את האמנים. נסי "רענון" עוד רגע.' }));
+    return;
+  }
+  renderArtists();
+}
+function artistFieldsBar() {
+  const bar = $('artistFields');
+  bar.innerHTML = '';
+  const counts = new Map();
+  artists.forEach((a) => { const f = (a.field || '').trim(); if (f) counts.set(f, (counts.get(f) || 0) + 1); });
+  if (!counts.size) return;
+  if (artistField && !counts.has(artistField)) artistField = '';
+  const mk = (label, val) => h('button', { class: val === artistField ? 'on' : '', type: 'button', onclick: () => { artistField = val; renderArtists(); } }, label);
+  bar.append(mk('הכל (' + artists.length + ')', ''));
+  [...counts.entries()].sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'he')).forEach(([f, n]) => bar.append(mk(f + ' (' + n + ')', f)));
+}
+function renderArtists() {
+  const wrap = $('artistsList');
+  wrap.innerHTML = '';
+  artistFieldsBar();
+  const q = ($('artistSearch').value || '').trim().toLowerCase();
+  const qd = q.replace(/\D/g, '');
+  const shown = artists.filter((a) => {
+    if (artistField && (a.field || '').trim() !== artistField) return false;
+    if (!q) return true;
+    const hay = [a.name, a.field, a.notes, a.addedBy].join(' ').toLowerCase();
+    return hay.includes(q) || (qd.length >= 3 && (a.phone || '').replace(/\D/g, '').includes(qd));
+  });
+  $('artistsCount').textContent = artists.length
+    ? artists.length + ' אמנים' + (shown.length !== artists.length ? ', מוצגים ' + shown.length : '') + '. כל מה שנשלח לקבוצת "קהילת האמנים" נכנס לכאן לבד.'
+    : 'כל אמן שנשלח לקבוצת הוואטסאפ "קהילת האמנים" מופיע כאן תוך כמה דקות. אפשר לתקן, להוסיף ידנית ולמחוק.';
+  if (!artists.length) {
+    wrap.append(h('div', { class: 'card', style: 'text-align:center;color:var(--soft)', text: 'עוד אין אמנים. כשמישהי תשלח שם וטלפון לקבוצה, הוא יופיע כאן.' }));
+    return;
+  }
+  if (!shown.length) {
+    wrap.append(h('div', { class: 'card', style: 'text-align:center;color:var(--soft)', text: 'לא נמצא אמן שמתאים לחיפוש.' }));
+    return;
+  }
+  const grid = h('div', { class: 'ar-grid' });
+  const fmt = (isoStr) => { const d = new Date(isoStr); return isNaN(d) ? '' : pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + '.' + d.getFullYear(); };
+  shown.slice().sort((a, b) => (b.at || '').localeCompare(a.at || '')).forEach((a) => {
+    const digits = (a.phone || '').replace(/\D/g, '');
+    const intl = digits.startsWith('0') ? '972' + digits.slice(1) : digits;
+    const edit = h('button', { class: 'icon-btn', title: 'עריכה', 'aria-label': 'עריכה', onclick: () => editArtist(a) }, icon('doc'));
+    const del = h('button', { class: 'icon-btn del', title: 'מחיקה', 'aria-label': 'מחיקה' }, icon('trash'));
+    del.addEventListener('click', async () => {
+      const ok = await ask({ title: 'למחוק את ' + (a.name || 'האמן/ית') + '?', text: 'הכרטיס יימחק מהרשימה. את זה אי אפשר להחזיר.', ok: 'כן, למחוק' });
+      if (!ok) return;
+      del.disabled = true;
+      const j = await artistAction({ action: 'delete', id: a.id });
+      if (j) { toast('הכרטיס נמחק'); loadArtists(); } else del.disabled = false;
+    });
+    const card = h('div', { class: 'ar-card' },
+      h('div', { class: 'ar-top' }, h('h3', { text: a.name || 'ללא שם' }), h('div', { class: 'ar-acts' }, edit, del)),
+      h('span', { class: 'ar-field' + (a.field ? '' : ' none'), text: a.field || 'בלי תחום' }),
+      a.phone ? h('div', { class: 'ar-phone' },
+        h('a', { href: 'tel:' + a.phone, dir: 'ltr', text: a.phone }),
+        intl.length >= 11 ? h('a', { class: 'wa', href: 'https://wa.me/' + intl, target: '_blank', rel: 'noopener', text: 'וואטסאפ' }) : null) : null,
+      a.notes ? h('p', { class: 'ar-notes', text: a.notes }) : null,
+      h('p', { class: 'ar-meta', text: (a.source === 'whatsapp' ? 'מהקבוצה' + (a.addedBy ? ', שלח/ה ' + a.addedBy : '') : 'נוסף ידנית') + (a.at ? ' · ' + fmt(a.at) : '') + (a.edited ? ' · תוקן בפאנל' : '') }));
+    grid.append(card);
+  });
+  wrap.append(grid);
+}
+async function artistAction(body) {
+  try {
+    const res = await fetch('/api/artists', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': key() },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error();
+    return await res.json();
+  } catch {
+    toast('לא הצלחתי לשמור, נסי שוב', { warn: true });
+    return null;
+  }
+}
+async function editArtist(a) {
+  const isNew = !a;
+  a = a || {};
+  const f = (label, el, hint) => h('label', { class: 'field' }, h('span', { text: label }), el, hint ? h('small', { text: hint }) : null);
+  const name = h('input', { type: 'text', value: a.name || '', placeholder: 'שם האמן/ית' });
+  const phone = h('input', { type: 'tel', value: a.phone || '', placeholder: '05x-xxxxxxx', dir: 'ltr' });
+  const field = h('input', { type: 'text', value: a.field || '', placeholder: 'למשל: ציור, קרמיקה, צילום', list: 'artistFieldList' });
+  const dl = h('datalist', { id: 'artistFieldList' });
+  [...new Set(artists.map((x) => (x.field || '').trim()).filter(Boolean))].forEach((v) => dl.append(h('option', { value: v })));
+  const notes = h('textarea', { rows: '4', placeholder: 'כמה מילים על האמן/ית' });
+  notes.value = a.notes || '';
+  const form = {
+    el: h('div', { class: 'form' }, f('שם', name), f('טלפון', phone), f('תחום', field, 'מילה או שתיים. לפי זה אפשר לסנן את הרשימה.'), dl, f('כמה מילים', notes)),
+    collect: () => ({ name: name.value.trim(), phone: phone.value.trim(), field: field.value.trim(), notes: notes.value.trim() }),
+    focus: name,
+  };
+  for (;;) {
+    const r = await ask({ title: isNew ? 'אמן/ית חדש/ה' : 'עריכת ' + (a.name || 'הכרטיס'), text: isNew ? '' : 'תיקון כאן נשמר, גם אם ההודעה בקבוצה אומרת אחרת.', form, tone: 'mint', ok: 'שמירה', cancel: 'ביטול' });
+    if (!r) return;
+    if (!r.name && !r.phone) { toast('צריך לפחות שם או טלפון', { warn: true }); continue; }
+    const j = await artistAction({ action: 'save', artist: { ...r, id: a.id || undefined } });
+    if (!j) return;
+    toast(isNew ? 'האמן/ית נוסף/ה' : 'נשמר');
+    loadArtists();
+    return;
+  }
+}
+$('artistsRefresh').addEventListener('click', loadArtists);
+$('artistAdd').addEventListener('click', () => editArtist(null));
+$('artistSearch').addEventListener('input', () => { if (artists.length) renderArtists(); });
 
 /* ================= RENTAL BOOKINGS =================
    The lifecycle mirrors api/booking.mjs:

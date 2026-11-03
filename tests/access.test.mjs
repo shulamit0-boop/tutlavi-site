@@ -20,6 +20,7 @@ const { default: booking } = await import('../api/booking.mjs');
 const { default: register } = await import('../api/register.mjs');
 const { default: availability } = await import('../api/availability.mjs');
 const { default: calendar } = await import('../api/calendar.mjs');
+const { default: artists } = await import('../api/artists.mjs');
 
 const req = (url, init = {}) => new Request('https://tutlavi.com' + url, init);
 const json = (url, method, body, headers = {}) =>
@@ -105,6 +106,13 @@ test('register: the payment callback refuses a caller without the secret', async
 test('register: deleting a registration needs the key', async () => {
   const res = await register(json('/api/register', 'POST', { action: 'delete', id: 'x' }));
   assert.equal(res.status, 401);
+});
+
+test('artists: the directory needs the key, for reading and writing', async () => {
+  assert.equal((await artists(req('/api/artists'))).status, 401);
+  assert.equal((await artists(req('/api/artists', { headers: WRONG }))).status, 401);
+  assert.equal((await artists(json('/api/artists', 'POST', { action: 'upsert', artists: [{ name: 'x', phone: '0501234567' }] }))).status, 401);
+  assert.equal((await artists(json('/api/artists', 'POST', { action: 'delete', id: 'abc' }, SHORT))).status, 401);
 });
 
 test('calendar: the feed says nothing without its own token', async () => {
