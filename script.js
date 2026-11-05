@@ -725,7 +725,7 @@ inquiryForm.addEventListener('submit', (e) => {
         formStatus.className = 'form-status err';
         formStatus.textContent = taken
           ? 'החלון שבחרתם הרגע נתפס. בחרו חלון אחר ביומן ונסו שוב.'
-          : 'לא הצלחנו לרשום את הבקשה. נסו שוב, או כתבו ל-vivian.office.info@gmail.com';
+          : 'לא הצלחנו לרשום את הבקשה. נסו שוב, או כתבו ל-tutStudio@gmail.com';
         submitBtn.disabled = false;
         if (taken) loadAvailability(true);
         return;
@@ -766,7 +766,7 @@ inquiryForm.addEventListener('submit', (e) => {
   })()
     .catch(() => {
       formStatus.className = 'form-status err';
-      formStatus.textContent = 'משהו השתבש. נסו שוב או כתבו ל-vivian.office.info@gmail.com';
+      formStatus.textContent = 'משהו השתבש. נסו שוב או כתבו ל-tutStudio@gmail.com';
     })
     .finally(() => { submitBtn.disabled = false; });
 });
@@ -795,7 +795,7 @@ contactForm?.addEventListener('submit', (e) => {
     })
     .catch(() => {
       cfStatus.className = 'cf-status err';
-      cfStatus.textContent = 'משהו השתבש. נסו שוב או כתבו ל-vivian.office.info@gmail.com';
+      cfStatus.textContent = 'משהו השתבש. נסו שוב או כתבו ל-tutStudio@gmail.com';
     })
     .finally(() => { btn.disabled = false; });
 });
@@ -893,7 +893,7 @@ if (eventModal) {
         if (res.status === 503 && data.error === 'payments not configured') {
           throw new Error('רכישת כרטיסים בהקמה כרגע — כתבו לנו ונשריין לכם מקום.');
         }
-        throw new Error('משהו השתבש. נסו שוב או כתבו ל-vivian.office.info@gmail.com');
+        throw new Error('משהו השתבש. נסו שוב או כתבו ל-tutStudio@gmail.com');
       }
       // email copy to the studio (both free and paid)
       try {
