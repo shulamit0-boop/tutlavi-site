@@ -396,6 +396,8 @@ export default async function handler(req) {
   if (body.action === 'decline') {
     b.status = 'declined';
     b.declinedAt = new Date().toISOString();
+    // why it was declined, so the studio can see patterns later
+    if (typeof body.reason === 'string') b.declineReason = str(body.reason, 200);
     b.holdUntil = null;
     const avail = await readAvail();
     if (releaseHold(avail, id)) await kvSet(AVAIL_KEY, avail);

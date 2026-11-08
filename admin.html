@@ -1984,6 +1984,7 @@ function bookingRow(b) {
     who.append(msg);
   }
   if (b.idnum && (b.status === 'signed' || b.status === 'confirmed')) who.append(h('span', { class: 'sub', text: 'ת.ז / ח.פ: ' + b.idnum }));
+  if (b.status === 'declined' && b.declineReason) who.append(h('span', { class: 'sub', text: 'סיבה: ' + b.declineReason }));
   if (b.status === 'signed' && b.holdUntil) who.append(h('span', { class: 'sub hold', text: 'שמור עד ' + heShort(b.holdUntil.slice(0, 10)) }));
   row.append(who);
 
@@ -2270,17 +2271,28 @@ async function signFlow(b) {
   if (j) toast('נסגר! ' + heShort(b.date) + ' תפוס ביומן ✓', { ms: 5000 });
 }
 
+const DECLINE_REASONS = ['הלקוח כבר לא רלוונטי', 'התאריך תפוס', 'לא מתאים לסוג האירוע', 'המחיר לא התאים', 'אין מענה מהלקוח', 'אחר'];
+
 async function declineFlow(b) {
   const confirmed = b.status === 'confirmed';
-  const ok = await ask({
+  const reason = h('select', {}, [h('option', { value: '', text: 'בלי סיבה' }), ...DECLINE_REASONS.map((v) => h('option', { value: v, text: v }))]);
+  const more = h('input', { type: 'text', placeholder: 'פרט נוסף (לא חובה)', maxlength: '120' });
+  const form = {
+    el: h('div', { class: 'form' },
+      h('label', { class: 'field' }, h('span', { text: 'סיבה (לא חובה)' }), reason, h('small', { text: 'נשמרת בכרטיס, כדי שאפשר יהיה ללמוד מזה' })),
+      h('label', { class: 'field' }, h('span', { text: 'פרט נוסף' }), more)),
+    collect: () => ({ reason: [reason.value, more.value.trim()].filter(Boolean).join(' · ') }),
+    focus: reason,
+  };
+  const r = await ask({ form,
     title: confirmed ? 'לבטל הזמנה שכבר נסגרה?' : 'לדחות את הבקשה?',
     text: confirmed
       ? ['ההסכם יסומן כמבוטל.', 'שימי לב: היום יישאר תפוס ביומן. כדי לפנות אותו, פותחים את היום ב"יומן פנוי" ומסמנים את החלון כפנוי.']
       : ['הבקשה של ' + (b.name || 'הלקוח') + ' תעבור ל"נדחו", והתאריך יחזור להיות פנוי באתר.', 'הלקוח לא מקבל על זה הודעה אוטומטית.'],
     ok: confirmed ? 'כן, לבטל' : 'כן, לדחות',
   });
-  if (!ok) return;
-  const j = await bookAction('decline', b.id);
+  if (!r) return;
+  const j = await bookAction('decline', b.id, { reason: r.reason });
   if (j) toast(confirmed ? 'ההזמנה בוטלה' : 'הבקשה נדחתה והתאריך פנוי שוב');
 }
 
