@@ -21,6 +21,7 @@ const { default: register } = await import('../api/register.mjs');
 const { default: availability } = await import('../api/availability.mjs');
 const { default: calendar } = await import('../api/calendar.mjs');
 const { default: artists } = await import('../api/artists.mjs');
+const { default: finance, clean: cleanFinance } = await import('../api/finance.mjs');
 
 const req = (url, init = {}) => new Request('https://tutlavi.com' + url, init);
 const json = (url, method, body, headers = {}) =>
@@ -134,4 +135,27 @@ test('invoice: admin only, and never issues without Green Invoice configured', a
   assert.equal((await invoice(req('/api/invoice?v=../../x'))).status, 404);
   assert.equal((await invoice(json('/api/invoice', 'POST', { action: 'credit', id: 'abc', number: 1 }, WRONG))).status, 401);
   assert.equal((await invoice(json('/api/invoice', 'POST', { action: 'issue', id: '../x', price: 100 }, KEY))).status, 400);
+});
+
+test('finance: the books need the key, for reading and writing', async () => {
+  assert.equal((await finance(req('/api/finance'))).status, 401);
+  assert.equal((await finance(req('/api/finance', { headers: WRONG }))).status, 401);
+  assert.equal((await finance(json('/api/finance', 'PUT', { fixed: [], entries: [] }))).status, 401);
+  assert.equal((await finance(json('/api/finance', 'PUT', { fixed: [] }, SHORT))).status, 401);
+});
+
+test('finance: stored values are cleaned', () => {
+  const out = cleanFinance({
+    fixed: [{ id: 'rent', name: 'שכירות\nX', amount: '4600' }, null, { name: 'x', amount: -5 }],
+    entries: [
+      { id: 'a1', kind: 'out', date: '2026-11-03', desc: 'תיקון', amount: 400 },
+      { kind: 'weird', date: '2026-11-04', amount: '250' },
+      { kind: 'in', date: 'not a date', amount: 100 },
+      { kind: 'in', date: '2026-11-05', amount: 0 },
+    ],
+  });
+  assert.deepEqual(out.fixed.map((f) => [f.name, f.amount]), [['שכירות X', 4600], ['x', 0]]);
+  assert.equal(out.entries.length, 2);
+  assert.equal(out.entries[1].kind, 'in');
+  assert.equal(out.entries[1].amount, 250);
 });

@@ -122,6 +122,35 @@ svg.i{ width:20px; height:20px; stroke:currentColor; fill:none; stroke-width:1.8
 
 /* ---------- app shell ---------- */
 #app{ display:none; max-width:1240px; margin:0 auto; padding:18px clamp(14px,3vw,36px) 120px; }
+/* ---------- money tab ---------- */
+.tile.static{ cursor:default; }
+.tile.static:hover{ transform:none; box-shadow:var(--shadow); }
+.money-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; align-items:start; }
+@media (max-width:980px){ .money-grid{ grid-template-columns:1fr; } }
+.money-grid .card h2{ display:flex; justify-content:space-between; align-items:baseline; gap:.5rem; }
+.money-grid .card h2 small{ font-size:.82rem; font-weight:400; color:var(--soft); }
+.mlist{ list-style:none; }
+.mlist li{ display:flex; align-items:center; gap:.6rem; padding:.55rem 0; border-bottom:1px solid var(--line); min-height:48px; }
+.mlist li .when{ color:var(--soft); font-size:.88rem; flex:none; min-width:3.6em; }
+.mlist li .what{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.mlist li .amt{ font-weight:600; white-space:nowrap; }
+.mlist li .amt.in{ color:var(--mint); }
+.mlist li .amt.out{ color:var(--berry-ink); }
+.mlist li .amt.none{ color:var(--faint); font-weight:400; font-size:.88rem; }
+.mlist li.click{ cursor:pointer; border-radius:var(--r-sm); }
+.mlist li.click:hover{ background:var(--stone-bg); }
+.mlist li.empty-li{ color:var(--soft); justify-content:center; border-bottom:0; }
+.mlist .inp{ min-height:40px; padding:.45rem .7rem; }
+.mlist .inp.n{ width:7.5em; flex:none; text-align:end; }
+.msum{ display:flex; justify-content:space-between; padding-top:.8rem; font-weight:600; font-size:1.05rem; }
+.mnote{ color:var(--soft); font-size:.85rem; margin-top:.6rem; }
+.madd{ display:grid; grid-template-columns:1fr 1fr; gap:.6rem; margin-top:1rem; padding:1rem; background:var(--stone-bg); border-radius:var(--r-sm); }
+.madd .full{ grid-column:1/-1; }
+.kind-sw{ display:flex; background:#fff; border:1.5px solid var(--line2); border-radius:999px; padding:3px; }
+.kind-sw button{ flex:1; border:0; background:none; border-radius:999px; padding:.4rem .6rem; font-size:.95rem; color:var(--soft); }
+.kind-sw button.on.in{ background:var(--mint); color:#fff; }
+.kind-sw button.on.out{ background:var(--berry); color:#fff; }
+
 @media (display-mode: standalone){
   #app{ padding-top:calc(10px + env(safe-area-inset-top)); padding-bottom:calc(120px + env(safe-area-inset-bottom));
         padding-right:max(14px, env(safe-area-inset-right)); padding-left:max(14px, env(safe-area-inset-left)); }
@@ -573,6 +602,9 @@ body.dragging, body.dragging *{ cursor:grabbing !important; user-select:none; }
     <button data-tab="gantt">
       <svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="12" height="4" rx="1.5"/><rect x="7" y="11" width="14" height="4" rx="1.5"/><rect x="5" y="17" width="8" height="4" rx="1.5"/></svg>גאנט
     </button>
+    <button data-tab="money">
+      <svg class="i" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="3"/><circle cx="12" cy="12" r="2.5"/><path d="M7 9.5v5M17 9.5v5"/></svg>כספים
+    </button>
     <button data-tab="cal">
       <svg class="i" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>יומן פנוי
     </button>
@@ -710,6 +742,26 @@ body.dragging, body.dragging *{ cursor:grabbing !important; user-select:none; }
       </div>
       <div class="card gday" id="ganttDay" aria-live="polite"></div>
     </div>
+  </section>
+
+  <!-- ============ MONEY ============ -->
+  <section id="tab-money" hidden>
+    <div class="page-head">
+      <div>
+        <h1>כספים</h1>
+        <p>כמה נכנס וכמה יצא בכל חודש. ההכנסות מההשכרות נכנסות לבד מהבקשות שסגורות ומאושרות. הוצאות קבועות נספרות בכל חודש, ואת כל השאר מוסיפים כאן ביד.</p>
+      </div>
+    </div>
+    <div class="card" style="margin-bottom:1rem;padding-block:1rem">
+      <div class="month-nav" style="margin:0">
+        <button class="icon-btn" id="moneyPrevM" aria-label="החודש הקודם"><svg class="i" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+        <b id="moneyMonthLabel"></b>
+        <button class="btn quiet sm" id="moneyToday">החודש</button>
+        <button class="icon-btn" id="moneyNextM" aria-label="החודש הבא"><svg class="i" viewBox="0 0 24 24"><path d="M15 6l-6 6 6 6"/></svg></button>
+      </div>
+    </div>
+    <div class="tiles" id="moneyTiles"></div>
+    <div id="moneyBody"><p class="loading">רגע, טוען…</p></div>
   </section>
 
   <!-- ============ CALENDAR ============ -->
@@ -1021,7 +1073,7 @@ function draggable(el, { onDrop, canDrop, grip, whole = true, onStart }) {
 }
 
 /* ================= TABS ================= */
-const TABS = ['home', 'book', 'gantt', 'cal', 'events', 'regs', 'artists', 'content'];
+const TABS = ['home', 'book', 'gantt', 'money', 'cal', 'events', 'regs', 'artists', 'content'];
 function showTab(which) {
   live.filter((x) => !x.undo).forEach((x) => x.finish(false));
   TABS.forEach((t) => { $('tab-' + t).hidden = t !== which; });
@@ -1030,6 +1082,7 @@ function showTab(which) {
   if (which === 'artists') loadArtists();
   if (which === 'book' || which === 'home') loadBookings();
   if (which === 'gantt') { renderGantt(); loadBookings(); }
+  if (which === 'money') { renderMoney(); loadFinance(); loadBookings(); }
   try { (IS_APP ? localStorage : sessionStorage).setItem('tut-admin-tab', which); } catch {}
   window.scrollTo({ top: 0 });
 }
@@ -1871,6 +1924,7 @@ async function loadBookings() {
   }
   renderBoard();
   renderHome();
+  if (!$('tab-money').hidden) renderMoney();
 }
 
 /* ---- the month view above the list ---- */
@@ -2576,6 +2630,186 @@ $('ganttToday').addEventListener('click', () => { ganttView = new Date(); ganttV
 })();
 $('ganttNew').addEventListener('click', () => newContractFlow());
 $('ganttRefresh').addEventListener('click', () => { load(); loadBookings(); });
+
+/* ================= MONEY =================
+   Income and expenses per month. Rental income comes from the bookings
+   (status confirmed, price before VAT, counted on the booking's date). Fixed
+   monthly costs and hand-entered income/expenses live in /api/finance. */
+let fin = null;            // { fixed, entries } once loaded
+let finTimer = null;
+let moneyView = new Date(); moneyView.setDate(1);
+let moneyKind = 'in';
+
+// same reading as api/invoice.mjs parsePrice: "₪2,500" → 2500; tiny numbers are clause numbers
+function priceNum(v) {
+  if (typeof v === 'number') return Number.isFinite(v) && v > 0 ? v : 0;
+  const m = String(v || '').replace(/,/g, '').match(/\d+(?:\.\d+)?/);
+  return m && +m[0] >= 50 ? +m[0] : 0;
+}
+
+async function loadFinance() {
+  try {
+    const res = await fetch('/api/finance', { headers: { 'x-admin-key': key() }, cache: 'no-store' });
+    if (!res.ok) throw new Error();
+    const j = await res.json();
+    fin = { fixed: Array.isArray(j.fixed) ? j.fixed : [], entries: Array.isArray(j.entries) ? j.entries : [] };
+  } catch {
+    if (!fin) {
+      $('moneyBody').innerHTML = '';
+      $('moneyBody').append(h('p', { class: 'empty', text: 'לא הצלחתי לטעון את הכספים. נסי לעבור לטאב אחר ולחזור עוד רגע.' }));
+      return;
+    }
+  }
+  renderMoney();
+}
+
+function queueFinSave() {
+  saving();
+  clearTimeout(finTimer);
+  finTimer = setTimeout(async () => {
+    try {
+      const res = await fetch('/api/finance', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json', 'x-admin-key': key() },
+        body: JSON.stringify(fin),
+      });
+      if (res.ok) saved();
+      else saveFailed(res.status === 401 ? 'צריך להתחבר מחדש' : 'השמירה נכשלה');
+    } catch { saveFailed(); }
+  }, 600);
+}
+
+function finChange(msg, fn) {
+  const before = JSON.stringify(fin);
+  fn();
+  queueFinSave(); renderMoney();
+  toast(msg, { undo: () => { fin = JSON.parse(before); queueFinSave(); renderMoney(); toast('בוטל, הכל חזר כמו שהיה'); } });
+}
+
+function moneyRange() {
+  const y = moneyView.getFullYear(), m = moneyView.getMonth();
+  return { start: iso(new Date(y, m, 1)), end: iso(new Date(y, m + 1, 0)) };
+}
+
+function moneyNumbers() {
+  const { start, end } = moneyRange();
+  const inMonth = (d) => d >= start && d <= end;
+  const vis = bookings.filter((b) => !pendingDelete.has(b.id) && inMonth(b.date || ''));
+  const rentals = vis.filter((b) => b.status === 'confirmed').sort((a, b) => a.date < b.date ? -1 : 1);
+  const coming = vis.filter((b) => b.status === 'sent' || b.status === 'signed');
+  const entries = (fin?.entries || []).filter((e) => inMonth(e.date)).sort((a, b) => a.date < b.date ? -1 : 1);
+  const rent = rentals.reduce((t, b) => t + priceNum(b.price), 0);
+  const handIn = entries.filter((e) => e.kind === 'in').reduce((t, e) => t + e.amount, 0);
+  const handOut = entries.filter((e) => e.kind === 'out').reduce((t, e) => t + e.amount, 0);
+  const fixed = (fin?.fixed || []).reduce((t, f) => t + (+f.amount || 0), 0);
+  return { rentals, coming, entries, rent, handIn, handOut, fixed,
+    comingSum: coming.reduce((t, b) => t + priceNum(b.price), 0),
+    income: rent + handIn, expense: fixed + handOut };
+}
+
+function renderMoneyTiles() {
+  const n = moneyNumbers();
+  const net = n.income - n.expense;
+  const tiles = $('moneyTiles');
+  tiles.innerHTML = '';
+  const tile = (cls, big, lbl, sub) => tiles.append(h('div', { class: 'tile static ' + cls },
+    h('span', { class: 'big', text: big }), h('span', { class: 'lbl', text: lbl }), h('span', { class: 'sub', text: sub })));
+  tile('mint', shekel(n.income), 'נכנס החודש', 'השכרות ' + shekel(n.rent) + (n.handIn ? ' · עוד ' + shekel(n.handIn) : ''));
+  tile('berry', shekel(n.expense), 'יצא החודש', 'קבועות ' + shekel(n.fixed) + (n.handOut ? ' · עוד ' + shekel(n.handOut) : ''));
+  tile(net < 0 ? 'berry' : 'mint', (net < 0 ? '−' : '') + shekel(Math.abs(net)), net < 0 ? 'חסר החודש' : 'נשאר החודש', net < 0 ? 'ההוצאות גדולות מההכנסות' : 'הכנסות פחות הוצאות');
+  const fs = $('moneyFixedSum');
+  if (fs) fs.textContent = shekel(n.fixed);
+}
+
+function renderMoney() {
+  $('moneyMonthLabel').textContent = MONTHS[moneyView.getMonth()] + ' ' + moneyView.getFullYear();
+  if (!fin) return;
+  const n = moneyNumbers();
+  const { start, end } = moneyRange();
+  const body = $('moneyBody');
+  body.innerHTML = '';
+
+  /* 1. rentals */
+  const rl = h('ul', { class: 'mlist' });
+  n.rentals.forEach((b) => {
+    const p = priceNum(b.price);
+    rl.append(h('li', { class: 'click', title: 'מעבר לבקשה', onclick: () => { showTab('book'); setTimeout(() => flashCard(b.id), 300); } },
+      h('span', { class: 'when', text: heShort(b.date) }),
+      h('span', { class: 'what', text: b.name || '' }),
+      h('span', { class: 'amt ' + (p ? 'in' : 'none'), text: p ? shekel(p) : 'אין מחיר' })));
+  });
+  if (!n.rentals.length) rl.append(h('li', { class: 'empty-li', text: 'אין החודש השכרות סגורות' }));
+  const rentCard = h('div', { class: 'card' },
+    h('h2', {}, 'מהשכרות', h('small', { text: 'סגורות ומאושרות' })), rl,
+    h('div', { class: 'msum' }, h('span', { text: 'סה״כ' }), h('span', { text: shekel(n.rent) })),
+    h('p', { class: 'mnote', text: 'המחירים כמו בחוזה, לפני מע״מ.' }),
+    n.coming.length ? h('p', { class: 'mnote', text: n.coming.length === 1 ? `עוד השכרה אחת בדרך (${shekel(n.comingSum)}): החוזה נשלח והיא עוד לא נסגרה. היא תיכנס לחשבון כשתיסגר.` : `עוד ${n.coming.length} השכרות בדרך (${shekel(n.comingSum)}): החוזים נשלחו והן עוד לא נסגרו. הן ייכנסו לחשבון כשייסגרו.` }) : null);
+
+  /* 2. by hand */
+  const ml = h('ul', { class: 'mlist' });
+  n.entries.forEach((e) => ml.append(h('li', {},
+    h('span', { class: 'when', text: heShort(e.date) }),
+    h('span', { class: 'what', text: e.desc || (e.kind === 'in' ? 'הכנסה' : 'הוצאה') }),
+    h('span', { class: 'amt ' + e.kind, text: (e.kind === 'in' ? '+' : '−') + shekel(e.amount) }),
+    h('button', { class: 'icon-btn del', 'aria-label': 'מחיקה', onclick: () => finChange('נמחק', () => { fin.entries = fin.entries.filter((x) => x.id !== e.id); }) }, icon('trash')))));
+  if (!n.entries.length) ml.append(h('li', { class: 'empty-li', text: 'עוד לא הוספת כלום החודש' }));
+
+  const today = todayIso();
+  const dateInp = h('input', { class: 'inp', type: 'date', value: today >= start && today <= end ? today : start, 'aria-label': 'תאריך' });
+  const descInp = h('input', { class: 'inp full', placeholder: 'על מה? (למשל: מכירת קפה, תיקון מזגן)', maxlength: '160', 'aria-label': 'תיאור' });
+  const amtInp = h('input', { class: 'inp', type: 'number', min: '0', step: '1', inputmode: 'decimal', placeholder: 'סכום ₪', 'aria-label': 'סכום' });
+  const kindBtn = (k, label) => h('button', { type: 'button', class: k + (moneyKind === k ? ' on' : ''), onclick: (ev) => {
+    moneyKind = k; ev.currentTarget.parentNode.querySelectorAll('button').forEach((b) => b.classList.toggle('on', b.classList.contains(k)));
+  } }, label);
+  const add = () => {
+    const amount = Math.round((+amtInp.value || 0) * 100) / 100;
+    if (!(amount > 0)) { amtInp.focus(); toast('חסר סכום', { warn: true }); return; }
+    if (!dateInp.value) { dateInp.focus(); return; }
+    const e = { id: Date.now().toString(36) + genId(), kind: moneyKind, date: dateInp.value, desc: descInp.value.trim().slice(0, 160), amount };
+    fin.entries.push(e);
+    queueFinSave();
+    const away = e.date < start || e.date > end;
+    renderMoney();
+    toast(away ? 'נוסף ל' + heShort(e.date) + ' (חודש אחר)' : (e.kind === 'in' ? 'ההכנסה נוספה' : 'ההוצאה נוספה'));
+  };
+  [descInp, amtInp].forEach((i) => i.addEventListener('keydown', (ev) => { if (ev.key === 'Enter') add(); }));
+  const handCard = h('div', { class: 'card' },
+    h('h2', {}, 'הוספה ביד'), ml,
+    h('div', { class: 'msum' }, h('span', { text: 'נטו' }), h('span', { text: (n.handIn - n.handOut < 0 ? '−' : '') + shekel(Math.abs(n.handIn - n.handOut)) })),
+    h('div', { class: 'madd' },
+      h('div', { class: 'kind-sw full', role: 'group', 'aria-label': 'סוג' }, kindBtn('in', 'הכנסה'), kindBtn('out', 'הוצאה')),
+      descInp, dateInp, amtInp,
+      h('button', { class: 'btn full', type: 'button', onclick: add }, '+ הוספה')));
+
+  /* 3. fixed */
+  const fl = h('ul', { class: 'mlist' });
+  fin.fixed.forEach((f) => {
+    const name = h('input', { class: 'inp', value: f.name || '', placeholder: 'שם ההוצאה', maxlength: '80', 'aria-label': 'שם ההוצאה' });
+    const amt = h('input', { class: 'inp n', type: 'number', min: '0', step: '1', inputmode: 'decimal', value: f.amount || '', placeholder: '0', 'aria-label': 'סכום לחודש' });
+    name.addEventListener('input', () => { f.name = name.value.slice(0, 80); queueFinSave(); });
+    amt.addEventListener('input', () => { f.amount = Math.max(0, +amt.value || 0); queueFinSave(); renderMoneyTiles(); });
+    fl.append(h('li', {}, name, amt,
+      h('button', { class: 'icon-btn del', 'aria-label': 'מחיקה', onclick: () => finChange('ההוצאה הקבועה נמחקה', () => { fin.fixed = fin.fixed.filter((x) => x !== f); }) }, icon('trash'))));
+  });
+  if (!fin.fixed.length) fl.append(h('li', { class: 'empty-li', text: 'אין הוצאות קבועות' }));
+  const fixedCard = h('div', { class: 'card' },
+    h('h2', {}, 'הוצאות קבועות', h('small', { text: 'בכל חודש' })), fl,
+    h('div', { class: 'msum' }, h('span', { text: 'סה״כ לחודש' }), h('span', { id: 'moneyFixedSum', text: shekel(n.fixed) })),
+    h('button', { class: 'btn soft sm', type: 'button', style: 'margin-top:1rem;width:100%', onclick: () => {
+      fin.fixed.push({ id: Date.now().toString(36) + genId(), name: '', amount: 0 });
+      queueFinSave(); renderMoney();
+      const ins = $('moneyBody').querySelectorAll('.card:last-child .mlist li:last-child input');
+      ins[0]?.focus();
+    } }, '+ הוצאה קבועה'),
+    h('p', { class: 'mnote', text: 'שינוי כאן חל על כל החודשים, גם על חודשים שעברו.' }));
+
+  body.append(h('div', { class: 'money-grid' }, rentCard, handCard, fixedCard));
+  renderMoneyTiles();
+}
+const moneyMove = (n) => { moneyView.setMonth(moneyView.getMonth() + n); renderMoney(); };
+$('moneyPrevM').addEventListener('click', () => moneyMove(-1));
+$('moneyNextM').addEventListener('click', () => moneyMove(1));
+$('moneyToday').addEventListener('click', () => { moneyView = new Date(); moneyView.setDate(1); renderMoney(); });
 
 function start() {
   $('login').style.display = 'none';
