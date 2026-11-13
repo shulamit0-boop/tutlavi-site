@@ -2048,6 +2048,7 @@ function bookingRow(b) {
   const chips = h('div', { class: 'chips' });
   if (b.purpose) chips.append(h('span', { class: 'chip', text: b.purpose }));
   if (b.participants) chips.append(h('span', { class: 'chip', text: b.participants + ' משתתפים' }));
+  if (b.npo) chips.append(h('span', { class: 'chip', text: 'עמותה' }));
   if (b.price) chips.append(h('span', { class: 'chip money', text: b.price }));
   row.append(h('td', {}, chips));
 
@@ -2107,6 +2108,7 @@ async function approveFlow(b) {
   purpose.value = b.purpose || purposes[0];
   const participants = h('input', { type: 'text', inputmode: 'numeric', value: b.participants || '' });
   const price = h('input', { type: 'text', placeholder: 'למשל ₪2,500', value: b.price || BASE_PRICE });
+  const npo = npoBox(price, b.npo, b.npo ? BASE_PRICE : (b.price || BASE_PRICE));
   const note = h('textarea', { rows: '3', placeholder: 'למשל: המחיר כולל שימוש בבר. הגעה לפריקה מ-17:00.' });
   note.value = b.studioNote || '';
   const form = {
@@ -2118,10 +2120,11 @@ async function approveFlow(b) {
       h('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:.8rem' }, f('משעה', start), f('עד שעה', end)),
       f('סוג האירוע', purpose),
       f('כמה משתתפים (לא חובה)', participants),
+      npo.el,
       f('מחיר סופי', price),
       f('דברים שסיכמתם (לא חובה)', note, 'נכנס לחוזה עצמו ולמייל ללקוח')),
     collect: () => ({
-      price: price.value.trim(), note: note.value.trim(),
+      price: price.value.trim(), npo: npo.box.checked, note: note.value.trim(),
       details: {
         name: name.value.trim(), phone: phone.value.trim(), email: email.value.trim(),
         date: date.value, start: start.value, end: end.value,
@@ -2142,7 +2145,7 @@ async function approveFlow(b) {
     if (missing) { toast(missing, { warn: true }); continue; }
     const j = await bookAction('approve', b.id, r);
     if (!j) return;
-    return deliverContract({ ...b, ...d, price: r.price, studioNote: r.note }, location.origin + '/contract?bid=' + b.id, j.mailed);
+    return deliverContract({ ...b, ...d, price: r.price, npo: r.npo, studioNote: r.note }, location.origin + '/contract?bid=' + b.id, j.mailed);
   }
 }
 
@@ -2245,6 +2248,29 @@ async function deliverContract(b, link, mailed) {
 }
 
 const BASE_PRICE = '₪2,500';
+/* Nonprofits: the space costs ₪1,500, a nonprofit pays only operating costs */
+const NPO_FULL_PRICE = '₪1,500';
+const NPO_PRICE = '₪600';
+
+/* "עמותה ללא מטרות רווח" checkbox for the contract forms. Ticking it puts the
+   nonprofit price in the price field (unless she already typed something else),
+   unticking puts back the regular one. */
+function npoBox(price, on, regular) {
+  const box = h('input', { type: 'checkbox' });
+  box.checked = Boolean(on);
+  const hint = h('small', { text: 'בחוזה ייכתב: עלות השכרת החלל היא ' + NPO_FULL_PRICE + ', ולעמותות ללא מטרות רווח יש רק עלויות תפעול על סך המחיר שבשדה (' + NPO_PRICE + ').' });
+  hint.hidden = !box.checked;
+  box.addEventListener('change', () => {
+    hint.hidden = !box.checked;
+    const v = price.value.trim();
+    if (box.checked && (!v || v === regular || v === BASE_PRICE || v === NPO_FULL_PRICE)) price.value = NPO_PRICE;
+    else if (!box.checked && v === NPO_PRICE) price.value = regular || BASE_PRICE;
+  });
+  const el = h('label', { class: 'field', style: 'gap:.3rem' },
+    h('span', { style: 'display:flex;align-items:center;gap:.5rem' }, box, h('span', { text: 'עמותה ללא מטרות רווח' })),
+    hint);
+  return { el, box };
+}
 
 // 054-312-9933 → 972543129933, the form wa.me wants
 function waNumber(phone) {
@@ -2256,7 +2282,9 @@ function contractText(b, link) {
   return 'שלום ' + (b.name || '') + ',\n\n' +
     'שמחנו לקבל את בקשתכם:\n' +
     heDate(b.date) + (b.start && b.end ? ', ' + b.start + '–' + b.end : '') + '\n' +
-    (b.price ? 'עלות ההשכרה: ' + b.price + ' בתוספת מע"מ (מחיר הרצה)\n' : '') +
+    (b.price ? (b.npo
+      ? 'עלות השכרת החלל היא ' + NPO_FULL_PRICE + '. לעמותות ללא מטרות רווח יש רק עלויות תפעול על סך ' + b.price + ' בתוספת מע"מ\n'
+      : 'עלות ההשכרה: ' + b.price + ' בתוספת מע"מ (מחיר הרצה)\n') : '') +
     (b.studioNote ? '\nסיכומים נוספים:\n' + b.studioNote + '\n' : '') +
     '\nלהשלמת ההזמנה נותר רק לחתום על ההסכם בקישור הבא:\n' +
     link + '\n\n' +
@@ -2284,6 +2312,7 @@ async function newContractFlow(preDate) {
   const purpose = h('select', {}, ['ארוחה או ערב', 'סדנה', 'יום צילום', 'אירוע חברה', 'השקה', 'אחר'].map((v) => h('option', { value: v, text: v })));
   const participants = h('input', { type: 'text', inputmode: 'numeric', placeholder: 'למשל 30' });
   const price = h('input', { type: 'text', value: BASE_PRICE });
+  const npo = npoBox(price, false, BASE_PRICE);
   const note = h('textarea', { rows: '3', placeholder: 'למשל: המחיר כולל שימוש בבר. הגעה לפריקה מ-17:00.' });
   const form = {
     el: h('div', { class: 'form' },
@@ -2294,12 +2323,13 @@ async function newContractFlow(preDate) {
       h('div', { style: 'display:grid;grid-template-columns:1fr 1fr;gap:.8rem' }, f('משעה', start), f('עד שעה', end)),
       f('סוג האירוע', purpose),
       f('כמה משתתפים (לא חובה)', participants),
+      npo.el,
       f('מחיר', price),
       f('דברים שסיכמתם (לא חובה)', note, 'נכנס לחוזה עצמו')),
     collect: () => ({
       name: name.value.trim(), phone: phone.value.trim(), email: email.value.trim(),
       date: date.value, start: start.value, end: end.value, purpose: purpose.value,
-      participants: participants.value.trim(), price: price.value.trim(), note: note.value.trim(),
+      participants: participants.value.trim(), price: price.value.trim(), npo: npo.box.checked, note: note.value.trim(),
     }),
     focus: name,
   };

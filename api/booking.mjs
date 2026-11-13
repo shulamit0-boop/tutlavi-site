@@ -70,6 +70,7 @@ const publicView = (b, id) => ({
   name: b.name, email: b.email, phone: b.phone,
   date: b.date, start: b.start, end: b.end,
   purpose: b.purpose, participants: b.participants, price: b.price,
+  npo: Boolean(b.npo),
   message: b.message, studioNote: b.studioNote || '',
   idnum: maskId(b.idnum),
   signature: b.signature || null,
@@ -284,6 +285,7 @@ export default async function handler(req) {
       purpose: str(d.purpose, 160),
       participants: str(d.participants, 30),
       price: str(d.price, 30),
+      npo: d.npo === true,
       message: '',
       studioNote: multiline(d.note, 1500),
       windowId: '',
@@ -319,6 +321,9 @@ export default async function handler(req) {
        fixes the final price and adds whatever else was agreed. Both land in
        the contract itself, not only in the covering email. */
     if (typeof body.price === 'string') b.price = str(body.price, 30);
+    /* nonprofit rate: the contract shows the full space price and that a
+       nonprofit pays only the operating costs (the price above) */
+    if (typeof body.npo === 'boolean') b.npo = body.npo;
     if (typeof body.note === 'string') b.studioNote = multiline(body.note, 1500);
     /* Full edit: the studio may also fix the renter's details and the slot.
        Moving the date or hours frees the calendar window this request was

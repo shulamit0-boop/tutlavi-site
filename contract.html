@@ -198,7 +198,8 @@ ol{ padding-inline-start:1.2rem; }
 
 <h2>2. תמורה ותשלום</h2>
 <ol>
-  <li>דמי ההשכרה: <span class="fill" id="c-price">סכום ₪</span> <b>בתוספת מע"מ כדין</b>.</li>
+  <li id="priceStd">דמי ההשכרה: <span class="fill" id="c-price">סכום ₪</span> <b>בתוספת מע"מ כדין</b>.</li>
+  <li id="priceNpo" hidden>עלות השכרת החלל היא ₪1,500. השוכר הוא <b>עמותה ללא מטרות רווח</b>, ולכן ישלם רק עלויות תפעול על סך <span class="fill" id="c-price-npo">₪600</span> <b>בתוספת מע"מ כדין</b>.</li>
   <li>המחיר הוא <b>מחיר הרצה</b>, הניתן לתקופת ההרצה של הסטודיו בלבד. אין בו כדי לחייב את המשכיר במחיר זה בהשכרות עתידיות.</li>
   <li>התשלום יתבצע ב<b>העברה בנקאית</b> לחשבון המשכיר.</li>
   <li>פרטי החשבון להעברה: הילה שייר, בנק לאומי (10), סניף 861, מספר חשבון 04224270.</li>
@@ -405,6 +406,12 @@ function applyData(d) {
   fill('c-hours', (d.start && d.end) ? d.start + '–' + d.end : (d.start || ''));
   fill('c-purpose', d.purpose);
   fill('c-price', d.price);
+  if (d.npo) {
+    // nonprofit: the full space price is stated, and they pay only operating costs
+    fill('c-price-npo', d.price);
+    $('priceStd').remove();
+    $('priceNpo').hidden = false;
+  }
   fill('c-participants', d.participants);
   if (d.studioNote) {
     // textContent, so anything typed in the panel stays text and never markup
