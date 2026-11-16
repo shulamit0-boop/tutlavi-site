@@ -305,7 +305,7 @@ export default async function handler(req) {
       return Response.json({ error: 'store write failed' }, { status: 500 });
     }
     await pushIndex(id);
-    const mailed = mailReady() && b.email ? await contractToClient(b, id) : false;
+    const mailed = mailReady() && b.email && body.mail !== false ? await contractToClient(b, id) : false;
     return Response.json({ ok: true, id, status: b.status, mailed });
   }
 
@@ -364,8 +364,9 @@ export default async function handler(req) {
     if (!(await kvSet('booking:' + id, b))) {
       return Response.json({ error: 'store write failed' }, { status: 500 });
     }
-    // when this succeeds the panel skips the mailto: hand-off entirely
-    const mailed = mailReady() ? await contractToClient(b, id) : false;
+    // when this succeeds the panel skips the mailto: hand-off entirely.
+    // mail:false = Hefziba prepares it for Hila's OK first (16.11.2026), no mail to the renter
+    const mailed = mailReady() && body.mail !== false ? await contractToClient(b, id) : false;
     return Response.json({ ok: true, status: b.status, holdUntil: b.holdUntil, mailed });
   }
 

@@ -123,8 +123,6 @@ async function send({ to, subject, html, text, replyTo }) {
   }
 }
 
-const NPO_FULL_PRICE = '₪1,500';
-
 const when = (b) => [heDate(b.date), [b.start, b.end].filter(Boolean).join('–')]
   .filter(Boolean).join(' · ');
 
@@ -135,7 +133,7 @@ const detailRows = (b) => `
         ['שעות', [b.start, b.end].filter(Boolean).join('–')],
         ['מטרה', b.purpose],
         ['משתתפים', b.participants],
-        ['עלות', b.price ? (b.npo ? 'עמותה ללא מטרות רווח: עלויות תפעול בלבד ' + b.price + ' + מע"מ (במקום ' + NPO_FULL_PRICE + ')' : b.price + ' + מע"מ') : ''],
+        ['עלות', b.price ? (b.npo ? 'ללא עלות שכירות. עלויות תפעול הערב בלבד: ' + b.price + ' + מע"מ' : b.price + ' + מע"מ') : ''],
       ])}
     </table>`;
 

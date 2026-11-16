@@ -1361,7 +1361,7 @@ const FIELDS = [
   { sec: 'לכתוב לנו' },
   { key: 'contactTitle', label: 'הכותרת הענקית', def: 'בואו' },
   { key: 'contactLead', label: 'משפט מתחת לכותרת', def: 'הכי נוח בוואטסאפ. עונים כשאנחנו לא באמצע סדנה.' },
-  { key: 'contactEmail', label: 'אימייל', def: 'tutStudio@gmail.com', dir: 'ltr' },
+  { key: 'contactEmail', label: 'אימייל', def: 'tutlavi.studio@gmail.com', dir: 'ltr' },
   { key: 'contactPhone', label: 'טלפון (וואטסאפ)', def: '054-312-9933', dir: 'ltr', note: 'מתעדכן גם בתפריט' },
   { key: 'contactInstagram', label: 'אינסטגרם', def: '@tutlavi_studio', dir: 'ltr', note: 'אפשר @שם או קישור מלא' },
   { key: 'innerCircle', label: 'שורת Inner Circle', def: 'יש לנו קבוצת וואטסאפ קטנה. שם מספרים קודם על ערבים, סדנאות וארוחות. אפשר להצטרף.', multi: true },
@@ -2248,7 +2248,8 @@ async function deliverContract(b, link, mailed) {
 }
 
 const BASE_PRICE = '₪2,500';
-/* Nonprofits: the space costs ₪1,500, a nonprofit pays only operating costs */
+/* Nonprofits: use of the space with no rent, they pay only the evening's
+   operating costs. No "full price" is quoted (16.11.2026, Hila). */
 const NPO_FULL_PRICE = '₪1,500';
 const NPO_PRICE = '₪600';
 
@@ -2258,7 +2259,7 @@ const NPO_PRICE = '₪600';
 function npoBox(price, on, regular) {
   const box = h('input', { type: 'checkbox' });
   box.checked = Boolean(on);
-  const hint = h('small', { text: 'בחוזה ייכתב: עלות השכרת החלל היא ' + NPO_FULL_PRICE + ', ולעמותות ללא מטרות רווח יש רק עלויות תפעול על סך המחיר שבשדה (' + NPO_PRICE + ').' });
+  const hint = h('small', { text: 'בחוזה ייכתב: הסכם שימוש בחלל, ללא עלות שכירות. התשלום (' + NPO_PRICE + ' או המחיר שבשדה) הוא עבור עלויות התפעול של הערב בלבד ואינו משקף עלות השכרה.' });
   hint.hidden = !box.checked;
   box.addEventListener('change', () => {
     hint.hidden = !box.checked;
@@ -2283,7 +2284,7 @@ function contractText(b, link) {
     'שמחנו לקבל את בקשתכם:\n' +
     heDate(b.date) + (b.start && b.end ? ', ' + b.start + '–' + b.end : '') + '\n' +
     (b.price ? (b.npo
-      ? 'עלות השכרת החלל היא ' + NPO_FULL_PRICE + '. לעמותות ללא מטרות רווח יש רק עלויות תפעול על סך ' + b.price + ' בתוספת מע"מ\n'
+      ? 'השימוש בחלל ללא עלות שכירות. התשלום הוא עבור עלויות התפעול של הערב בלבד: ' + b.price + ' בתוספת מע"מ\n'
       : 'עלות ההשכרה: ' + b.price + ' בתוספת מע"מ (מחיר הרצה)\n') : '') +
     (b.studioNote ? '\nסיכומים נוספים:\n' + b.studioNote + '\n' : '') +
     '\nלהשלמת ההזמנה נותר רק לחתום על ההסכם בקישור הבא:\n' +
