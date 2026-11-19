@@ -617,6 +617,9 @@ body.dragging, body.dragging *{ cursor:grabbing !important; user-select:none; }
     <button data-tab="artists">
       <svg class="i" viewBox="0 0 24 24"><path d="M12 3a9 9 0 100 18c1.2 0 1.8-.8 1.8-1.7 0-.6-.3-1-.6-1.5-.3-.4-.5-.8-.5-1.3 0-.9.8-1.5 1.7-1.5H16a5 5 0 005-5c0-4-4-7-9-7z"/><circle cx="7.5" cy="11" r="1.2"/><circle cx="10.5" cy="7.5" r="1.2"/><circle cx="15" cy="7.5" r="1.2"/></svg>אמנים
     </button>
+    <button data-tab="vivian">
+      <svg class="i" viewBox="0 0 24 24"><path d="M5 4h14l-7 8z"/><path d="M12 12v7M8 20h8"/></svg>ויויאן
+    </button>
     <button data-tab="content">
       <svg class="i" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>טקסטים ותמונות
     </button>
@@ -843,6 +846,27 @@ body.dragging, body.dragging *{ cursor:grabbing !important; user-select:none; }
   </section>
 
   <!-- ============ ARTISTS ============ -->
+  <section id="tab-vivian" hidden>
+    <div class="page-head">
+      <div>
+        <h1>ויויאן · רשימת עדכונים</h1>
+        <p id="vivCount">כל מי שנרשם לעדכונים בעמוד של ויויאן או בקוד של סדנת הקוקטיילים מופיע כאן לבד.</p>
+      </div>
+      <div style="display:flex;gap:.5rem;flex-wrap:wrap">
+        <button class="btn soft sm" id="vivRefresh">
+          <svg class="i" viewBox="0 0 24 24"><path d="M20 12a8 8 0 11-2.3-5.7M20 4v5h-5"/></svg>רענון
+        </button>
+        <button class="btn soft sm" id="vivCsv">הורדה לאקסל</button>
+        <button class="btn berry sm" id="vivAdd">+ נרשם/ת</button>
+      </div>
+    </div>
+    <div class="ar-tools">
+      <input class="inp" id="vivSearch" type="search" placeholder="חיפוש לפי שם, טלפון או הערה…" autocomplete="off">
+      <select class="inp" id="vivFilter" aria-label="סינון לפי מה מעניין"></select>
+    </div>
+    <div class="card table-card"><div class="table-wrap" id="vivList"><p class="loading">רגע, טוען…</p></div></div>
+  </section>
+
   <section id="tab-artists" hidden>
     <div class="page-head">
       <div>
@@ -1073,13 +1097,14 @@ function draggable(el, { onDrop, canDrop, grip, whole = true, onStart }) {
 }
 
 /* ================= TABS ================= */
-const TABS = ['home', 'book', 'gantt', 'money', 'cal', 'events', 'regs', 'artists', 'content'];
+const TABS = ['home', 'book', 'gantt', 'money', 'cal', 'events', 'regs', 'artists', 'vivian', 'content'];
 function showTab(which) {
   live.filter((x) => !x.undo).forEach((x) => x.finish(false));
   TABS.forEach((t) => { $('tab-' + t).hidden = t !== which; });
   document.querySelectorAll('.nav button').forEach((b) => b.classList.toggle('active', b.dataset.tab === which));
   if (which === 'regs') loadRegs();
   if (which === 'artists') loadArtists();
+  if (which === 'vivian') loadViv();
   if (which === 'book' || which === 'home') loadBookings();
   if (which === 'gantt') { renderGantt(); loadBookings(); }
   if (which === 'money') { renderMoney(); loadFinance(); loadBookings(); }
@@ -1860,6 +1885,152 @@ async function editArtist(a) {
 }
 $('artistsRefresh').addEventListener('click', loadArtists);
 $('artistAdd').addEventListener('click', () => editArtist(null));
+
+/* ================= VIVIAN (רשימת עדכונים / CRM) =================
+   Sign-ups from /vivian and /syrups (the workshop QR), via /api/vivian.
+   One row per phone; signing up again merges the interests. */
+let vivLeads = [];
+let vivFilterVal = '';
+async function loadViv() {
+  const wrap = $('vivList');
+  wrap.innerHTML = '';
+  wrap.append(h('p', { class: 'loading', text: 'רגע, טוען…' }));
+  try {
+    const res = await fetch('/api/vivian', { headers: { 'x-admin-key': key() }, cache: 'no-store' });
+    if (!res.ok) throw new Error();
+    const j = await res.json();
+    vivLeads = Array.isArray(j.leads) ? j.leads : [];
+  } catch {
+    wrap.innerHTML = '';
+    wrap.append(h('p', { class: 'empty', text: 'לא הצלחתי לטעון את הרשימה. נסי "רענון" עוד רגע.' }));
+    return;
+  }
+  renderViv();
+}
+function vivInterestOptions() {
+  const all = [];
+  vivLeads.forEach((l) => (l.interests || []).forEach((t) => { if (!all.includes(t)) all.push(t); }));
+  return all;
+}
+function vivShown() {
+  const q = ($('vivSearch').value || '').trim().toLowerCase();
+  const qd = q.replace(/\D/g, '');
+  return vivLeads.filter((l) => {
+    if (vivFilterVal && !(l.interests || []).includes(vivFilterVal)) return false;
+    if (!q) return true;
+    const hay = [l.name, l.notes, l.source, (l.interests || []).join(' ')].join(' ').toLowerCase();
+    return hay.includes(q) || (qd.length >= 3 && (l.phone || '').replace(/\D/g, '').includes(qd));
+  });
+}
+function renderViv() {
+  const sel = $('vivFilter');
+  const opts = vivInterestOptions();
+  if (vivFilterVal && !opts.includes(vivFilterVal)) vivFilterVal = '';
+  sel.innerHTML = '';
+  sel.append(h('option', { value: '', text: 'כל הנרשמים (' + vivLeads.length + ')' }));
+  opts.forEach((v) => sel.append(h('option', { value: v, text: v + ' (' + vivLeads.filter((l) => (l.interests || []).includes(v)).length + ')' })));
+  sel.value = vivFilterVal;
+
+  const wrap = $('vivList');
+  wrap.innerHTML = '';
+  const shown = vivShown();
+  $('vivCount').textContent = vivLeads.length
+    ? vivLeads.length + ' נרשמים' + (shown.length !== vivLeads.length ? ', מוצגים ' + shown.length : '') + '. מי שנרשם בעמוד של ויויאן או בקוד של הסדנה נכנס לכאן לבד.'
+    : 'כל מי שנרשם לעדכונים בעמוד של ויויאן או בקוד של סדנת הקוקטיילים מופיע כאן לבד.';
+  if (!shown.length) {
+    wrap.append(h('p', { class: 'empty', text: vivLeads.length ? 'לא נמצא מישהו שמתאים לחיפוש או לסינון.' : 'עוד אין נרשמים. כשמישהו יסרוק את הקוד וירשם, הוא יופיע כאן.' }));
+    return;
+  }
+  const fmt = (isoStr) => { const d = new Date(isoStr); return isNaN(d) ? '' : pad(d.getDate()) + '.' + pad(d.getMonth() + 1) + '.' + d.getFullYear(); };
+  const head = h('tr', {}, ['שם והערות', 'טלפון', 'מה מעניין', 'נרשם', ''].map((t) => h('th', { text: t })));
+  const body = h('tbody', {});
+  shown.slice().sort((a, b) => (b.at || '').localeCompare(a.at || '')).forEach((l) => {
+    const row = h('tr', { 'data-id': l.id });
+    const who = h('td', { class: 'who' }, h('div', { class: 'nm', text: l.name || 'ללא שם' }));
+    if (l.notes) {
+      const msg = h('span', { class: 'sub msg', title: 'לחיצה לפתיחה', text: l.notes });
+      msg.addEventListener('click', () => msg.classList.toggle('open'));
+      who.append(msg);
+    }
+    row.append(who);
+    const contact = h('div', { class: 'contact' });
+    if (l.phone) {
+      const digits = l.phone.replace(/\D/g, '');
+      contact.append(h('a', { href: 'tel:' + digits, dir: 'ltr' }, icon('phone'), l.phone));
+      if (digits.length >= 9) contact.append(h('a', { href: 'https://wa.me/' + waNumber(l.phone), target: '_blank', rel: 'noopener' }, icon('chat'), 'וואטסאפ'));
+    }
+    row.append(h('td', {}, contact));
+    row.append(h('td', {}, h('span', { text: (l.interests || []).join(', ') || '—' })));
+    row.append(h('td', { class: 'got' }, h('span', { text: fmt(l.at) }), h('small', { text: l.source || '' })));
+    const edit = h('button', { class: 'icon-btn', title: 'עריכה', 'aria-label': 'עריכה', onclick: () => editViv(l) }, icon('doc'));
+    const del = h('button', { class: 'icon-btn del', title: 'מחיקה', 'aria-label': 'מחיקה' }, icon('trash'));
+    del.addEventListener('click', async () => {
+      const ok = await ask({ title: 'למחוק את ' + (l.name || 'הנרשם/ת') + '?', text: 'השורה תימחק מהרשימה. את זה אי אפשר להחזיר.', ok: 'כן, למחוק' });
+      if (!ok) return;
+      del.disabled = true;
+      const j = await vivAction({ action: 'delete', id: l.id });
+      if (j) { toast('נמחק'); loadViv(); } else del.disabled = false;
+    });
+    row.append(h('td', { class: 'acts-cell' }, h('div', { class: 'acts' }, edit, del)));
+    body.append(row);
+  });
+  wrap.append(h('table', { class: 'tbl ar' }, h('thead', {}, head), body));
+}
+async function vivAction(body) {
+  try {
+    const res = await fetch('/api/vivian', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-admin-key': key() },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error();
+    return await res.json();
+  } catch {
+    toast('לא הצלחתי לשמור, נסי שוב', { warn: true });
+    return null;
+  }
+}
+async function editViv(l) {
+  const isNew = !l;
+  l = l || {};
+  const f = (label, el, hint) => h('label', { class: 'field' }, h('span', { text: label }), el, hint ? h('small', { text: hint }) : null);
+  const name = h('input', { type: 'text', value: l.name || '', placeholder: 'שם' });
+  const phone = h('input', { type: 'tel', value: l.phone || '', placeholder: '05x-xxxxxxx', dir: 'ltr' });
+  const ints = h('input', { type: 'text', value: (l.interests || []).join(', '), placeholder: 'סירופים, יין מתובל, סדנאות' });
+  const notes = h('textarea', { rows: '3', placeholder: 'הערות' });
+  notes.value = l.notes || '';
+  const form = {
+    el: h('div', { class: 'form' }, f('שם', name), f('טלפון', phone), f('מה מעניין', ints, 'מפרידים בפסיק'), f('הערות', notes)),
+    collect: () => ({ name: name.value.trim(), phone: phone.value.trim(), interests: ints.value.split(',').map((x) => x.trim()).filter(Boolean), notes: notes.value.trim() }),
+    focus: name,
+  };
+  for (;;) {
+    const r = await ask({ title: isNew ? 'נרשם/ת חדש/ה' : 'עריכת ' + (l.name || 'הרשומה'), form, tone: 'mint', ok: 'שמירה', cancel: 'ביטול' });
+    if (!r) return;
+    if (!r.name && !r.phone) { toast('צריך לפחות שם או טלפון', { warn: true }); continue; }
+    const j = await vivAction({ action: 'save', lead: { ...r, id: l.id || undefined } });
+    if (!j) return;
+    toast(isNew ? 'נוסף לרשימה' : 'נשמר');
+    loadViv();
+    return;
+  }
+}
+function vivCsv() {
+  const rows = vivShown();
+  if (!rows.length) { toast('אין מה להוריד', { warn: true }); return; }
+  const esc = (v) => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  const lines = [['שם', 'טלפון', 'מה מעניין', 'מאיפה', 'תאריך הרשמה', 'הערות'].map(esc).join(',')];
+  rows.forEach((l) => lines.push([l.name, l.phone, (l.interests || []).join(', '), l.source, (l.at || '').slice(0, 10), l.notes].map(esc).join(',')));
+  const blob = new Blob(['\ufeff' + lines.join('\r\n')], { type: 'text/csv;charset=utf-8' });
+  const a = h('a', { href: URL.createObjectURL(blob), download: 'vivian-' + new Date().toISOString().slice(0, 10) + '.csv' });
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+$('vivRefresh').addEventListener('click', loadViv);
+$('vivAdd').addEventListener('click', () => editViv(null));
+$('vivCsv').addEventListener('click', vivCsv);
+$('vivSearch').addEventListener('input', () => { if (vivLeads.length) renderViv(); });
+$('vivFilter').addEventListener('change', (e) => { vivFilterVal = e.target.value; renderViv(); });
 $('artistSearch').addEventListener('input', () => { if (artists.length) renderArtists(); });
 $('artistFieldFilter').addEventListener('change', (e) => { artistFilter.field = e.target.value; renderArtists(); });
 $('artistMeta').addEventListener('click', editArtistMeta);

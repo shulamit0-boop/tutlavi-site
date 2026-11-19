@@ -141,7 +141,12 @@ vivForm.addEventListener('submit', (e) => {
   vivSubmit.disabled = true;
 
   const p = Object.fromEntries(new FormData(vivForm).entries());
-  fetch(VIV_ENDPOINT, {
+  const toCrm = fetch('/api/vivian', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: p.name || '', phone: p.phone || '', interests: ['פופ-אפ'], source: 'vivian', _honey: p._honey || '' }),
+  }).then(r => r.ok);
+  const toMail = fetch(VIV_ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
     body: JSON.stringify({
@@ -153,8 +158,10 @@ vivForm.addEventListener('submit', (e) => {
       'טלפון': p.phone || '',
       'מאיפה': 'עמוד ויויאן',
     }),
-  })
-    .then(r => r.json())
+  }).then(r => r.json()).then(d => String(d.success) === 'true');
+  // saved if either the panel (CRM) or the e-mail got it
+  Promise.allSettled([toCrm, toMail])
+    .then(rs => ({ success: rs.some(r => r.status === 'fulfilled' && r.value) ? 'true' : 'false' }))
     .then(d => {
       if (String(d.success) !== 'true') throw new Error(d.message || 'failed');
       vivStatus.className = 'form-status ok';

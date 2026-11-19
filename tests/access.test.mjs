@@ -159,3 +159,14 @@ test('finance: stored values are cleaned', () => {
   assert.equal(out.entries[1].kind, 'in');
   assert.equal(out.entries[1].amount, 250);
 });
+
+test('vivian: the sign-up list needs the key to read, edit or delete', async () => {
+  const { default: vivian, cleanInterests } = await import('../api/vivian.mjs');
+  assert.equal((await vivian(req('/api/vivian'))).status, 401);
+  assert.equal((await vivian(req('/api/vivian', { headers: WRONG }))).status, 401);
+  assert.equal((await vivian(json('/api/vivian', 'POST', { action: 'delete', id: 'abc' }))).status, 401);
+  assert.equal((await vivian(json('/api/vivian', 'POST', { action: 'save', lead: { name: 'x' } }, SHORT))).status, 401);
+  // a public sign-up without a real phone is refused, not stored
+  assert.equal((await vivian(json('/api/vivian', 'POST', { name: 'x', phone: '12' }))).status, 400);
+  assert.deepEqual(cleanInterests(['סירופים', 'סירופים', ' יין מתובל ']), ['סירופים', 'יין מתובל']);
+});
