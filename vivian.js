@@ -146,8 +146,11 @@ vivForm.addEventListener('submit', (e) => {
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ name: p.name || '', phone: p.phone || '', interests: ['פופ-אפ'], source: 'vivian', _honey: p._honey || '' }),
   }).then(r => r.ok);
+  // FormSubmit can take ~50s to answer, so it never holds the form up:
+  // keepalive lets it finish even if the visitor closes the page.
   const toMail = fetch(VIV_ENDPOINT, {
     method: 'POST',
+    keepalive: true,
     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
     body: JSON.stringify({
       _subject: 'הרשמה לעדכוני ויויאן · ' + (p.name || ''),
@@ -159,9 +162,10 @@ vivForm.addEventListener('submit', (e) => {
       'מאיפה': 'עמוד ויויאן',
     }),
   }).then(r => r.json()).then(d => String(d.success) === 'true');
-  // saved if either the panel (CRM) or the e-mail got it
-  Promise.allSettled([toCrm, toMail])
-    .then(rs => ({ success: rs.some(r => r.status === 'fulfilled' && r.value) ? 'true' : 'false' }))
+  // done as soon as the panel (CRM) saved it; only if that failed, wait for the e-mail
+  toCrm.catch(() => false)
+    .then(ok => ok || toMail.catch(() => false))
+    .then(ok => ({ success: ok ? 'true' : 'false' }))
     .then(d => {
       if (String(d.success) !== 'true') throw new Error(d.message || 'failed');
       vivStatus.className = 'form-status ok';
