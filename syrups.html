@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>סירופים של ויויאן · עדכונים</title>
+<meta name="description" content="נרשמים בשנייה ומקבלים בוואטסאפ עדכון כשיש סירופים, ציוד בר וסדנאות חדשות של ויויאן.">
+<meta name="robots" content="noindex">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="favicon.png">
+<link rel="stylesheet" href="home.css">
+<link rel="stylesheet" href="forms.css">
+<style>
+  .syr-top{ display:flex; justify-content:space-between; align-items:center; padding:18px var(--pad-x); border-bottom:1px solid var(--line); }
+  .syr-top img{ height:22px; width:auto; display:block; }
+  .syr-top .eyebrow{ font-size:11px; }
+  .syr-hero{ position:relative; aspect-ratio:16/10; max-height:42vh; width:100%; overflow:hidden; background:#1b1c1d; }
+  .syr-hero img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .syr-main{ padding:36px var(--pad-x) 56px; }
+  .syr-main .lead{ margin-top:18px; max-width:40ch; }
+  .syr-form{ margin-top:32px; }
+  .pick-row{ display:flex; flex-wrap:wrap; gap:.5rem; margin-top:.6rem; }
+  .pick{ position:relative; display:inline-flex; align-items:center; border:1px solid rgba(27,28,29,.3); border-radius:999px; padding:.5rem 1.05rem; font-size:.95rem; cursor:pointer; user-select:none; transition:background .15s, color .15s, border-color .15s; }
+  .pick input{ position:absolute; opacity:0; width:1px; height:1px; pointer-events:none; }
+  .pick:has(input:checked){ background:var(--ink); color:#fff; border-color:var(--ink); }
+  .pick:has(input:focus-visible){ outline:2px solid var(--accent); outline-offset:2px; }
+  @media (min-width:768px){ .syr-hero{ max-height:52vh; } .syr-main{ max-width:640px; margin:0 auto; } }
+</style>
+</head>
+<body>
+
+<header class="syr-top">
+  <a href="/vivian#top" aria-label="ויויאן"><img src="media/logo-tut.png" alt="תות" width="645" height="249"></a>
+  <span class="eyebrow" dir="ltr">VIVIAN — SYRUPS</span>
+</header>
+
+<div class="syr-hero"><img src="media/vivian-tray.jpg" alt="מגש קוקטיילים של ויויאן"></div>
+
+<main class="syr-main">
+  <p class="eyebrow">/ אחרי הסדנה</p>
+  <h1 class="viv-title">אהבתם את הסירופים?<br>תדעו ראשונים כשיש<span class="dot">.</span></h1>
+  <p class="lead">משאירים שם וטלפון, ואנחנו שולחות בוואטסאפ כשיש סירופים ביתיים למכירה, ציוד בר או סדנה חדשה. בלי ספאם, רק דרינקים.</p>
+
+  <form class="viv-form paper-form syr-form" id="vivForm">
+    <p class="hp-field"><label>אל תמלאו: <input name="_honey" tabindex="-1" autocomplete="off"></label></p>
+    <p class="pf-head" dir="ltr">VIVIAN — UPDATES</p>
+    <div class="pf-rule" aria-hidden="true"></div>
+
+    <div class="field">
+      <label class="field-label" for="viv-name"><i class="num">( 1 )</i> איך קוראים לך</label>
+      <input id="viv-name" name="name" type="text" autocomplete="name" placeholder="שם" required>
+    </div>
+    <div class="field">
+      <label class="field-label" for="viv-phone"><i class="num">( 2 )</i> טלפון — וואטסאפ זה הכי טוב</label>
+      <input id="viv-phone" name="phone" type="tel" inputmode="tel" autocomplete="tel" dir="ltr" placeholder="050-" required>
+    </div>
+    <fieldset class="field" style="border:0;padding:0;margin-inline:0">
+      <legend class="field-label"><i class="num">( 3 )</i> מה מעניין אותך? (לא חובה)</legend>
+      <div class="pick-row">
+        <label class="pick"><input type="checkbox" name="interest" value="סירופים" checked>סירופים</label>
+        <label class="pick"><input type="checkbox" name="interest" value="ציוד בר">ציוד בר</label>
+        <label class="pick"><input type="checkbox" name="interest" value="סדנאות">סדנאות</label>
+        <label class="pick"><input type="checkbox" name="interest" value="פופ-אפ">הפופ-אפ של ויויאן</label>
+      </div>
+    </fieldset>
+
+    <div class="pf-rule" aria-hidden="true"></div>
+    <div class="pf-foot">
+      <p class="pf-hint">שם וטלפון, וזה מספיק</p>
+      <button type="submit" class="modal-submit" id="vivSubmit" disabled>תעדכנו אותי <span dir="ltr" aria-hidden="true">←</span></button>
+    </div>
+    <p class="form-status" id="vivStatus" role="status" aria-live="polite"></p>
+  </form>
+
+  <p class="viv-contacts" dir="ltr">
+    <a href="https://www.instagram.com/vivian_cocktails/" target="_blank" rel="noopener">@vivian_cocktails</a>
+    <span aria-hidden="true">·</span>
+    <a href="https://wa.me/972547316782" target="_blank" rel="noopener">054-731-6782</a>
+  </p>
+  <p class="viv-back"><a href="/vivian#top"><span dir="ltr" aria-hidden="true">←</span> לעמוד של ויויאן</a></p>
+</main>
+
+<footer class="site-footer">
+  <span>© 2026 סטודיו תות · <span>מגן אברהם 6, יפו</span></span>
+  <a href="/vivian">ויויאן</a>
+  <span dir="ltr">VIVIAN — COCKTAIL PARTY</span>
+</footer>
+
+<script src="syrups.js"></script>
+</body>
+</html>

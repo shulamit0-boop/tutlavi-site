@@ -24,9 +24,18 @@
     {
       "source": "/rent",
       "destination": "/index.html"
+    },
+    {
+      "source": "/syrups",
+      "destination": "/syrups.html"
     }
   ],
   "redirects": [
+    {
+      "source": "/sirop",
+      "destination": "/syrups",
+      "permanent": false
+    },
     {
       "source": "/vivan",
       "destination": "/vivian",
