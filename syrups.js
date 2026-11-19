@@ -54,7 +54,7 @@ vivForm.addEventListener('submit', (e) => {
     .then(d => {
       if (String(d.success) !== 'true') throw new Error(d.message || 'failed');
       vivStatus.className = 'form-status ok';
-      vivStatus.textContent = 'נרשמתם. נעדכן אתכם בוואטסאפ לפני כולם.';
+      vivStatus.textContent = 'נרשמתם. נעדכן אתכם לפני כולם.';
       vivForm.reset();
       syncVivSubmit();
     })
