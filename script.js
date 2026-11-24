@@ -200,16 +200,19 @@ function applySiteContent(c) {
   if (Array.isArray(c.events)) {
     const section = document.getElementById('schedule');
     const list = document.getElementById('schedList');
-    // hide drafts (hidden) and events whose date has already passed.
-    // date is "dd.mm.yyyy"; unparseable/empty dates are kept (never treated as past).
-    const isPast = (d) => {
+    // show only the coming week: today through 7 days ahead (24.11.2026, per Shulamit).
+    // drafts (hidden) never show. date is "dd.mm.yyyy"; unparseable/empty dates are kept.
+    const SCHED_DAYS_AHEAD = 7;
+    const parseEv = (d) => {
       const m = /^\s*(\d{1,2})\.(\d{1,2})\.(\d{4})\s*$/.exec(d || '');
-      if (!m) return false;
-      const ev = new Date(+m[3], +m[2] - 1, +m[1]);
-      const today = new Date(); today.setHours(0, 0, 0, 0);
-      return ev < today;
+      return m ? new Date(+m[3], +m[2] - 1, +m[1]) : null;
     };
-    const visible = c.events.filter(ev => ev && ev.hidden !== true && !isPast(ev.date));
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const until = new Date(today); until.setDate(until.getDate() + SCHED_DAYS_AHEAD);
+    const inWindow = (d) => { const dt = parseEv(d); return !dt || (dt >= today && dt <= until); };
+    const visible = c.events
+      .filter(ev => ev && ev.hidden !== true && inWindow(ev.date))
+      .sort((a, b) => (parseEv(a.date) || today) - (parseEv(b.date) || today));
     if (!visible.length) {
       if (section) section.style.display = 'none';
     } else if (list) {

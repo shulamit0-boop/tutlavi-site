@@ -1477,6 +1477,15 @@ function isPastDate(d) {
   return dt < today;
 }
 
+/* the home page shows only the coming 7 days (SCHED_DAYS_AHEAD in script.js) */
+function isBeyondWeek(d) {
+  const m = /^\s*(\d{1,2})\.(\d{1,2})\.(\d{4})\s*$/.exec(d || '');
+  if (!m) return false;
+  const dt = new Date(+m[3], +m[2] - 1, +m[1]);
+  const until = new Date(); until.setHours(0, 0, 0, 0); until.setDate(until.getDate() + 7);
+  return dt > until;
+}
+
 function eventsChange(msg, fn) {
   const before = JSON.stringify(content.events);
   fn();
@@ -1495,6 +1504,7 @@ function renderEvents() {
     const title = h('span', { class: 'title', text: ev.name || 'אירוע חדש' });
     const badge = ev.hidden === true ? h('span', { class: 'badge draft', text: 'טיוטה, לא מוצג' })
       : isPastDate(ev.date) ? h('span', { class: 'badge past', text: 'עבר, ירד מהאתר' })
+      : isBeyondWeek(ev.date) ? h('span', { class: 'badge draft', text: 'יופיע באתר שבוע לפני' })
       : h('span', { class: 'badge live', text: 'מוצג באתר' });
     const del = h('button', { class: 'icon-btn del', title: 'מחיקת האירוע', 'aria-label': 'מחיקת האירוע',
       onclick: () => eventsChange('האירוע "' + (ev.name || 'ללא שם') + '" נמחק', () => { content.events.splice(i, 1); }) }, icon('trash'));
