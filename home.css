@@ -396,18 +396,17 @@ body.menu-open .menu-scrim{ opacity:1; visibility:visible; }
   .sched-status,.sched-status-col{ grid-area:status; justify-self:end; }
 }
 
-/* upcoming events band: dark, right under the hero, so it can't be missed */
-.sched-band{ background:var(--ink); color:#fff; border-top:none; }
-.sched-band .eyebrow{ color:rgba(255,255,255,.75); }
+/* upcoming events: right under the hero, large type on the page's own light ground */
+.sched-band{ border-top:none; }
 .sched-title{
   font-size:clamp(40px,7vw,88px); font-weight:500; line-height:1; letter-spacing:-.02em;
   margin-bottom:32px;
 }
 .sched-title .dot{ color:var(--accent); }
-.sched-band .sched-list{ border-top:1px solid rgba(255,255,255,.4); list-style:none; }
+.sched-band .sched-list{ border-top:2px solid var(--ink); list-style:none; }
 .sched-band .sched-row{
   grid-template-columns:150px 150px 1fr auto auto; grid-template-areas:"img date main cat status";
-  align-items:center; gap:28px; padding:24px 0; border-bottom:1px solid rgba(255,255,255,.2);
+  align-items:center; gap:28px; padding:24px 0; border-bottom:1px solid var(--line);
 }
 .sched-band .sched-row:not(.has-img){ grid-template-columns:150px 1fr auto auto; grid-template-areas:"date main cat status"; }
 .sched-band .sched-row::before{ content:none; }
@@ -417,16 +416,14 @@ body.menu-open .menu-scrim{ opacity:1; visibility:visible; }
 .sched-band .sched-day{ font-family:var(--sans); font-size:56px; font-weight:500; line-height:1; text-align:right; }
 .sched-band .sched-main{ grid-area:main; gap:6px; }
 .sched-band .sched-name{ font-size:clamp(22px,2.4vw,30px); line-height:1.2; }
-.sched-band .sched-desc{ font-size:15px; color:rgba(255,255,255,.78); }
+.sched-band .sched-desc{ font-size:15px; }
 .sched-band .sched-cat{ grid-area:cat; }
-.sched-band .sched-cat,.sched-band .sched-status{ color:rgba(255,255,255,.7); }
-.sched-band .sched-status.on{ color:#fff; }
 .sched-band .sched-status,.sched-band .sched-status-col{ grid-area:status; }
 .sched-band .sched-reg{
   background:var(--accent); border-color:var(--accent); color:#fff;
   font-size:16px; padding:14px 30px;
 }
-.sched-band .sched-reg:hover{ background:#fff; border-color:#fff; color:var(--ink); }
+.sched-band .sched-reg:hover{ background:var(--ink); border-color:var(--ink); }
 @media (max-width:767px){
   .sched-band .sched-row{
     grid-template-columns:112px 1fr; grid-template-areas:"img date" "main main" "status status"; gap:16px;
