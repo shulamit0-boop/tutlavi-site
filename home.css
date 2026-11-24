@@ -396,8 +396,9 @@ body.menu-open .menu-scrim{ opacity:1; visibility:visible; }
   .sched-status,.sched-status-col{ grid-area:status; justify-self:end; }
 }
 
-/* upcoming events: right under the hero, large type on the page's own light ground */
-.sched-band{ border-top:none; }
+/* upcoming events: right under the hero, large type on a light grey tint that sets it apart from the next section */
+.sched-band{ background:#e2e1dd; border-top:none; border-bottom:1px solid var(--ink); }
+.sched-band .eyebrow,.sched-band .sched-cat{ color:#4f4f4d; }
 .sched-title{
   font-size:clamp(40px,7vw,88px); font-weight:500; line-height:1; letter-spacing:-.02em;
   margin-bottom:32px;
@@ -406,7 +407,7 @@ body.menu-open .menu-scrim{ opacity:1; visibility:visible; }
 .sched-band .sched-list{ border-top:2px solid var(--ink); list-style:none; }
 .sched-band .sched-row{
   grid-template-columns:150px 150px 1fr auto auto; grid-template-areas:"img date main cat status";
-  align-items:center; gap:28px; padding:24px 0; border-bottom:1px solid var(--line);
+  align-items:center; gap:28px; padding:24px 0; border-bottom:1px solid rgba(27,28,29,.2);
 }
 .sched-band .sched-row:not(.has-img){ grid-template-columns:150px 1fr auto auto; grid-template-areas:"date main cat status"; }
 .sched-band .sched-row::before{ content:none; }
@@ -416,7 +417,7 @@ body.menu-open .menu-scrim{ opacity:1; visibility:visible; }
 .sched-band .sched-day{ font-family:var(--sans); font-size:56px; font-weight:500; line-height:1; text-align:right; }
 .sched-band .sched-main{ grid-area:main; gap:6px; }
 .sched-band .sched-name{ font-size:clamp(22px,2.4vw,30px); line-height:1.2; }
-.sched-band .sched-desc{ font-size:15px; }
+.sched-band .sched-desc{ font-size:15px; color:#4f4f4d; }
 .sched-band .sched-cat{ grid-area:cat; }
 .sched-band .sched-status,.sched-band .sched-status-col{ grid-area:status; }
 .sched-band .sched-reg{
@@ -434,6 +435,8 @@ body.menu-open .menu-scrim{ opacity:1; visibility:visible; }
   .sched-band .sched-status,.sched-band .sched-status-col{ justify-self:stretch; }
   .sched-band .sched-reg{ width:100%; justify-content:center; }
 }
+
+.sched-band .sched-row:last-child{ border-bottom:none; padding-bottom:0; }
 
 /* ============ 5 · CONTACT ============ */
 .contact-title{
