@@ -203,6 +203,7 @@ function applySiteContent(c) {
     // show only the coming week: today through 7 days ahead (24.11.2026, per Shulamit).
     // drafts (hidden) never show. date is "dd.mm.yyyy"; unparseable/empty dates are kept.
     const SCHED_DAYS_AHEAD = 7;
+    const SCHED_DOW = ['ראשון', 'שני', 'שלישי', 'רביעי', 'חמישי', 'שישי', 'שבת'];
     const parseEv = (d) => {
       const m = /^\s*(\d{1,2})\.(\d{1,2})\.(\d{4})\s*$/.exec(d || '');
       return m ? new Date(+m[3], +m[2] - 1, +m[1]) : null;
@@ -219,10 +220,16 @@ function applySiteContent(c) {
       if (section) section.style.display = '';
       list.innerHTML = visible.map(ev => {
         const hot = ev.hot ? ' on' : '';
+        const dt = parseEv(ev.date);
+        const diff = dt ? Math.round((dt - today) / 864e5) : null;
+        const img = /^(\/media\/|https:\/\/)/.test(ev.img || '') ? ev.img : '';
         const action = regAction(ev);
-        return '<li class="sched-row reveal in-view">' +
-          '<span class="sched-flag' + hot + '"></span>' +
-          '<span class="sched-date" dir="ltr">' + escHtml(ev.date || '') + '</span>' +
+        return '<li class="sched-row reveal in-view' + (img ? ' has-img' : '') + '">' +
+          (img ? '<img class="sched-img" src="' + escAttr(img) + '" alt="" loading="lazy">' : '<span class="sched-flag' + hot + '"></span>') +
+          '<span class="sched-date">' + (dt
+            ? '<span class="sched-dow">' + (diff === 0 ? 'היום' : diff === 1 ? 'מחר' : 'יום ' + SCHED_DOW[dt.getDay()]) + '</span>' +
+              '<span class="sched-day" dir="ltr">' + dt.getDate() + '.' + (dt.getMonth() + 1) + '</span>'
+            : escHtml(ev.date || '')) + '</span>' +
           '<span class="sched-main">' +
             '<span class="sched-name">' + escHtml(ev.name || '') + '</span>' +
             (ev.desc ? '<span class="sched-desc">' + escHtml(ev.desc) + '</span>' : '') +

@@ -32,6 +32,10 @@
     <button class="menu-close" id="menuClose" aria-label="סגירה">&times;</button>
   </div>
   <nav class="menu-list">
+    <a href="#schedule" class="menu-item">
+      <span class="menu-item-main">/ אירועים קרובים</span>
+      <span class="menu-item-num" style="color:var(--accent)" aria-hidden="true">●</span>
+    </a>
     <a href="#here" class="menu-item">
       <span class="menu-item-main">/ מה יש כאן</span>
       <span class="menu-item-num">( 1 )</span>
@@ -48,17 +52,13 @@
       <span class="menu-item-main">/ איך זה הולך</span>
       <span class="menu-item-num">( 4 )</span>
     </a>
-    <a href="#schedule" class="menu-item">
-      <span class="menu-item-main">/ מה קורה בסטודיו</span>
-      <span class="menu-item-num">( 5 )</span>
-    </a>
     <a href="#contact" class="menu-item">
       <span class="menu-item-main">/ לכתוב לנו</span>
-      <span class="menu-item-num">( 6 )</span>
+      <span class="menu-item-num">( 5 )</span>
     </a>
     <button type="button" class="menu-item" data-open-inquiry="rental">
       <span class="menu-item-main">/ להשכיר את החלל</span>
-      <span class="menu-item-num">( 7 )</span>
+      <span class="menu-item-num">( 6 )</span>
     </button>
   </nav>
   <div class="menu-foot" dir="ltr">
@@ -83,6 +83,17 @@
       <span class="cta-box" aria-hidden="true">←</span>
     </a>
   </div>
+</section>
+
+<!-- ============ UPCOMING EVENTS (right under the hero, 24.11.2026 per Hila) ============
+     Hidden by script.js while there is no upcoming event saved in /admin. -->
+<section class="sec sched-band" id="schedule" style="display:none">
+  <div class="sec-head">
+    <p class="eyebrow" data-edit="schedTitle">/ מה קורה בסטודיו</p>
+    <p class="eyebrow"><span id="schedCount">FROM CALENDAR</span></p>
+  </div>
+  <h2 class="sched-title">אירועים קרובים<span class="dot">.</span></h2>
+  <ul class="sched-list" id="schedList"></ul>
 </section>
 
 <!-- ============ 1 · WHAT IS HERE ============ -->
@@ -233,21 +244,11 @@
   </div>
 </section>
 
-<!-- ============ 5 · SCHEDULE ============
-     Hidden by script.js while there is no upcoming event saved in /admin. -->
-<section class="sec" id="schedule" style="display:none">
-  <div class="sec-head">
-    <p class="eyebrow" data-edit="schedTitle">/ מה קורה בסטודיו &nbsp;&nbsp;( 5 )</p>
-    <p class="eyebrow"><span id="schedCount">FROM CALENDAR</span></p>
-  </div>
-  <ul class="sched-list" id="schedList"></ul>
-</section>
-
-<!-- ============ 6 · CONTACT ============ -->
+<!-- ============ 5 · CONTACT ============ -->
 <section class="sec" id="contact">
   <div class="two-col">
     <div class="reveal">
-      <p class="eyebrow">/ לכתוב לנו &nbsp;&nbsp;( 6 )</p>
+      <p class="eyebrow">/ לכתוב לנו &nbsp;&nbsp;( 5 )</p>
       <h2 class="contact-title" data-edit="contactTitle" data-dot>בואו<span class="dot">.</span></h2>
       <p class="lead contact-lead" data-edit="contactLead">הכי נוח בוואטסאפ. עונים כשאנחנו לא באמצע סדנה.</p>
       <button type="button" class="contact-book" data-open-inquiry="rental">
